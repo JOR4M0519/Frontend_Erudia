@@ -1,7 +1,7 @@
 import { Navigate, Route } from 'react-router-dom';
 import { PrivateRoutes } from '../../models';
 import { RoutesWithNotFound } from '../../utilities';
-import { Layout } from '../../components/Layout';
+import { Layout } from '../../components';
 import { Dashboard } from './Dashboard/Dashboard';
 import { lazy } from 'react';
 

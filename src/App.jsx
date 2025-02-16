@@ -8,7 +8,7 @@ import store from './redux/store';
 import { RoutesWithNotFound } from './utilities';
 import React from "react";
 
-import { Layout }  from "./components/Layout" 
+import { Layout }  from "./components/index" 
 
 import { Login } from './pages/login/Login';
 import { Dashboard } from './pages/private/index';

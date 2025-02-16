@@ -4,7 +4,7 @@ import {SearchModal} from "../windows/Search"
 
 
 
-export function Layout({ children }) {
+export default function Layout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   //const navigate = useNavigate()
 

@@ -4,12 +4,8 @@ import { useSelector } from "react-redux";
 import ProfileSection from "../../../components/ProfileSection"
 import PersonalInfoSection from "../../../components/PersonalInfoSection"
 import ActionCards from "../../../components/ActionCards"
-import { decodeRoles, RoutesWithNotFound } from "../../../utilities";
-import { PrivateRoutes, Roles } from "../../../models";
-import { Navigate, Route } from "react-router-dom";
-import { Layout } from "../../../components/Layout";
-import { Admin } from "../Admin";
-import { RoleGuard } from "../../../guards";
+import { decodeRoles } from "../../../utilities";
+import { StudentLayout } from "./StudentLayout";
 
 
 export function Dashboard() {
@@ -20,8 +16,6 @@ export function Dashboard() {
     
     const userData = {
         name: userState.name,
-        period: "2023-1",
-        studentId: "123456",
         role: storedRole
     }
 
@@ -41,12 +35,27 @@ export function Dashboard() {
                 </div>
             </header>
 
+
+            {/* Renderizar StudentLayout solo si el usuario es estudiante */}
+        
+            <StudentLayout/>
+        {/* {storedRole.includes("ADMIN") ? (
+          <StudentLayout />
+        ) : (
+          <>
             <div className="grid md:grid-cols-2 gap-6">
+              <ProfileSection />
+              <PersonalInfoSection />
+            </div>
+            <ActionCards />
+          </>
+        )} */}
+            {/* <div className="grid md:grid-cols-2 gap-6">
                 <ProfileSection />
                 <PersonalInfoSection />
             </div>
 
-            <ActionCards />
+            <ActionCards /> */}
             </div>
 
             {/* <RoutesWithNotFound>
