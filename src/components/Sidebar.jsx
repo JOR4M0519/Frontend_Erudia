@@ -11,6 +11,7 @@ import {
   BookType,
   ShieldPlus,
   ChevronDown,
+  StarIcon,
 } from "lucide-react";
 import Logout from "./Logout";
 import { PrivateRoutes, SideBarRoles } from "../models";
@@ -18,19 +19,13 @@ import { decodeRoles,hasAccess } from "../utilities";
 import { searchService } from "../windows/Search/searchService";
 
 
-export default function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar() {
   const userState = useSelector(store => store.user);
   const storedRole = decodeRoles(userState?.roles) ?? [];
 
   const navItems = [
     { navKey: "DASHBOARD", to: PrivateRoutes.DASHBOARD, icon: <Home className="h-5 w-5" />, label: "Inicio" },
-    {
-      navKey: "SEARCH",
-      icon: <Search className="h-5 w-5" />,
-      label: "Buscador",
-      isModal: true, // Indica que es un modal
-    },
-    { navKey: "PROFILE", to: PrivateRoutes.PROFILE, icon: <User className="h-5 w-5" />, label: "Perfil" },
+    
     { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Materias" },
     { navKey: "ACTIVITIES", to: PrivateRoutes.ACTIVITIES, icon: <NotebookText className="h-5 w-5" />, label: "Actividades" },
     { navKey: "STUDENTTRACKING", to: PrivateRoutes.STUDENTTRACKING, icon: <BookUser className="h-5 w-5" />, label: "Observador" },
@@ -51,39 +46,40 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         }
       ]
     },
+    { navKey: "GRADES", to: PrivateRoutes.GRADES, icon: <StarIcon className="h-5 w-5" />, label: "Mis Notas" },
     { navKey: "SETTINGS", to: PrivateRoutes.SETTINGS, icon: <Settings className="h-5 w-5" />, label: "Configuraciones" },
   ];
 
   return (
-    <aside className={`bg-white border-r w-[250px] p-4 transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
-      <div className="flex items-center justify-between mb-6">
-        <img src="/logo.svg" alt="Logo" className="h-8" />
-        <Logout />
-      </div>
-      <nav className="space-y-2">
+    <aside
+    className={`g-white border-r w-64 h-full flex flex-col shadow-md`}
+  >
+    {/* 🔹 Contenedor navegación */}
+    <div className="flex flex-col flex-1">
+      {/* 🔹 Navegación */}
+      <nav className="space-y-4 p-1 flex-1 overflow-auto">
         {navItems.map((item, index) =>
           hasAccess(storedRole, SideBarRoles[item.navKey] ?? []) ? (
             <NavItem key={index} {...item} userRoles={storedRole} />
           ) : null
         )}
       </nav>
-    </aside>
+    </div>
+
+    {/* 🔹 Botón de Logout (SIEMPRE visible) */}
+    <div className="p-4 border-t">
+      <Logout />
+    </div>
+  </aside>
   );
 }
 
-function NavItem({ to, icon, label, subItems, navKey, userRoles, isModal }) {
+function NavItem({ to, icon, label, subItems, navKey, userRoles}) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!hasAccess(userRoles, SideBarRoles[navKey] ?? [])) return null;
 
-  const handleClick = () => {
-    if (isModal) {
-      
-      searchService.open(); // Abre el modal en SEARCH
-      console.log("click")
-    }
-  };
-
+  
   return (
     <div className="flex flex-col">
       <div className="flex justify-between items-center">
@@ -101,7 +97,7 @@ function NavItem({ to, icon, label, subItems, navKey, userRoles, isModal }) {
           </NavLink>
         ) : (
           <button
-            onClick={handleClick}
+            
             className="flex items-center space-x-3 p-3 w-full rounded-lg hover:bg-gray-100 transition-colors"
           >
             {icon}

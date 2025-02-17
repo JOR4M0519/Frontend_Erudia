@@ -8,7 +8,7 @@ import store from './redux/store';
 import { RoutesWithNotFound } from './utilities';
 import React from "react";
 
-import { Layout }  from "./components/Layout" 
+import { Layout }  from "./components/index" 
 
 import { Login } from './pages/login/Login';
 import { Dashboard } from './pages/private/index';
@@ -18,6 +18,7 @@ import { Activities } from './pages/private/Activities';
 import { StudentTracking } from './pages/private/StudentTracking';
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
+import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
 
 // const Login = lazy(() => import('./pages/login/Login'));
 // const Private = lazy(() => import('./pages/Private/Private'));
@@ -38,7 +39,7 @@ function App() {
               <Route path={PublicRoutes.LOGIN} element={<Login />} />
 
               <Route element={<AuthGuard privateValidation={true} />}>
-                <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Layout><Dashboard /></Layout>} />
+                <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Layout><Dashboard/></Layout>} />
               </Route>
                
               {/* <Route element={<RoleGuard rol={Roles.ADMIN} />}>
@@ -51,11 +52,15 @@ function App() {
               </Route>
 
               <Route element={<MultiRoleGuard navKey="PROFILE" />}>
-                <Route path={PrivateRoutes.PROFILE} element={<Layout><Profile /></Layout>} />
+                <Route path={PrivateRoutes.PROFILE} element={<Layout><Profile/></Layout>} />
               </Route>
 
               <Route element={<MultiRoleGuard navKey="SUBJECTS" />}>
                 <Route path={PrivateRoutes.SUBJECTS} element={<Layout><Subject/></Layout>} />
+              </Route>
+              
+              <Route element={<MultiRoleGuard navKey="GRADES" />}>
+                <Route path={PrivateRoutes.GRADES} element={<Layout><GradesStudent /></Layout>} />
               </Route>
 
               <Route element={<MultiRoleGuard navKey="ACTIVITIES" />}>
