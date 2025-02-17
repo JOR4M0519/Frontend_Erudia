@@ -5,10 +5,9 @@ import { hasAccess } from "../../../utilities/accesControl.utility";
 import { Roles } from "../../../models";
 import { useSelector } from "react-redux";
 import { decodeRoles } from "../../../utilities";
-import { s } from "framer-motion/client";
 
 export default function SubjectGrid() {
-  const userState = useSelector(store => store.user);
+  const userState = useSelector(store => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
 
   const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
@@ -19,7 +18,6 @@ export default function SubjectGrid() {
   const defaultImage = "/bg-subject.png";
 
   const subjectsValue = serviceData.getSubjectsValue();
-  console.log("Imagen cargada:", defaultImage);
 
   if (!subjectsValue || !subjectsValue.subjects) {
     return <p className="text-gray-500">Cargando materias...</p>;

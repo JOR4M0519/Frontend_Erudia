@@ -1,23 +1,10 @@
-import {configureStore} from "@reduxjs/toolkit"
-import userSliceReducer from './states/user';
-  
+import { configureStore } from "@reduxjs/toolkit";
+import userSliceReducer, { selectedUserReducer } from './states/user';
+
 export default configureStore({
     reducer: {
-      user: userSliceReducer
+      user: userSliceReducer,           // 🔹 Usuario bloqueado
+      selectedUser: selectedUserReducer // 🔹 Usuario seleccionado
     },
-    devTools: true // Habilita Redux DevTools para depuración
+    devTools: true
 });
-
-
-
-// export class AppStore {
-//   user;
-// }
-
-
-// export default configureStore<AppStore>({
-//   reducer: {
-//     user: userSliceReducer
-//   }
-// });
-

@@ -9,7 +9,7 @@ export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
   const [periodGrade, setPeriodGrade] = useState("-");
   const selectedSubject = sessionStorage.getItem("selectedSubject");
-  const userState = useSelector(store => store.user);
+  const userState = useSelector(store => store.selectedUser);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   
   useEffect(() => {
