@@ -1,5 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
+import { State } from "../../../../models";
 
 // 🔹 Estado de la vista (home / grades / otra pantalla que quieras)
 const viewSubject = new BehaviorSubject("home");
@@ -22,7 +23,7 @@ export const studentService = {
 
 };
 
-// 🔹 Gestión de datos almacenados en sessionStorage
+//  Gestión de datos almacenados en sessionStorage
 const storedData = sessionStorage.getItem("studentData");
 const initialSubjects = storedData ? JSON.parse(storedData) : null;
 const subjectsStudent = new BehaviorSubject(initialSubjects);
@@ -115,10 +116,42 @@ export const studentDataService = {
           description: task.activity.activity.description,
           startDate: task.activity.startDate,
           endDate: task.activity.endDate,
-          subjectName: task.activity.activity.subject.subjectName,
+          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
           score: task.score ?? "-",
           status: task.comment ?? "Sin estado",
         }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener tareas:", error);
+      return [];
+    }
+  },
+
+  getTaskDetails: async (activityId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/activity-grade/${activityId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        const task = response.data; 
+
+        return {
+          id: activityId,
+          name: task.activity.activity.activityName,
+          knowledge: task.activity.activity.achievementGroup.subjectKnowledge.idKnowledge.name,
+          description: task.activity.activity.description,
+          startDate: task.activity.startDate ?? "-",  //No se tiene aun
+          endDate: task.activity.endDate ?? "-",      //No se tiene aun
+          score: task.score ?? "-",
+          comment: task.comment ?? "Sin estado",
+          status: (new State()).getName(task.activity.activity.status),
+        };
       }
 
       return [];
@@ -139,7 +172,7 @@ export const studentDataService = {
   },
 };
 
-// ✅ Exportar todo en un solo archivo
+//  Exportar todo en un solo archivo
 export default {
   studentService,
   studentDataService,

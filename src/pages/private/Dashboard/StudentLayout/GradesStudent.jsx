@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { FileDown } from "lucide-react";
 import { BackButton,Card } from "../../../../components"; 
-import { studentDataService, studentService } from "./index";
+import { studentDataService} from "./index";
 import { useSelector } from "react-redux";
 import { configViewService } from "../../Setting";
-import { Navigate, redirect, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function GradesStudent() {
   const [grades, setGrades] = useState([]);

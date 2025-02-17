@@ -12,6 +12,7 @@ export class StudentGroupModel {
           id: data.group?.mentor?.id || null,
           firstName: data.group?.mentor?.firstName || "Desconocido",
           lastName: data.group?.mentor?.lastName || "Desconocido",
+          email: data.group?.mentor?.email || "Desconocido",
         },
       };
   

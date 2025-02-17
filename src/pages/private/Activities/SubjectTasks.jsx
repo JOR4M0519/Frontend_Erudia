@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { studentService, studentDataService } from "../Dashboard/StudentLayout/StudentService";
 import { BackButton } from "../../../components";
 import { configViewService } from "../Setting";
+import { comment } from "postcss";
 
 export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
@@ -32,13 +33,32 @@ Instrucciones:
    • 15 - 6 = ___
 
 2. Escribe un problema de suma o resta y pídele a un amigo o familiar que lo resuelva.
+1. Resuelve las siguientes sumas y restas:
+   • 12 + 5 = ___
+   • 20 - 8 = ___
+   • 7 + 9 = ___
+   • 15 - 6 = ___
 
+2. Escribe un problema de suma o resta y pídele a un amigo o familiar que lo resuelva.1. Resuelve las siguientes sumas y restas:
+   • 12 + 5 = ___
+   • 20 - 8 = ___
+   • 7 + 9 = ___
+   • 15 - 6 = ___
+
+2. Escribe un problema de suma o resta y pídele a un amigo o familiar que lo resuelva.1. Resuelve las siguientes sumas y restas:
+   • 12 + 5 = ___
+   • 20 - 8 = ___
+   • 7 + 9 = ___
+   • 15 - 6 = ___
+
+2. Escribe un problema de suma o resta y pídele a un amigo o familiar que lo resuelva.
 3. Dibuja un ejemplo de una suma o una resta usando objetos (como manzanas, juguetes o pelotas).`,
   startDate: "2024-01-15T00:00:00",
   endDate: "2024-01-21T23:59:59",
   status: "Entrega Lunes 21 de enero",
   score: "-",
   subjectName: "Matemáticas",
+  comment: "Sin estado",
   activity: {
     activityName: "Sumemos y Restemos con Diversión",
     subject: {
@@ -62,19 +82,22 @@ Instrucciones:
       setTasks(taskData);
     };
 
-    // 🔹 Obtener las tareas de la materia
-    const fetchActivityDetail = async () => {
-      const taskData = await studentDataService.getTasks(selectedSubject, selectedPeriod, userState.id);
-      setTasks(taskData);
-    };
+    
 
     fetchPeriodGrade();
     fetchTasks();
   }, [selectedPeriod, selectedSubject, userState]);
 
-  const handleTaskClick = (task) => {
-    console.log("Seleccionando tarea:", task);
-    studentService.openTaskModal(task)
+  // 🔹 Obtener los detalles de la tareas de la materia
+  const fetchActivityDetail = async (taskId) => {
+    return await studentDataService.getTaskDetails(taskId);
+    
+  };
+
+  const handleTaskClick = async(taskId) => {
+    const taskData = await fetchActivityDetail(taskId); 
+    console.log(taskData);
+    if (taskData) studentService.openTaskModal(taskData); 
   }
 
   return (
@@ -106,7 +129,7 @@ Instrucciones:
             tasks.map((task) => (
               <div
               key={task.id}
-              onClick={() => handleTaskClick(sampleTask)}
+              onClick={() => handleTaskClick(task.id)}
               className="grid grid-cols-12 gap-4 p-3 hover:bg-gray-200 transition-colors items-center cursor-pointer"
               >
                 <div className="col-span-4 font-medium text-gray-700">{task.name}</div>

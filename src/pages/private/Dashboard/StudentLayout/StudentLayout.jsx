@@ -20,6 +20,7 @@ export default function StudentLayout() {
             const responseGroups = await request("GET", "academy", `/student-groups/user/${userState.id}`, {});
             if (responseGroups.status === 200 && responseGroups.data.length > 0) {
               //  Convertimos el JSON en una instancia del modelo
+              console.log(responseGroups.data[0]);
               const studentGroup = new StudentGroupModel(responseGroups.data[0]); 
               
       
