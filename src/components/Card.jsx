@@ -14,4 +14,4 @@ export default function Card({ title, children, className = "", onClick, style }
       {children}
     </div>
   );
-}
+} 

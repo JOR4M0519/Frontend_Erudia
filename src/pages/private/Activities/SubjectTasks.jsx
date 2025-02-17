@@ -3,21 +3,31 @@ import { useSelector } from "react-redux";
 import { studentService, studentDataService } from "../Dashboard/StudentLayout/StudentService";
 import { BackButton } from "../../../components";
 import { configViewService } from "../Setting";
-import { comment } from "postcss";
+import { EvaluationSchemeModal } from "./";
 
 export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
   const [periodGrade, setPeriodGrade] = useState("-");
-  const selectedSubject = sessionStorage.getItem("selectedSubject");
-  const userState = useSelector(store => store.selectedUser);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
-  
+  const [isSchemeModalOpen, setIsSchemeModalOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState(false);
+  //const selectedSubject = JSON.parse(sessionStorage.getItem("selectedSubject"));
+  const userState = useSelector(store => store.selectedUser);
+
   useEffect(() => {
-      const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
-      return () => selectedPeriodSubscription.unsubscribe();
-    }, []);
+    // 🔹 Suscripción al período y materia seleccionada
+    const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+    const subjectSubscription = studentService.getSelectedSubject().subscribe((subjectString) => {
+      if (subjectString) {
+        setSelectedSubject(JSON.parse(subjectString)); // Convertimos de string a objeto
+      }
+    });
 
-
+    return () => {
+      periodSubscription.unsubscribe();
+      subjectSubscription.unsubscribe();
+    };
+  }, []);
 
 // Ejemplo de tarea para probar el modal
 const sampleTask = {
@@ -72,13 +82,13 @@ Instrucciones:
 
     // 🔹 Obtener la nota del periodo
     const fetchPeriodGrade = async () => {
-      const grade = await studentDataService.getPeriodGrade(selectedSubject, selectedPeriod, userState.id);
+      const grade = await studentDataService.getPeriodGrade(selectedSubject.id, selectedPeriod, userState.id);
       setPeriodGrade(grade);
     };
 
     // 🔹 Obtener las tareas de la materia
     const fetchTasks = async () => {
-      const taskData = await studentDataService.getTasks(selectedSubject, selectedPeriod, userState.id);
+      const taskData = await studentDataService.getTasks(selectedSubject.id, selectedPeriod, userState.id);
       setTasks(taskData);
     };
 
@@ -102,10 +112,12 @@ Instrucciones:
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between bg-gray-200 rounded-full p-4">
-        <div className="flex items-center space-x-4 flex-1">
+
+
+      <div className="flex items-center justify-between gap-20">
+        <div className="flex items-center gap-10 flex-1  bg-gray-200 rounded-full p-4">
           <span className="font-medium text-gray-800 px-4">
-            {tasks.length > 0 ? tasks[0].subjectName : "Materia"}
+            {selectedSubject ? selectedSubject.subjectName : "Materia"}
           </span>
           <div className="bg-gray-300 px-4 py-1 rounded-full">
             <span className="text-sm text-gray-700">
@@ -113,8 +125,17 @@ Instrucciones:
             </span>
           </div>
         </div>
-        <BackButton onClick={() => studentService.setView("home")} />
+        <button
+          
+          onClick={() => setIsSchemeModalOpen(true)}
+          className="cursor-pointer border-2 border-blue-500 text-black font-medium
+       rounded-full px-6 py-2 hover:bg-blue-100 transition">
+          Esquema de evaluación
+        </button>
       </div>
+
+
+
 
       <div className="bg-gray-100 rounded-lg overflow-hidden">
         <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
@@ -147,6 +168,13 @@ Instrucciones:
           )}
         </div>
       </div>
+      <BackButton onClick={() => studentService.setView("home")} />
+      <EvaluationSchemeModal 
+      isOpen={isSchemeModalOpen} 
+      onClose={() => setIsSchemeModalOpen(false)} 
+      subjectId={selectedSubject.id} 
+      groupId={studentDataService.getSubjectsValue().group.id}
+      />
     </div>
   );
 }

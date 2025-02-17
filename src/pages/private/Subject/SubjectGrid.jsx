@@ -15,7 +15,6 @@ export default function SubjectGrid() {
   // Seleccionar el servicio correcto según el rol
   const serviceData = studentDataService;
   const serviceView = studentService;
-  const defaultImage = "/bg-subject.png";
 
   const subjectsValue = serviceData.getSubjectsValue();
 
@@ -23,10 +22,12 @@ export default function SubjectGrid() {
     return <p className="text-gray-500">Cargando materias...</p>;
   }
 
-  const handleSubjectClick = (subjectId) => {
-    serviceView.setView("subjectTasks"); // 🔹 Usa el servicio dinámico
-    sessionStorage.setItem("selectedSubject", subjectId); // Guardamos la materia en sessionStorage
+  const handleSubjectClick = (subject) => {
+    const subjectString = JSON.stringify(subject); // Convertir objeto a string
+    studentService.setSelectedSubject(subjectString); // Almacenar en sessionStorage y en el observable
+    studentService.setView("subjectTasks"); // Cambiar la vista
   };
+  
 
   return (
     <div>
@@ -40,7 +41,7 @@ export default function SubjectGrid() {
         <Card
         key={subject.id}
         className="relative w-full h-40 cursor-pointer hover:shadow-md transition-shadow rounded-lg overflow-hidden"
-        onClick={() => handleSubjectClick(subject.id)}
+        onClick={() => handleSubjectClick(subject)}
       >
         {/* 🔹 Imagen de fondo */}
         <div 
