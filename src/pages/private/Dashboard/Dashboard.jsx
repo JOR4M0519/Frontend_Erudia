@@ -1,44 +1,49 @@
-
 import { useSelector } from "react-redux";
-
-import ProfileSection from "../../../components/ProfileSection"
-import PersonalInfoSection from "../../../components/PersonalInfoSection"
-import ActionCards from "../../../components/ActionCards"
+import { useEffect, useState } from "react";
 import { decodeRoles } from "../../../utilities";
+import { Roles } from "../../../models";
+import { Layout } from "../../../components";
+import StudentTopBar from "./StudentTopBar";
 import { StudentLayout } from "./StudentLayout";
-
+import { configViewService } from "../Setting";
 
 export function Dashboard() {
-  
-    const userState = useSelector(store => store.user);
-    // Parsear el string a un array
-    const storedRole = decodeRoles(userState.roles) || []; 
-    
-    const userData = {
-        name: userState.name,
-        role: storedRole
-    }
+  const userState = useSelector(store => store.user);
+  const storedRole = decodeRoles(userState.roles) || [];
 
-    return (
-        <>
-            <div className="space-y-6">
-            <header className="bg-white p-6 rounded-lg shadow-sm">
-                <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-semibold">Bienvenida {userData.name}</h1>
-                    <p className="text-gray-600">Role: {userData.role} Periodo {userData.period}</p>
-                </div>
-                <div className="text-sm text-gray-600">
-                    <p>Periodo {userData.period}</p>
-                    <p>ID: {userData.studentId}</p>
-                </div>
-                </div>
-            </header>
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [periods, setPeriods] = useState([]);
 
+  // 🔹 Suscribirse a los períodos disponibles
+  useEffect(() => {
+    const periodSubscription = configViewService.getPeriods().subscribe(setPeriods);
+    return () => periodSubscription.unsubscribe();
+  }, []);
 
-            {/* Renderizar StudentLayout solo si el usuario es estudiante */}
-        
-            <StudentLayout/>
+  // 🔹 Suscribirse al período seleccionado
+  useEffect(() => {
+    const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+    return () => selectedPeriodSubscription.unsubscribe();
+  }, []);
+
+  // 🔹 Cargar períodos al montar el componente
+  useEffect(() => {
+    configViewService.loadPeriods();
+  }, []);
+
+  let LayoutComponent = null;
+  let HeaderComponent = null;
+
+  if (storedRole.includes(Roles.ADMIN)) {
+    LayoutComponent = <StudentLayout/>;
+    HeaderComponent = (
+      <StudentTopBar />
+    );
+  }
+
+  return <StudentLayout/>;
+}
+
         {/* {storedRole.includes("ADMIN") ? (
           <StudentLayout />
         ) : (
@@ -56,7 +61,6 @@ export function Dashboard() {
             </div>
 
             <ActionCards /> */}
-            </div>
 
             {/* <RoutesWithNotFound>
                 <Route path="/" element={<Navigate to={PrivateRoutes.DASHBOARD} />} />
@@ -64,7 +68,3 @@ export function Dashboard() {
                     <Route path={PrivateRoutes.ADMIN} element={<Layout requiredRole={Roles.ADMIN}><Admin/></Layout>} />
                 </Route>
             </RoutesWithNotFound> */}
-
-        </>
-    )
-}

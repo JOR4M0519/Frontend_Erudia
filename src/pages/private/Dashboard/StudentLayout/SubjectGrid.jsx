@@ -13,7 +13,6 @@ export default function SubjectGrid() {
     studentService.setView("subjectTasks"); // Cambiamos la vista a SubjectTasks
     sessionStorage.setItem("selectedSubject", subjectId); // Guardamos la materia en sessionStorage
   };
-  console.log(studentData.subjects);
 
   return (
     <div className="grid grid-cols-2 gap-4">

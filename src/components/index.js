@@ -11,6 +11,7 @@ export { default as  GradesCard } from './GradesCard';
 export { default as Notifications } from './Notifications';
 export { default as PeriodSelector } from './PeriodSelector';
 export { default as BackButton } from './BackButton';
+export { default as Selector } from './Selector';
 
 
 

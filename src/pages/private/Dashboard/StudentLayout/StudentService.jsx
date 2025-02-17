@@ -4,6 +4,8 @@ import { request } from "../../../../services/config/axios_helper"; // Importamo
 // 🔹 Estado de la vista (home / grades / otra pantalla que quieras)
 const viewSubject = new BehaviorSubject("home");
 const selectedSubject = new BehaviorSubject(sessionStorage.getItem("selectedSubject") || null);
+const activityModalState = new BehaviorSubject({ isOpen: false, activityData: null })
+
 
 export const studentService = {
   getView: () => viewSubject.asObservable(),
@@ -13,20 +15,44 @@ export const studentService = {
     selectedSubject.next(subjectId);
     sessionStorage.setItem("selectedSubject", subjectId);
   },
+
+  getTaskModal: () => activityModalState.asObservable(),
+  openTaskModal: (activityData) => activityModalState.next({ isOpen: true, activityData }),
+  closeTaskModal: () => activityModalState.next({ isOpen: false, activityData: null }),
+
 };
 
 // 🔹 Gestión de datos almacenados en sessionStorage
 const storedData = sessionStorage.getItem("studentData");
 const initialSubjects = storedData ? JSON.parse(storedData) : null;
-
-// 🔹 Estado de los datos de materias del estudiante
 const subjectsStudent = new BehaviorSubject(initialSubjects);
 
-// 🔹 Gestión de materias con RxJS y sessionStorage
 export const studentDataService = {
   getSubjects: () => subjectsStudent.asObservable(),
   getSubjectsValue: () => subjectsStudent.value,
 
+  // 🔹 Obtener la nota del período de una materia
+  getPeriodGrade: async (subjectId, periodId, studentId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/subject-grade/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
+        {}
+      );
+
+      if (response.status === 200 && response.data.length > 0) {
+        return response.data[0].totalScore ?? "-";
+      }
+
+      return "-"; // Si no hay calificación, devolvemos "-"
+    } catch (error) {
+      console.error("Error al obtener la nota del período:", error);
+      return "-";
+    }
+  },
+
+  // 🔹 Obtener todas las calificaciones del estudiante en un periodo
   getGrades: async (periodId, studentId) => {
     const storageKey = `grades_${studentId}_${periodId}`;
     const storedGrades = sessionStorage.getItem(storageKey);
@@ -64,8 +90,6 @@ export const studentDataService = {
         }
       }
 
-      
-
       sessionStorage.setItem(storageKey, JSON.stringify(grades));
       return grades;
     } catch (error) {
@@ -74,17 +98,30 @@ export const studentDataService = {
     }
   },
 
+  // Obtener las tareas de una materia en un periodo
   getTasks: async (subjectId, periodId, studentId) => {
     try {
       const response = await request(
         "GET",
         "academy",
-        `/tasks/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
+        `/activity-grade/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
         {}
       );
+
       if (response.status === 200) {
-        return response.data;
+        return response.data.map((task) => ({
+          id: task.activity.id,
+          name: task.activity.activity.activityName,
+          description: task.activity.activity.description,
+          startDate: task.activity.startDate,
+          endDate: task.activity.endDate,
+          subjectName: task.activity.activity.subject.subjectName,
+          score: task.score ?? "-",
+          status: task.comment ?? "Sin estado",
+        }));
       }
+
+      return [];
     } catch (error) {
       console.error("Error al obtener tareas:", error);
       return [];
@@ -102,9 +139,7 @@ export const studentDataService = {
   },
 };
 
-
-
-//  Exportar todo en un solo archivo
+// ✅ Exportar todo en un solo archivo
 export default {
   studentService,
   studentDataService,

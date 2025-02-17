@@ -11,5 +11,6 @@ export const PrivateRoutes = {
   ACTIVITIES:       '/activities',
   STUDENTTRACKING:  '/student-tracking',
   ADMIN:            '/admin',  
+  GRADES:           '/grades-general',
   SETTINGS:         '/settings',
 };

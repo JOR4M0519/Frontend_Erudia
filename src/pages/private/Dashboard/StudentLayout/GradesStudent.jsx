@@ -3,11 +3,20 @@ import { FileDown } from "lucide-react";
 import { BackButton,Card } from "../../../../components"; 
 import { studentDataService, studentService } from "./index";
 import { useSelector } from "react-redux";
+import { configViewService } from "../../Setting";
+import { Navigate, redirect, useNavigate } from "react-router-dom";
 
-export default function GradesStudent({ selectedPeriod }) {
+export default function GradesStudent() {
   const [grades, setGrades] = useState([]);
   const studentData = studentDataService.getSubjectsValue();
   const userState = useSelector(store => store.user);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+      const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+      return () => selectedPeriodSubscription.unsubscribe();
+    }, []);
 
   useEffect(() => {
     
@@ -40,7 +49,7 @@ export default function GradesStudent({ selectedPeriod }) {
             <FileDown className="h-4 w-4" />
             Boletín
           </button>
-          <BackButton onClick={() => studentService.setView("home")} />
+          <BackButton onClick={() => navigate("/dashboard")} />
         </div>
 
         <div className="space-y-2">
