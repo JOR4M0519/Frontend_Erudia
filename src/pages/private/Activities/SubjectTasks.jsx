@@ -106,7 +106,6 @@ Instrucciones:
 
   const handleTaskClick = async(taskId) => {
     const taskData = await fetchActivityDetail(taskId); 
-    console.log(taskData);
     if (taskData) studentService.openTaskModal(taskData); 
   }
 

@@ -161,6 +161,65 @@ export const studentDataService = {
     }
   },
 
+  getAllTasks: async (periodId, studentId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/activity-grade/periods/${periodId}/users/${studentId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        return response.data.map((task) => ({
+          id: task.activity.id,
+          name: task.activity.activity.activityName,
+          description: task.activity.activity.description,
+          startDate: task.activity.startDate,
+          endDate: task.activity.endDate,
+          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
+          score: task.score ?? "-",
+          status: task.comment ?? "Sin estado",
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener todas las tareas:", error);
+      return [];
+    }
+  },
+  // 🔹 Obtener observaciones del estudiante
+  getStudentObservations: async (studentId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/student-tracking/students/${studentId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        return response.data.map((data) => ({
+          id: data.id,
+          title: "Observador",
+          date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "-",
+          teacher: data.professor ?? "Desconocido",
+          situation: data.situation ?? "Sin información",
+          commitment: data.compromise ?? "Sin compromiso",
+          followUp: data.followUp ?? "Sin seguimiento",
+          status: data.status ?? "Pendiente",
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener observaciones:", error);
+      return [];
+    }
+  },
+
+
   setSubjects: (data) => {
     sessionStorage.setItem("studentData", JSON.stringify(data));
     subjectsStudent.next(data);
