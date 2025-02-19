@@ -1,19 +1,23 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { CalendarDays, UserCircle, Search } from "lucide-react";
 import { Selector } from "../../../components";
 import { configViewService } from "../Setting";
-import { studentDataService } from "./StudentLayout";
+import { studentDataService } from "./StudentLayout/StudentService";
 import { PrivateRoutes } from "../../../models";
 import { searchService } from "../../../windows/Search";
+import { setSelectedUser } from "../../../redux/states/user";
 
 export default function StudentTopBar() {
-  const studentData = studentDataService.getSubjectsValue();
+  const dispatch = useDispatch();
   const userState = useSelector(store => store.user);
-
+  const selectedUser = useSelector(store => store.selectedUser);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periods, setPeriods] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [studentData, setStudentData] = useState(null);
 
   useEffect(() => {
     const periodSubscription = configViewService.getPeriods().subscribe(setPeriods);
@@ -21,11 +25,56 @@ export default function StudentTopBar() {
   }, []);
 
   useEffect(() => {
+    const subscription = studentDataService.getStudentData().subscribe(setStudentData);
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!userState?.id) return;
+
+    const fetchStudents = async () => {
+      try {
+        const response = await studentDataService.getFamilyStudents(userState.id);
+        
+        const studentsWithRoles = response.map(student => ({
+          ...student,
+          roles: userState.roles // Agregar los roles del usuario a cada estudiante
+        }));
+
+        if (response.length > 0) {
+          const userAsStudent = {
+            id: userState.id,
+            name: userState.name,
+            roles: userState.roles,
+            isUser: true // Puedes agregar una bandera para identificar al usuario
+          };
+  
+          // Agregar al usuario como el primer elemento de la lista
+          setStudents([userAsStudent, ...studentsWithRoles]);
+        }
+      } catch (error) {
+        console.error("Error obteniendo estudiantes del familiar:", error);
+      }
+    };
+
+    fetchStudents();
+  }, [userState?.id, dispatch]);
+
+  useEffect(() => {
     const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
     return () => selectedPeriodSubscription.unsubscribe();
   }, []);
 
-  if (!studentData) return null;
+  if (!students.length) return <p className="text-gray-500">Cargando estudiantes...</p>;
+
+  const handleStudentChange = (studentId) => {
+    const selected = students.find(student => student.id === parseInt(studentId));
+    if (selected) {
+      setSelectedStudentId(studentId);
+      dispatch(setSelectedUser(selected));
+      studentDataService.clearSubjects(); // Limpiar datos antiguos
+    }
+  };
 
   return (
     <div className="fixed top-0 left-0 w-full bg-gray-200 shadow-md z-50">
@@ -35,7 +84,15 @@ export default function StudentTopBar() {
         <div className="flex items-center gap-4">
           <img src={"/logo.png"} alt="Logo Colegio" className="h-10" />
           <div>
-            <h1 className="text-base font-semibold text-gray-700">{userState.name || "Desconocido"}</h1>                        
+            <Selector
+              selectedItem={selectedStudentId}
+              setSelectedItem={handleStudentChange}
+              items={students}
+              itemKey="id"
+              itemLabel="name"
+              placeholder="Seleccionar estudiante"
+            />
+            <p className="text-sm text-gray-600">{studentData?.group?.groupName || "Grupo"}</p>
           </div>
         </div>
 

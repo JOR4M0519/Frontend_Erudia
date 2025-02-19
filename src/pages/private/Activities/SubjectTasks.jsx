@@ -77,6 +77,7 @@ Instrucciones:
   }
 };
 
+
   useEffect(() => {
     if (!selectedSubject || !selectedPeriod || !userState.id) return;
 
@@ -172,7 +173,7 @@ Instrucciones:
       isOpen={isSchemeModalOpen} 
       onClose={() => setIsSchemeModalOpen(false)} 
       subjectId={selectedSubject.id} 
-      groupId={studentDataService.getSubjectsValue().group.id}
+      groupId={studentDataService.getStudentDataValue()?.group?.id}
       periodId={selectedPeriod}
       />
     </div>

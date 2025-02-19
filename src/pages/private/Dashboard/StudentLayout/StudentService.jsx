@@ -1,12 +1,12 @@
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, filter, firstValueFrom } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
-import { State } from "../../../../models";
+import { State, StudentGroupModel } from "../../../../models";
 
 // 🔹 Estado de la vista (home / grades / otra pantalla que quieras)
 const viewSubject = new BehaviorSubject("home");
 const selectedSubject = new BehaviorSubject(sessionStorage.getItem("selectedSubject") || null);
 const activityModalState = new BehaviorSubject({ isOpen: false, activityData: null })
-
+const studentData$ = new BehaviorSubject(null);
 
 export const studentService = {
   getView: () => viewSubject.asObservable(),
@@ -41,7 +41,7 @@ export const studentDataService = {
         `/subject-grade/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
         {}
       );
-
+      
       if (response.status === 200 && response.data.length > 0) {
         return response.data[0].totalScore ?? "-";
       }
@@ -54,20 +54,13 @@ export const studentDataService = {
   },
 
   // 🔹 Obtener todas las calificaciones del estudiante en un periodo
-  getGrades: async (periodId, studentId) => {
+  getGrades: async (periodId, studentId,subjects) => {
     const storageKey = `grades_${studentId}_${periodId}`;
-    const storedGrades = sessionStorage.getItem(storageKey);
-
-    if (storedGrades) {
-      console.log("Obteniendo calificaciones desde sessionStorage...");
-      return JSON.parse(storedGrades);
-    }
+    
 
     try {
       console.log("Consultando calificaciones desde la API...");
-      const subjects = subjectsStudent.value?.subjects || [];
       const grades = [];
-
       for (const subject of subjects) {
         const response = await request(
           "GET",
@@ -219,7 +212,7 @@ export const studentDataService = {
     }
   },
   
-  // 🔹 Obtener lista de familiares
+  // Obtener lista de familiares
 getFamilyDetails: async (userId) => {
   try {
     const response = await request("GET", "academy", `/users/detail/family/${userId}`, {});
@@ -239,6 +232,8 @@ getFamilyDetails: async (userId) => {
   }
 },
 
+
+// XXX Se debe cambiar el nombre a getUserDetails
 // 🔹 Obtener detalles de un familiar específico cuando se abre el modal
 getFamilyMemberDetails: async (familyMemberId) => {
   try {
@@ -270,6 +265,29 @@ getFamilyMemberDetails: async (familyMemberId) => {
   }
 },
 
+getFamilyStudents: async (familyId) => {
+  try {
+    const response = await request(
+      "GET",
+      "academy",
+      `/users/detail/family/${familyId}/students`,
+      {}
+    );
+
+    if (response.status === 200) {
+      return response.data.map((student) => ({
+        id: student.relativeUser.id,
+        name: `${student.relativeUser.firstName} ${student.relativeUser.lastName}`,
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error obteniendo estudiantes del familiar:", error);
+    return [];
+  }
+},
+
 
   setSubjects: (data) => {
     sessionStorage.setItem("studentData", JSON.stringify(data));
@@ -280,6 +298,41 @@ getFamilyMemberDetails: async (familyMemberId) => {
     sessionStorage.removeItem("studentData");
     subjectsStudent.next(null);
   },
+
+  getStudentData: () => studentData$.asObservable(),
+  getStudentDataValue: () => studentData$.value,
+
+  setStudentData: (data) => {
+    studentData$.next(data);
+  },
+
+  clearStudentData: () => {
+    studentData$.next(null);
+  },
+
+  // 🔹 Obtener los datos del estudiante seleccionado
+  fetchStudentData: async (studentId) => {
+    try {
+      
+      studentDataService.clearStudentData(); // 🔹 Limpiar antes de cargar nuevos datos
+
+      // 🔹 Obtener el grupo del estudiante
+      const responseGroups = await request("GET", "academy", `/student-groups/user/${studentId}`, {});
+      if (responseGroups.status === 200 && responseGroups.data.length > 0) {
+        const studentGroup = new StudentGroupModel(responseGroups.data[0]);
+
+        // 🔹 Obtener materias del estudiante
+        const responseSubjects = await request("GET", "academy", `/subjects-groups/students-groups/${studentGroup.group.id}`, {});
+        if (responseSubjects.status === 200) {
+          studentGroup.addSubjects(responseSubjects.data);
+          studentDataService.setStudentData(studentGroup.toJSON()); // 🔹 Guardamos en RxJS
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando datos del estudiante:", error);
+    }
+  }
+
 };
 
 //  Exportar todo en un solo archivo

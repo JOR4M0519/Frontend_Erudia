@@ -1,23 +1,66 @@
-import { PeriodSelector } from "../../../../components"
-import { studentDataService } from "./index"
-import { useSelector } from "react-redux"
-import { Bell, Search } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { PeriodSelector } from "../../../../components";
+import { studentDataService } from "./index";
+import { Bell, Search } from "lucide-react";
+import {Selector} from "../../../../components"; // Importamos el Selector
 
 export default function StudentHeader({ selectedPeriod, setSelectedPeriod, periods }) {
-  const studentData = studentDataService.getSubjectsValue()
-  const userState = useSelector((store) => store.user)
+  const dispatch = useDispatch();
+  const userState = useSelector((store) => store.user);
+  const selectedStudent = useSelector((store) => store.selectedUser); // Estado global del estudiante seleccionado
 
-  if (!studentData) return null
+  const [students, setStudents] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+
+  useEffect(() => {
+    if (!userState?.id) return;
+
+    const fetchStudents = async () => {
+      try {
+        const response = await studentDataService.getFamilyStudents(userState.id);
+        console.log(students)
+        if (response.length > 0) {
+          setStudents(response);
+          setSelectedStudentId(response[0].id); // Seleccionamos el primer estudiante por defecto
+          dispatch(selectedStudent.setSelectedUser(response[0])); // Actualizamos Redux con el primer estudiante
+        }
+      } catch (error) {
+        console.error("Error obteniendo estudiantes del familiar:", error);
+      }
+    };
+
+    fetchStudents();
+  }, [userState?.id, dispatch]);
+
+  const handleStudentChange = (studentId) => {
+    const selected = students.find((student) => student.id === parseInt(studentId));
+    if (selected) {
+      setSelectedStudentId(studentId);
+      dispatch(selectedStudent.setSelectedUser(selected)); // Actualizamos Redux con el estudiante seleccionado
+    }
+  };
+
+  
 
   return (
     <div className="h-16 bg-[#e5e5e5] shadow-sm flex items-center px-6">
       <div className="flex-1 flex items-center justify-between gap-4">
-        {/* Logo y nombre del estudiante */}
+        {/* Logo y Selector del estudiante */}
+        <h1>HOLA</h1>
         <div className="flex items-center gap-4">
           <img src="/logo.svg" alt="Logo" className="h-10 w-10" />
+          
           <div>
-            <h1 className="text-lg font-semibold text-gray-800">{userState.name || "Estudiante"}</h1>
-            <p className="text-sm text-gray-600">{studentData.group?.groupName || "Grupo"}</p>
+            <Selector
+              selectedItem={selectedStudentId}
+              setSelectedItem={handleStudentChange}
+              items={students}
+              itemKey="id"
+              itemLabel="name"
+              placeholder="Seleccionar estudiante"
+            />
+            <p className="text-sm text-gray-600">{selectedStudent?.group?.groupName || "Grupo"}</p>
           </div>
         </div>
 
@@ -45,6 +88,6 @@ export default function StudentHeader({ selectedPeriod, setSelectedPeriod, perio
         </div>
       </div>
     </div>
-  )
+  );
 }
 

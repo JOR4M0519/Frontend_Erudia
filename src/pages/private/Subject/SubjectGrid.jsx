@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Card } from "../../../components"; // Importamos el componente Card
 import { studentDataService, studentService } from "../Dashboard/StudentLayout/StudentService";
 // import { teacherService } from "../Dashboard/TeacherLayout/TeacherService";
@@ -7,20 +8,27 @@ import { useSelector } from "react-redux";
 import { decodeRoles } from "../../../utilities";
 
 export default function SubjectGrid() {
+  //const userSelected = useSelector(store => store.userSelected);
   const userState = useSelector(store => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
-
   const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
 
   // Seleccionar el servicio correcto según el rol
   const serviceData = studentDataService;
   const serviceView = studentService;
 
-  const subjectsValue = serviceData.getSubjectsValue();
+  const [subjects, setSubjects] = useState(null);
+  //const subjectsValue = serviceData.getSubjectsValue();
 
-  if (!subjectsValue || !subjectsValue.subjects) {
-    return <p className="text-gray-500">Cargando materias...</p>;
-  }
+  useEffect(() => {
+    const subscription = studentDataService.getStudentData().subscribe(data => {
+      setSubjects(data?.subjects || []);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [userState]);
+
+ if (!subjects) return <p className="text-gray-500">Cargando materias...</p>;
 
   const handleSubjectClick = (subject) => {
     const subjectString = JSON.stringify(subject); // Convertir objeto a string
@@ -33,11 +41,11 @@ export default function SubjectGrid() {
     <div>
       {/* 🔹 Título "Mis Materias (X)" */}
       <h2 className="text-xl font-bold text-gray-800 mb-4">
-        Mis Materias ({subjectsValue.subjects.length})
+        Mis Materias ({subjects.length})
       </h2>
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
       
-      {subjectsValue.subjects.map((subject) => (
+      {subjects.map((subject) => (
         <Card
         key={subject.id}
         className="relative w-full h-40 cursor-pointer hover:shadow-md transition-shadow rounded-lg overflow-hidden"
