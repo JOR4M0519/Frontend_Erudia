@@ -1,65 +1,54 @@
-import { useEffect, useState } from "react"
-import { useSelector } from "react-redux"
-import { Pencil } from "lucide-react"
-import { decodeRoles } from "../../../utilities"
-import { BackButton } from "../../../components"
-import { request } from "../../../services/config/axios_helper"; 
-import { State } from "../../../models"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { Pencil } from "lucide-react";
+import { decodeRoles } from "../../../utilities";
+import { BackButton } from "../../../components";
+import { request } from "../../../services/config/axios_helper";
+import { studentDataService } from "../Dashboard/StudentLayout";
+import { State } from "../../../models";
+import { useNavigate } from "react-router-dom";
+import PersonalInfoModal from "./PersonalInfoModal"; // Importamos el modal
 
 function Profile({ viewing }) {
   const user = viewing ? useSelector((store) => store.selectedUser) : useSelector((store) => store.user);
-  const storedRole = decodeRoles(user?.roles) ?? [];
   const [userInfo, setUserInfo] = useState(null);
-
+  const [familyInfo, setFamilyInfo] = useState([]);
+  const [selectedFamilyMember, setSelectedFamilyMember] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const navigate = useNavigate();
   const state = new State();
+
   useEffect(() => {
-
-
-    if (!user?.id) return; // Evita hacer la solicitud si no hay ID
-
-    console.log("Está revisando el perfil de otro usuario? - " + viewing);
+    if (!user?.id) return;
 
     const fetchUserDetails = async () => {
-      try {
-        const response = await request("GET", "academy", `/users/detail/${user.id}`, {});
-        if (response.status === 200) {
-          setUserInfo(transformUserData(response.data)); // 🔹 Transformamos los datos aquí
-        }
-      } catch (error) {
-        console.error("Error obteniendo el usuario:", error);
-      }
+      const data = await studentDataService.getFamilyMemberDetails(user.id);
+      if (data) setUserInfo(data);
+    };
+
+    const fetchFamilyDetails = async () => {
+      const familyData = await studentDataService.getFamilyDetails(user.id);
+      if (familyData) setFamilyInfo(familyData);
     };
 
     fetchUserDetails();
+    fetchFamilyDetails();
   }, [user?.id]);
 
-  // 🔹 Transformar el JSON recibido a la estructura esperada
-  const transformUserData = (data) => {
-    return {
-      id: data.id,
-      name: `${data.firstName ?? ""} ${data.middleName ?? ""} ${data.lastName ?? ""} ${data.secondLastName ?? ""}`.trim(),
-      status: data.user.status,
-      avatar: "avatar.png", // 🔹 Imagen por defecto
-      personalInfo: {
-        codigo: data.id,
-        rc: `${data.dni} - ${data.idType?.name ?? "Desconocido"}`,
-        direccion: data.address ?? "No disponible",
-        barrio: data.neighborhood ?? "No disponible",
-        ciudad: data.city ?? "No disponible",
-        telefono: data.phoneNumber ?? "No disponible",
-        celular: data.user.email ?? "No disponible",
-        fechaNacimiento: data.dateOfBirth ? new Date(data.dateOfBirth).toLocaleDateString() : "No disponible",
-        position: data.positionJob ?? "No disponible",
-      },
-      familyInfo: {
-        madre: data.relatives?.mother ?? "No registrado",
-        padre: data.relatives?.father ?? "No registrado",
-        hermanos: data.relatives?.siblings ?? [],
-      },
-    };
+  // ✅ Hacer el fetch de la info del familiar antes de abrir el modal
+  const handleFamilyClick = async (familyMemberId, relationshipType) => {
+    try {
+      const familyData = await studentDataService.getFamilyMemberDetails(familyMemberId);
+      if (familyData) {
+        setSelectedFamilyMember({ ...familyData, relationshipType }); // ✅ Agregar el tipo de relación correctamente
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error obteniendo detalles del familiar:", error);
+    }
   };
+  
 
   if (!userInfo) {
     return <p className="text-gray-500">Cargando perfil...</p>;
@@ -67,9 +56,8 @@ function Profile({ viewing }) {
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      {/* Profile Header flex items-start gap-6 */}
+      {/* 🔹 Encabezado */}
       <div className="flex items-center justify-between bg-gray-100 p-6 rounded-lg shadow-md">
-        {/* 🔹 Avatar */}
         <div className="flex items-center gap-4">
           <img
             src={userInfo.avatar}
@@ -78,28 +66,18 @@ function Profile({ viewing }) {
           />
           <div>
             <h1 className="text-2xl font-bold text-gray-800">{userInfo.name}</h1>
-
-            {/* 🔹 Contenedor en línea para la posición y estado */}
             <div className="inline-flex items-center gap-2">
-              {/* 🔹 Posición */}
               <p className="text-gray-600">{userInfo.personalInfo.position}</p>
-
-              {/* 🔹 Estado con color dinámico */}
               <span className={`px-3 py-1 text-sm font-medium rounded-full ${state.getStatusClass(userInfo.status)}`}>
                 {state.getName(userInfo.status)}
               </span>
             </div>
-
-
           </div>
         </div>
-
-        {/* 🔹 Botón de Regresar */}
         <BackButton onClick={() => navigate("/dashboard")} className="px-4 py-2 bg-gray-700 text-white rounded-lg shadow-md hover:bg-gray-800 transition flex items-center gap-2" />
       </div>
 
-
-      {/* Personal Information */}
+      {/* 🔹 Información Personal */}
       <section className="bg-white rounded-xl shadow-sm">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
@@ -122,7 +100,7 @@ function Profile({ viewing }) {
         </div>
       </section>
 
-      {/* Family Information */}
+      {/* 🔹 Información Familiar */}
       <section className="bg-white rounded-xl shadow-sm">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
@@ -133,31 +111,28 @@ function Profile({ viewing }) {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="text-center font-medium mb-2">Madre</h3>
-              <p className="text-center text-gray-600">{userInfo.familyInfo.madre}</p>
-            </div>
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="text-center font-medium mb-2">Padre</h3>
-              <p className="text-center text-gray-600">{userInfo.familyInfo.padre}</p>
-            </div>
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="text-center font-medium mb-2">Hermanos</h3>
-              {userInfo.familyInfo.hermanos.length > 0 ? (
-                userInfo.familyInfo.hermanos.map((hermano, index) => (
-                  <p key={index} className="text-center text-gray-600">
-                    {hermano}
-                  </p>
-                ))
-              ) : (
-                <p className="text-center text-gray-600">No registrados</p>
-              )}
-            </div>
+            {familyInfo.length > 0 ? (
+              familyInfo.map((relative) => (
+                <div
+                key={relative.id}
+                onClick={() => handleFamilyClick(relative.id,relative.relationship)} // ✅ Llama la función corregida
+                className="bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition"
+              >
+                <h3 className="text-center font-medium mb-2">{relative.relationship}</h3>
+                <p className="text-center text-gray-600">
+                {relative.name || relative.lastName ? `${relative.name ?? ""} ${relative.lastName ?? ""}`.trim() : "No registrado"}
+                </p>
+                <p className="text-center text-gray-500 text-sm">{relative.email}</p>
+              </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-600">No se encontraron familiares registrados.</p>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Change Password Section */}
+      {/* 🔹 Cambiar Contraseña */}
       <section className="bg-white rounded-xl shadow-sm">
         <div className="p-6">
           <div className="flex items-center justify-between">
@@ -169,6 +144,9 @@ function Profile({ viewing }) {
           </div>
         </div>
       </section>
+
+      {/* 🔹 Modal de información del familiar */}
+      <PersonalInfoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} userData={selectedFamilyMember} />
     </div>
   );
 }

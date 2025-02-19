@@ -218,6 +218,57 @@ export const studentDataService = {
       return [];
     }
   },
+  
+  // 🔹 Obtener lista de familiares
+getFamilyDetails: async (userId) => {
+  try {
+    const response = await request("GET", "academy", `/users/detail/family/${userId}`, {});
+
+    if (response.status === 200) {
+      return response.data.map((relative) => ({
+        id: relative.relativeUser.id,
+        name: `${relative.relativeUser.firstName ?? ""} ${relative.relativeUser.lastName ?? ""}`.trim(),
+        email: relative.relativeUser.email ?? "No disponible",
+        relationship: relative.relationship.relationshipType,
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Error obteniendo los detalles de la familia:", error);
+    return [];
+  }
+},
+
+// 🔹 Obtener detalles de un familiar específico cuando se abre el modal
+getFamilyMemberDetails: async (familyMemberId) => {
+  try {
+    const response = await request("GET", "academy", `/users/detail/${familyMemberId}`, {});
+
+    if (response.status === 200) {
+      return {
+        id: response.data.id,
+        name: `${response.data.firstName ?? ""} ${response.data.middleName ?? ""} ${response.data.lastName ?? ""} ${response.data.secondLastName ?? ""}`.trim(),
+        status: response.data.user.status,
+        avatar: "avatar.png",
+        personalInfo: {
+          codigo: response.data.id,
+          rc: `${response.data.dni} - ${response.data.idType?.name ?? "Desconocido"}`,
+          direccion: response.data.address ?? "No disponible",
+          barrio: response.data.neighborhood ?? "No disponible",
+          ciudad: response.data.city ?? "No disponible",
+          telefono: response.data.phoneNumber ?? "No disponible",
+          celular: response.data.user.email ?? "No disponible",
+          fechaNacimiento: response.data.dateOfBirth ? new Date(response.data.dateOfBirth).toLocaleDateString() : "No disponible",
+          position: response.data.positionJob ?? "No disponible",
+        },
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error obteniendo detalles personales del familiar:", error);
+    return null;
+  }
+},
 
 
   setSubjects: (data) => {
