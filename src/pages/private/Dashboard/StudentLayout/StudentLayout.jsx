@@ -3,12 +3,12 @@ import { useSelector } from "react-redux";
 import { request } from "../../../../services/config/axios_helper";
 import { GradesStudent, HomeStudent, studentDataService, StudentHeader, studentService } from "./index";
 import { StudentGroupModel } from "../../../../models/index";
-import SubjectTasks from "../../Activities/SubjectTasks";
-import ActivityModal from "../../Activities/ActivityModal";
+import { SubjectTasks } from "../../Activities";
+import { ActivityModal } from "../../Activities";
 
 export default function StudentLayout() {
   const [view, setView] = useState("home"); // Estado local para la vista
-  const userState = useSelector(store => store.user);
+  const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
 
   useEffect(() => {
     const dataStudent = async () => {

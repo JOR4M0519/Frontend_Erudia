@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { SchedulePreview } from "../../../../windows/Schedule/index";
-import { Card } from "../../../../components";
-import { SubjectGrid } from "./index";
-import { Bell, Info, Calendar, CircleX } from "lucide-react";
+import { studentDataService} from "./index";
+import { Bell, Info, CircleX } from "lucide-react";
+import { SubjectGrid } from "../../Subject";
+
 
 export default function HomeStudent() {
   const [isDirectorModalOpen, setIsDirectorModalOpen] = useState(false);
   const [isNovedadesOpen, setIsNovedadesOpen] = useState(false);
+  const studentData = studentDataService.getSubjectsValue();
+  
 
   return (
     <div className="grid grid-cols-12 gap-6 px-6 mt-4 h-full">
@@ -58,8 +61,9 @@ export default function HomeStudent() {
                 <CircleX/>
               </button>
             </div>
-            <p className="mt-4 text-gray-700">Nombre del director: <strong>Prof. Juan Pérez</strong></p>
-            <p className="text-gray-600">Contacto: juan.perez@colegio.edu.co</p>
+            <p className="mt-4 text-gray-700">Nombre del director: <strong>Prof. 
+              {studentData?.group?.mentor?.firstName} {studentData?.group?.mentor?.lastName}</strong></p>
+            <p className="text-gray-600">Contacto: {studentData?.group?.mentor?.email}</p>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
+import { State } from "../../../../models";
 
 // 🔹 Estado de la vista (home / grades / otra pantalla que quieras)
 const viewSubject = new BehaviorSubject("home");
@@ -22,7 +23,7 @@ export const studentService = {
 
 };
 
-// 🔹 Gestión de datos almacenados en sessionStorage
+//  Gestión de datos almacenados en sessionStorage
 const storedData = sessionStorage.getItem("studentData");
 const initialSubjects = storedData ? JSON.parse(storedData) : null;
 const subjectsStudent = new BehaviorSubject(initialSubjects);
@@ -115,7 +116,7 @@ export const studentDataService = {
           description: task.activity.activity.description,
           startDate: task.activity.startDate,
           endDate: task.activity.endDate,
-          subjectName: task.activity.activity.subject.subjectName,
+          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
           score: task.score ?? "-",
           status: task.comment ?? "Sin estado",
         }));
@@ -128,6 +129,148 @@ export const studentDataService = {
     }
   },
 
+  getTaskDetails: async (activityId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/activity-grade/${activityId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        const task = response.data; 
+
+        return {
+          id: activityId,
+          name: task.activity.activity.activityName,
+          knowledge: task.activity.activity.achievementGroup.subjectKnowledge.idKnowledge.name,
+          description: task.activity.activity.description,
+          startDate: task.activity.startDate ?? "-",  //No se tiene aun
+          endDate: task.activity.endDate ?? "-",      //No se tiene aun
+          score: task.score ?? "-",
+          comment: task.comment ?? "Sin estado",
+          status: (new State()).getName(task.activity.activity.status),
+        };
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener tareas:", error);
+      return [];
+    }
+  },
+
+  getAllTasks: async (periodId, studentId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/activity-grade/periods/${periodId}/users/${studentId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        return response.data.map((task) => ({
+          id: task.activity.id,
+          name: task.activity.activity.activityName,
+          description: task.activity.activity.description,
+          startDate: task.activity.startDate,
+          endDate: task.activity.endDate,
+          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
+          score: task.score ?? "-",
+          status: task.comment ?? "Sin estado",
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener todas las tareas:", error);
+      return [];
+    }
+  },
+  // 🔹 Obtener observaciones del estudiante
+  getStudentObservations: async (studentId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/student-tracking/students/${studentId}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        return response.data.map((data) => ({
+          id: data.id,
+          title: "Observador",
+          date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "-",
+          teacher: data.professor ?? "Desconocido",
+          situation: data.situation ?? "Sin información",
+          commitment: data.compromise ?? "Sin compromiso",
+          followUp: data.followUp ?? "Sin seguimiento",
+          status: data.status ?? "Pendiente",
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error al obtener observaciones:", error);
+      return [];
+    }
+  },
+  
+  // 🔹 Obtener lista de familiares
+getFamilyDetails: async (userId) => {
+  try {
+    const response = await request("GET", "academy", `/users/detail/family/${userId}`, {});
+
+    if (response.status === 200) {
+      return response.data.map((relative) => ({
+        id: relative.relativeUser.id,
+        name: `${relative.relativeUser.firstName ?? ""} ${relative.relativeUser.lastName ?? ""}`.trim(),
+        email: relative.relativeUser.email ?? "No disponible",
+        relationship: relative.relationship.relationshipType,
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Error obteniendo los detalles de la familia:", error);
+    return [];
+  }
+},
+
+// 🔹 Obtener detalles de un familiar específico cuando se abre el modal
+getFamilyMemberDetails: async (familyMemberId) => {
+  try {
+    const response = await request("GET", "academy", `/users/detail/${familyMemberId}`, {});
+
+    if (response.status === 200) {
+      return {
+        id: response.data.id,
+        name: `${response.data.firstName ?? ""} ${response.data.middleName ?? ""} ${response.data.lastName ?? ""} ${response.data.secondLastName ?? ""}`.trim(),
+        status: response.data.user.status,
+        avatar: "avatar.png",
+        personalInfo: {
+          codigo: response.data.id,
+          rc: `${response.data.dni} - ${response.data.idType?.name ?? "Desconocido"}`,
+          direccion: response.data.address ?? "No disponible",
+          barrio: response.data.neighborhood ?? "No disponible",
+          ciudad: response.data.city ?? "No disponible",
+          telefono: response.data.phoneNumber ?? "No disponible",
+          celular: response.data.user.email ?? "No disponible",
+          fechaNacimiento: response.data.dateOfBirth ? new Date(response.data.dateOfBirth).toLocaleDateString() : "No disponible",
+          position: response.data.positionJob ?? "No disponible",
+        },
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error obteniendo detalles personales del familiar:", error);
+    return null;
+  }
+},
+
+
   setSubjects: (data) => {
     sessionStorage.setItem("studentData", JSON.stringify(data));
     subjectsStudent.next(data);
@@ -139,7 +282,7 @@ export const studentDataService = {
   },
 };
 
-// ✅ Exportar todo en un solo archivo
+//  Exportar todo en un solo archivo
 export default {
   studentService,
   studentDataService,
