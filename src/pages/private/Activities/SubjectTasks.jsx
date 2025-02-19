@@ -173,6 +173,7 @@ Instrucciones:
       onClose={() => setIsSchemeModalOpen(false)} 
       subjectId={selectedSubject.id} 
       groupId={studentDataService.getSubjectsValue().group.id}
+      periodId={selectedPeriod}
       />
     </div>
   );

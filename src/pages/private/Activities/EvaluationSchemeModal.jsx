@@ -2,14 +2,15 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { request } from "../../../services/config/axios_helper";
 
-export default function EvaluationSchemeModal({ isOpen, onClose, subjectId, groupId }) {
+export default function EvaluationSchemeModal({ isOpen, onClose, subjectId, groupId,periodId }) {
   const [schemeEvaluation, setSchemeEvaluation] = useState([]);
+
   useEffect(() => {
     if (!subjectId || !groupId || !isOpen) return; // 🔹 Evita la ejecución innecesaria
 
     const fetchSchemeEvaluation = async () => {
       try {
-        const response = await request("GET", "academy", `/achievements-group/subjects/${subjectId}/groups/${groupId}`);
+        const response = await request("GET", "academy", `/achievements-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`);
         if (response.status === 200 && Array.isArray(response.data)) {
           setSchemeEvaluation(response.data.map(transformSchemeData));
           
