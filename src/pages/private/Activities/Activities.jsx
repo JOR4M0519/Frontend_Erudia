@@ -45,7 +45,7 @@ export default function Activities() {
       <div className="flex items-center justify-between gap-20">
         <div className="flex items-center gap-10 flex-1 bg-gray-200 rounded-full p-4">
           <span className="font-medium text-gray-800 px-4">
-            {studentDataService.getSubjectsValue().group.groupName || "Rol"}
+            {studentDataService.getStudentDataValue()?.group?.groupName || "Rol"}
           </span>
           <div className="bg-gray-300 px-4 py-1 rounded-full">
             <span className="text-sm text-gray-700">Periodo {selectedPeriod}</span>

@@ -1,35 +1,47 @@
 import { useEffect, useState } from "react";
 import { FileDown } from "lucide-react";
-import { BackButton,Card } from "../../../../components"; 
-import { studentDataService} from "./index";
+import { BackButton, Card } from "../../../../components";
+import { studentDataService } from "./index";
 import { useSelector } from "react-redux";
 import { configViewService } from "../../Setting";
 import { useNavigate } from "react-router-dom";
 
 export default function GradesStudent() {
   const [grades, setGrades] = useState([]);
-  const studentData = studentDataService.getSubjectsValue();
-  const userState = useSelector(store => store.user);
+  const userState = useSelector((store) => store.selectedUser);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const navigate = useNavigate();
+  const [subjects, setSubjects] = useState([]);
 
+  // 🔹 Obtener el período seleccionado
   useEffect(() => {
-      const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
-      return () => selectedPeriodSubscription.unsubscribe();
-    }, []);
+    const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+    return () => selectedPeriodSubscription.unsubscribe();
+  }, [userState]);
 
+  // 🔹 Actualizar materias cuando cambia el usuario
   useEffect(() => {
-    
-    if (!studentData || !selectedPeriod || !userState.id) return;
+    const subscription = studentDataService.getStudentData().subscribe(data => {
+      setSubjects(data?.subjects || []);
+    });
+
+    console.log("1. "+subjects)
+
+    return () => subscription.unsubscribe();
+  }, [userState]);
+
+  // 🔹 Obtener calificaciones solo cuando las materias han sido actualizadas
+  useEffect(() => {
+    if (!selectedPeriod || !userState.id || subjects.length === 0) return;
 
     const fetchGrades = async () => {
-      const gradesData = await studentDataService.getGrades(selectedPeriod, userState.id);
-     
+      console.log("2. Obteniendo calificaciones para:", userState.id, "- Materias:", subjects);
+      const gradesData = await studentDataService.getGrades(selectedPeriod, userState.id, subjects);
       setGrades(gradesData);
     };
 
     fetchGrades();
-  }, [selectedPeriod, studentData, userState]);
+  }, [selectedPeriod, userState, subjects]);
 
   const handleDownloadBulletin = () => {
     console.log("Descargando boletín...");

@@ -3,53 +3,78 @@ import { useSelector } from "react-redux";
 import { Pencil } from "lucide-react";
 import { decodeRoles } from "../../../utilities";
 import { BackButton } from "../../../components";
-import { request } from "../../../services/config/axios_helper";
 import { studentDataService } from "../Dashboard/StudentLayout";
 import { State } from "../../../models";
-import { useNavigate } from "react-router-dom";
-import PersonalInfoModal from "./PersonalInfoModal"; // Importamos el modal
+import { useLocation, useNavigate } from "react-router-dom";
+import PersonalInfoModal from "./PersonalInfoModal";
 
-function Profile({ viewing }) {
-  const user = viewing ? useSelector((store) => store.selectedUser) : useSelector((store) => store.user);
+function Profile() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const state = new State();
+  
+  // 🔹 Obtener `id` del estado de navegación si existe
+  const locationId = location.state?.id || null;
+  
+  // 🔹 Obtener usuario seleccionado desde Redux
+  const selectedUser = useSelector(store => store.selectedUser);
+  
+  // 🔹 Determinar qué ID usar: `locationId` tiene prioridad
+  const userId = locationId || selectedUser?.id || null;
+
+  // 🔹 Estados para almacenar datos del usuario
   const [userInfo, setUserInfo] = useState(null);
   const [familyInfo, setFamilyInfo] = useState([]);
   const [selectedFamilyMember, setSelectedFamilyMember] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const navigate = useNavigate();
-  const state = new State();
 
+  
+  // ✅ **Fetch de datos personales cuando `userId` cambia**
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     const fetchUserDetails = async () => {
-      const data = await studentDataService.getFamilyMemberDetails(user.id);
-      if (data) setUserInfo(data);
-    };
-
-    const fetchFamilyDetails = async () => {
-      const familyData = await studentDataService.getFamilyDetails(user.id);
-      if (familyData) setFamilyInfo(familyData);
+      try {
+        const data = await studentDataService.getFamilyMemberDetails(userId);
+        if (data) setUserInfo(data);
+      } catch (error) {
+        console.error("Error obteniendo datos del usuario:", error);
+      }
     };
 
     fetchUserDetails();
-    fetchFamilyDetails();
-  }, [user?.id]);
+  }, [userId]);
 
-  // ✅ Hacer el fetch de la info del familiar antes de abrir el modal
+  // ✅ **Fetch de información familiar**
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchFamilyDetails = async () => {
+      try {
+        const familyData = await studentDataService.getFamilyDetails(userId);
+        if (familyData) setFamilyInfo(familyData);
+        
+      } catch (error) {
+        console.error("Error obteniendo datos familiares:", error);
+      }
+    };
+    
+    fetchFamilyDetails();
+
+  }, [userId]);
+
+  // ✅ **Función para abrir el modal con detalles del familiar**
   const handleFamilyClick = async (familyMemberId, relationshipType) => {
     try {
       const familyData = await studentDataService.getFamilyMemberDetails(familyMemberId);
       if (familyData) {
-        setSelectedFamilyMember({ ...familyData, relationshipType }); // ✅ Agregar el tipo de relación correctamente
+        setSelectedFamilyMember({ ...familyData, relationshipType });
         setIsModalOpen(true);
       }
     } catch (error) {
       console.error("Error obteniendo detalles del familiar:", error);
     }
   };
-  
-
   if (!userInfo) {
     return <p className="text-gray-500">Cargando perfil...</p>;
   }
@@ -113,34 +138,22 @@ function Profile({ viewing }) {
           <div className="grid md:grid-cols-3 gap-6">
             {familyInfo.length > 0 ? (
               familyInfo.map((relative) => (
+                
                 <div
-                key={relative.id}
-                onClick={() => handleFamilyClick(relative.id,relative.relationship)} // ✅ Llama la función corregida
-                className="bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition"
-              >
-                <h3 className="text-center font-medium mb-2">{relative.relationship}</h3>
-                <p className="text-center text-gray-600">
-                {relative.name || relative.lastName ? `${relative.name ?? ""} ${relative.lastName ?? ""}`.trim() : "No registrado"}
-                </p>
-                <p className="text-center text-gray-500 text-sm">{relative.email}</p>
-              </div>
+                  key={relative.id}
+                  onClick={() => handleFamilyClick(relative.id, relative.relationship)}
+                  className="bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition"
+                >
+                  <h3 className="text-center font-medium mb-2">{relative.relationship}</h3>
+                  <p className="text-center text-gray-600">
+                    {relative.name || relative.lastName ? `${relative.name ?? ""} ${relative.lastName ?? ""}`.trim() : "No registrado"}
+                  </p>
+                  <p className="text-center text-gray-500 text-sm">{relative.email}</p>
+                </div>
               ))
             ) : (
               <p className="text-center text-gray-600">No se encontraron familiares registrados.</p>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* 🔹 Cambiar Contraseña */}
-      <section className="bg-white rounded-xl shadow-sm">
-        <div className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              Cambiar contraseña
-              <Pencil className="h-4 w-4 text-gray-400" />
-            </h2>
-            <button className="text-primary hover:text-primary/80 font-medium">Cambiar</button>
           </div>
         </div>
       </section>

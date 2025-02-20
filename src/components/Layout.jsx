@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { decodeRoles } from "../utilities";
 import StudentTopBar from "../pages/private/Dashboard/StudentTopBar";
 import { configViewService } from "../pages/private/Setting";
+import {Breadcrumbs} from "./";
 export default function Layout({ children }) {
 
   const userState = useSelector(store => store.user);
@@ -36,11 +37,12 @@ export default function Layout({ children }) {
   if (storedRole.includes(Roles.ADMIN)) {
     
     HeaderComponent = (
-      <StudentTopBar/>
+      <StudentTopBar showSelectorUser={true}/>
     );
 
   } else if (storedRole.includes(Roles.TEACHER)) {
     
+
   }
 
 
@@ -51,6 +53,11 @@ export default function Layout({ children }) {
       <header className="bg-white shadow-md p-4 flex items-center justify-between col-span-2 h-20">
         {HeaderComponent}
       </header>
+
+      {/* 🔹 Breadcrumbs debajo del Header */}
+      <div className="bg-gray-100 px-6 py-2 col-span-2">
+        <Breadcrumbs /> {/* 🔹 Aquí colocamos el breadcrumb en todas las páginas */}
+      </div>
 
       {/* 🔹 Sidebar colocado debajo del header */}
       <aside className="bg-white border-r shadow-md w-64 h-[calc(100vh-64px)] sticky top-16">

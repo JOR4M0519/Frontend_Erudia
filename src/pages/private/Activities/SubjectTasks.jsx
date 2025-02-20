@@ -4,6 +4,7 @@ import { studentService, studentDataService } from "../Dashboard/StudentLayout/S
 import { BackButton } from "../../../components";
 import { configViewService } from "../Setting";
 import { EvaluationSchemeModal } from "./";
+import { useNavigate } from "react-router-dom";
 
 export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
@@ -11,6 +12,7 @@ export default function SubjectTasks() {
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isSchemeModalOpen, setIsSchemeModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(false);
+  const navigate = useNavigate();
   //const selectedSubject = JSON.parse(sessionStorage.getItem("selectedSubject"));
   const userState = useSelector(store => store.selectedUser);
 
@@ -22,7 +24,7 @@ export default function SubjectTasks() {
         setSelectedSubject(JSON.parse(subjectString)); // Convertimos de string a objeto
       }
     });
-
+ 
     return () => {
       periodSubscription.unsubscribe();
       subjectSubscription.unsubscribe();
@@ -76,6 +78,7 @@ Instrucciones:
     }
   }
 };
+
 
   useEffect(() => {
     if (!selectedSubject || !selectedPeriod || !userState.id) return;
@@ -167,12 +170,13 @@ Instrucciones:
           )}
         </div>
       </div>
-      <BackButton onClick={() => studentService.setView("home")} />
+      
+      <BackButton onClick={() => navigate("/dashboard/home")} />
       <EvaluationSchemeModal 
       isOpen={isSchemeModalOpen} 
       onClose={() => setIsSchemeModalOpen(false)} 
       subjectId={selectedSubject.id} 
-      groupId={studentDataService.getSubjectsValue().group.id}
+      groupId={studentDataService.getStudentDataValue()?.group?.id}
       periodId={selectedPeriod}
       />
     </div>

@@ -2,16 +2,16 @@ import { lazy, Suspense } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Navigate, Route } from 'react-router-dom';
 
-import { AuthGuard, RoleGuard,MultiRoleGuard  } from './guards';
+import { AuthGuard, RoleGuard, MultiRoleGuard } from './guards';
 import { PrivateRoutes, PublicRoutes, Roles } from './models';
 import store from './redux/store';
 import { RoutesWithNotFound } from './utilities';
 import React from "react";
 
-import { Layout }  from "./components/index" 
+import { Layout } from "./components/index"
 
 import { Login } from './pages/login/Login';
-import { Dashboard } from './pages/private/index';
+import { Dashboard } from './pages/private/Dashboard';
 import { Admin } from './pages/private/Admin';
 import { Subject } from './pages/private/Subject';
 import { Activities } from './pages/private/Activities';
@@ -27,58 +27,48 @@ import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
 function App() {
   return (
     <div className="App">
-      {/* Agregar spin de carga */}
       <Suspense fallback={<div>Loading...</div>}>
         <Provider store={store}>
           <BrowserRouter>
-            {/* Componente redirige a un sitio cuando no existe la ruta */}
             <RoutesWithNotFound>
-              {/* Redirige a una ruta cuando ingresa a la raiz y esta autenticado */}
+              {/* 🔹 Redirigir a Dashboard si ya está autenticado */}
               <Route path="/" element={<Navigate to={PrivateRoutes.DASHBOARD} />} />
-              
+
+              {/* 🔹 Rutas Públicas (sin Layout) */}
               <Route path={PublicRoutes.LOGIN} element={<Login />} />
 
+              {/* 🔹 Rutas Privadas (con Layout dentro del `AuthGuard`) */}
               <Route element={<AuthGuard privateValidation={true} />}>
-                <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Layout><Dashboard/></Layout>} />
-              </Route>
-               
-              {/* <Route element={<RoleGuard rol={Roles.ADMIN} />}>
-                <Route path={PrivateRoutes.ADMIN} element={<Layout><Admin/></Layout>} />
-              </Route> */}
-              
-              {/* Rutas protegidas dinámicamente por roles */}
-              <Route element={<MultiRoleGuard navKey="ADMIN" />}>
-                <Route path={PrivateRoutes.ADMIN} element={<Layout><Admin /></Layout>} />
-              </Route>
+                <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
 
-              <Route element={<MultiRoleGuard navKey="PROFILE" />}>
-                <Route path={PrivateRoutes.PROFILE} element={<Layout><Profile/></Layout>} />
+                <Route element={<MultiRoleGuard navKey="ADMIN" />}>
+                  <Route path={PrivateRoutes.ADMIN} element={<Admin />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="PROFILE" />}>
+                  <Route path={PrivateRoutes.PROFILE} element={<Profile />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="SUBJECTS" />}>
+                  <Route path={PrivateRoutes.SUBJECTS} element={<Subject />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="GRADES" />}>
+                  <Route path={PrivateRoutes.GRADES} element={<GradesStudent />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="ACTIVITIES" />}>
+                  <Route path={PrivateRoutes.ACTIVITIES} element={<Activities />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
+                  <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />} />
+                </Route>
+
+                <Route element={<MultiRoleGuard navKey="SETTINGS" />}>
+                  <Route path={PrivateRoutes.SETTINGS} element={<Settings />} />
+                </Route>
               </Route>
-
-              <Route element={<MultiRoleGuard navKey="SUBJECTS" />}>
-                <Route path={PrivateRoutes.SUBJECTS} element={<Layout><Subject/></Layout>} />
-              </Route>
-              
-              <Route element={<MultiRoleGuard navKey="GRADES" />}>
-                <Route path={PrivateRoutes.GRADES} element={<Layout><GradesStudent /></Layout>} />
-              </Route>
-
-              <Route element={<MultiRoleGuard navKey="ACTIVITIES" />}>
-                <Route path={PrivateRoutes.ACTIVITIES} element={<Layout><Activities /></Layout>} />
-              </Route>
-
-              <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
-                <Route path={PrivateRoutes.STUDENTTRACKING} element={<Layout><StudentTracking /></Layout>} />
-              </Route>
-
-              <Route element={<MultiRoleGuard navKey="SETTINGS" />}>
-                <Route path={PrivateRoutes.SETTINGS} element={<Layout><Settings /></Layout>} />
-              </Route>
-
-              <Route path={`${PrivateRoutes.PROFILE}/*`} element={<Layout><Settings /></Layout>} />
-              
-
-
             </RoutesWithNotFound>
           </BrowserRouter>
         </Provider>
@@ -86,7 +76,6 @@ function App() {
     </div>
   );
 }
-
 
 
 // const App = () => {

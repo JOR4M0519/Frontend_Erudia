@@ -1,20 +1,19 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
 import { PrivateRoutes, PublicRoutes } from '../models';
-
-
-const PrivateValidationFragment = <Outlet />;
-const PublicValidationFragment = <Navigate replace to={PublicRoutes.LOGIN} />;
+import Layout from '../components/Layout'; // 🔹 Importamos el Layout
 
 export const AuthGuard = ({ privateValidation }) => {
   const userState = useSelector((store) => store.user);
   
-  return userState.token ? (
-    privateValidation ? (
-      PrivateValidationFragment
-    ) : (
-      PublicValidationFragment
-    )
+  if (!userState.token) {
+    return <Navigate replace to={PublicRoutes.LOGIN} />;
+  }
+
+  return privateValidation ? (
+    <Layout> {/* 🔹 Envolvemos SOLO rutas privadas con Layout */}
+      <Outlet />
+    </Layout>
   ) : (
     <Navigate replace to={PublicRoutes.LOGIN} />
   );
