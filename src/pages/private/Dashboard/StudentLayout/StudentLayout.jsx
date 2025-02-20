@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { HomeStudent, studentDataService, studentService } from "./index";
+import { HomeStudent, studentDataService } from "./index";
 import { SubjectTasks } from "../../Activities";
 import { ActivityModal } from "../../Activities";
 import { useSelector } from "react-redux";

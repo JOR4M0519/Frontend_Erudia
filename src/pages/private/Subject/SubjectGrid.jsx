@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // 🔹 Importamos useNavigate
 import { Card } from "../../../components"; 
-import { studentDataService, studentService } from "../Dashboard/StudentLayout/StudentService";
+import { studentDataService } from "../Dashboard/StudentLayout/StudentService";
 import { hasAccess } from "../../../utilities/accesControl.utility";
 import { Roles } from "../../../models";
 import { useSelector } from "react-redux";
 import { decodeRoles } from "../../../utilities";
+import {subjectTaskService} from "./";
 
 export default function SubjectGrid() {
   const navigate = useNavigate(); // 🔹 Hook para redirigir
@@ -27,7 +28,7 @@ export default function SubjectGrid() {
 
   const handleSubjectClick = (subject) => {
     const subjectString = JSON.stringify(subject);
-    studentService.setSelectedSubject(subjectString); // Almacenar en sessionStorage y en el observable
+    subjectTaskService.setSelectedSubject(subjectString); // Almacenar en sessionStorage y en el observable
     
     // 🔹 Redirigir a `subjectTasks`
     navigate("/dashboard/subjectTasks");

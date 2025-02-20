@@ -96,7 +96,7 @@ export default function StudentTopBar({showSelectorUser=false,showSelectorYear=f
     if (selected) {
       setSelectedStudentId(studentId);
       dispatch(setSelectedUser(selected));
-      studentDataService.clearSubjects(); // Limpiar datos antiguos
+      //studentDataService.clearSubjects(); // Limpiar datos antiguos
       navigate(PrivateRoutes.DASHBOARD);
     }
   };

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { studentService, studentDataService } from "../Dashboard/StudentLayout/StudentService";
+import { studentDataService } from "../Dashboard/StudentLayout/StudentService";
 import { BackButton } from "../../../components";
 import { configViewService } from "../Setting";
 import { EvaluationSchemeModal } from "./";
 import { useNavigate } from "react-router-dom";
+import { subjectTaskService } from "../Subject";
 
 export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
@@ -15,11 +16,12 @@ export default function SubjectTasks() {
   const navigate = useNavigate();
   //const selectedSubject = JSON.parse(sessionStorage.getItem("selectedSubject"));
   const userState = useSelector(store => store.selectedUser);
-
+  console.log(sessionStorage.getItem("selectedSubject"));
+  
   useEffect(() => {
     // 🔹 Suscripción al período y materia seleccionada
     const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
-    const subjectSubscription = studentService.getSelectedSubject().subscribe((subjectString) => {
+    const subjectSubscription = subjectTaskService.getSelectedSubject().subscribe((subjectString) => {
       if (subjectString) {
         setSelectedSubject(JSON.parse(subjectString)); // Convertimos de string a objeto
       }
@@ -103,13 +105,13 @@ Instrucciones:
 
   // 🔹 Obtener los detalles de la tareas de la materia
   const fetchActivityDetail = async (taskId) => {
-    return await studentDataService.getTaskDetails(taskId);
+    return await studentDataService.getTaskDetailsStudent(taskId);
     
   };
 
   const handleTaskClick = async(taskId) => {
     const taskData = await fetchActivityDetail(taskId); 
-    if (taskData) studentService.openTaskModal(taskData); 
+    if (taskData) subjectTaskService.openTaskModal(taskData); 
   }
 
   return (
