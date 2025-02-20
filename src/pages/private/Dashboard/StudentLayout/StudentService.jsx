@@ -219,9 +219,9 @@ getFamilyDetails: async (userId) => {
 
     if (response.status === 200) {
       return response.data.map((relative) => ({
-        id: relative.relativeUser.id,
-        name: `${relative.relativeUser.firstName ?? ""} ${relative.relativeUser.lastName ?? ""}`.trim(),
-        email: relative.relativeUser.email ?? "No disponible",
+        id: relative.user.id,
+        name: `${relative.user.firstName ?? ""} ${relative.user.lastName ?? ""}`.trim(),
+        email: relative.user.email ?? "No disponible",
         relationship: relative.relationship.relationshipType,
       }));
     }

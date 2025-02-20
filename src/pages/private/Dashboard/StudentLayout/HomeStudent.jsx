@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SchedulePreview } from "../../../../windows/Schedule/index";
 import { studentDataService} from "./index";
 import { Bell, Info, CircleX } from "lucide-react";
@@ -8,8 +8,13 @@ import { SubjectGrid } from "../../Subject";
 export default function HomeStudent() {
   const [isDirectorModalOpen, setIsDirectorModalOpen] = useState(false);
   const [isNovedadesOpen, setIsNovedadesOpen] = useState(false);
-  const studentData = studentDataService.getSubjectsValue();
-  
+
+  const [studentData, setStudentData] = useState(null); // 🔹 Estado para los datos del estudiante
+  useEffect(() => {
+    const subscription = studentDataService.getStudentData().subscribe(setStudentData);
+    
+    return () => subscription.unsubscribe(); // 🔹 Cancelar suscripción al desmontar
+  }, []);
 
   return (
     <div className="grid grid-cols-12 gap-6 px-6 mt-4 h-full">

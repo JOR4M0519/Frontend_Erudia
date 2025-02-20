@@ -17,13 +17,15 @@ export default function GradesStudent() {
   useEffect(() => {
     const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
     return () => selectedPeriodSubscription.unsubscribe();
-  }, []);
+  }, [userState]);
 
   // 🔹 Actualizar materias cuando cambia el usuario
   useEffect(() => {
     const subscription = studentDataService.getStudentData().subscribe(data => {
       setSubjects(data?.subjects || []);
     });
+
+    console.log("1. "+subjects)
 
     return () => subscription.unsubscribe();
   }, [userState]);
@@ -33,7 +35,7 @@ export default function GradesStudent() {
     if (!selectedPeriod || !userState.id || subjects.length === 0) return;
 
     const fetchGrades = async () => {
-      console.log("Obteniendo calificaciones para:", userState.id, "Materias:", subjects);
+      console.log("2. Obteniendo calificaciones para:", userState.id, "- Materias:", subjects);
       const gradesData = await studentDataService.getGrades(selectedPeriod, userState.id, subjects);
       setGrades(gradesData);
     };

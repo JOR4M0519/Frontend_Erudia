@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 export default function Selector({
@@ -8,6 +9,14 @@ export default function Selector({
   itemLabel = "name",
   placeholder = "Seleccione una opción"
 }) {
+  
+  //Selecciona el primer elemento automáticamente si no hay uno seleccionado
+  useEffect(() => {
+    if (!selectedItem && items.length > 0) {
+      setSelectedItem(items[0][itemKey]);
+    }
+  }, [items, selectedItem, setSelectedItem]); // Se ejecuta cuando cambian `items` o `selectedItem`
+
   return (
     <div className="relative flex-grow">
       <select
