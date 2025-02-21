@@ -25,7 +25,7 @@ export default function GradesStudent() {
       setSubjects(data?.subjects || []);
     });
 
-    console.log("1. "+subjects)
+    
 
     return () => subscription.unsubscribe();
   }, [userState]);
@@ -35,7 +35,6 @@ export default function GradesStudent() {
     if (!selectedPeriod || !userState.id || subjects.length === 0) return;
 
     const fetchGrades = async () => {
-      console.log("2. Obteniendo calificaciones para:", userState.id, "- Materias:", subjects);
       const gradesData = await studentDataService.getGrades(selectedPeriod, userState.id, subjects);
       setGrades(gradesData);
     };

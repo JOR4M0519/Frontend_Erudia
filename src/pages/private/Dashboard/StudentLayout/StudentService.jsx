@@ -5,7 +5,7 @@ import { State, StudentGroupModel } from "../../../../models";
   /**
    * Actividades
    * obtiene los detalles de una actividad en especifico
-   * !Falta recibir correctamente los datos en startDate-Endate y aotros porbablemente
+   * !!Falta recibir correctamente los datos en startDate-Endate y aotros porbablemente
   */
 const getTaskDetails = async(activityId) =>{
   try {
@@ -41,15 +41,28 @@ const getTaskDetails = async(activityId) =>{
 
 const studentData$ = new BehaviorSubject(null);
 //  Gestión de datos almacenados en sessionStorage
-const storedData = sessionStorage.getItem("studentData");
-const initialSubjects = storedData ? JSON.parse(storedData) : null;
-const subjectsStudent = new BehaviorSubject(initialSubjects);
+const storedStudentData = sessionStorage.getItem("studentData");
+const initialStudentSubjects = storedStudentData ? JSON.parse(storedStudentData) : null;
+const subjectsStudent = new BehaviorSubject(initialStudentSubjects);
 
 export const studentDataService = {
   getSubjects: () => subjectsStudent.asObservable(),
   getSubjectsValue: () => subjectsStudent.value,
+  setSubjects: (data) => {
+    subjectsStudent.next(data);
+  },
+  clearSubjects: () => {
+    subjectsStudent.next(null);
+  },
 
-
+  getStudentData: () => studentData$.asObservable(),
+  getStudentDataValue: () => studentData$.value,
+  setStudentData: (data) => {
+    studentData$.next(data);
+  },
+  clearStudentData: () => {
+    studentData$.next(null);
+  },
   /**
    * Obtener la nota del período de una materia de un estudiante
   */
@@ -81,7 +94,7 @@ export const studentDataService = {
 
 
     try {
-      console.log("Consultando calificaciones desde la API...");
+      
       const grades = [];
       for (const subject of subjects) {
         const response = await request(
@@ -291,6 +304,7 @@ export const studentDataService = {
         return response.data.map((student) => ({
           id: student.relativeUser.id,
           name: `${student.relativeUser.firstName} ${student.relativeUser.lastName}`,
+          username: student.relativeUser.username
         }));
       }
 
@@ -326,29 +340,51 @@ export const studentDataService = {
       console.error("Error cargando datos del estudiante:", error);
     }
   },
-
-  setSubjects: (data) => {
-    subjectsStudent.next(data);
-  },
-
-  clearSubjects: () => {
-    subjectsStudent.next(null);
-  },
-
-  getStudentData: () => studentData$.asObservable(),
-  getStudentDataValue: () => studentData$.value,
-
-  setStudentData: (data) => {
-    studentData$.next(data);
-  },
-
-  clearStudentData: () => {
-    studentData$.next(null);
-  },
-
   
 
 };
 
+const teacherData$ = new BehaviorSubject(null);
+
+export const teacherDataService ={
+  getSubjects: () => teacherData$.asObservable(),
+  getSubjectsValue: () => teacherData$.value,
+
+  setSubjects: (data) => {
+    teacherData$.next(data);
+  },
+
+  clearSubjects: () => {
+    teacherData$.next(null);
+  },
+
+  /**
+    * Obtener los datos de los grupos de acuerdo con las materias que dicta el profesor
+    * !!Hace falta por desarrollar
+  */
+  fetchSubjectsData: async (teacherId) => {
+    try {
+
+      studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
+
+      // * Obtener el grupo del estudiante
+      const responseGroups = await request("GET", "academy", `/student-groups/user/${studentId}`, {});
+      if (responseGroups.status === 200 && responseGroups.data.length > 0) {
+        const studentGroup = new StudentGroupModel(responseGroups.data[0]);
+
+        // * Obtener materias del estudiante
+        const responseSubjects = await request("GET", "academy", `/subjects-groups/students-groups/${studentGroup.group.id}`, {});
+        
+        if (responseSubjects.status === 200) {
+          studentGroup.addSubjects(responseSubjects.data);
+          studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando datos del estudiante:", error);
+    }
+  },
+} 
+
 //  Exportar todo en un solo archivo
-export default {studentDataService,};
+export default {studentDataService,teacherDataService};

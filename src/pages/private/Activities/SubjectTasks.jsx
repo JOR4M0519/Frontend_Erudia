@@ -16,7 +16,6 @@ export default function SubjectTasks() {
   const navigate = useNavigate();
   //const selectedSubject = JSON.parse(sessionStorage.getItem("selectedSubject"));
   const userState = useSelector(store => store.selectedUser);
-  console.log(sessionStorage.getItem("selectedSubject"));
   
   useEffect(() => {
     // 🔹 Suscripción al período y materia seleccionada

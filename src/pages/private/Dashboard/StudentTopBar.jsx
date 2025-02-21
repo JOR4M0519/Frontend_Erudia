@@ -8,6 +8,8 @@ import { studentDataService } from "./StudentLayout/StudentService";
 import { PrivateRoutes } from "../../../models";
 import { searchService } from "../../../windows/Search";
 import { setSelectedUser } from "../../../redux/states/user";
+import { userDataService } from "../../../services/userDataService";
+
 
 export default function StudentTopBar({showSelectorUser=false,showSelectorYear=false}) {
   const navigate = useNavigate();
@@ -44,12 +46,14 @@ export default function StudentTopBar({showSelectorUser=false,showSelectorYear=f
     const fetchStudents = async () => {
       try {
         const response = await studentDataService.getFamilyStudents(userState.id);
-  
-        const studentsWithRoles = response.map(student => ({
+
+        const studentsWithRoles = await Promise.all(response.map(async student => ({
           ...student,
-          roles: userState.roles // Agregar los roles del usuario a cada estudiante
-        }));
-  
+          roles: await userDataService.getRoleGroups(student.username) || userState.roles // Agregar los roles del usuario a cada estudiante-En caso que no tenga agregar roles del usuario logeado
+        })));
+
+        
+        //Agregar el usuario logeado
         if (response.length > 0) {
           const userAsStudent = {
             id: userState.id,
@@ -57,9 +61,9 @@ export default function StudentTopBar({showSelectorUser=false,showSelectorYear=f
             roles: userState.roles,
             isUser: true // Bandera para identificar al usuario
           };
-  
+          
           const newStudentsList = [userAsStudent, ...studentsWithRoles];
-  
+          
           //  Verificar si la nueva lista de estudiantes es diferente antes de actualizar el estado
           setStudents(prevStudents => 
             JSON.stringify(prevStudents) !== JSON.stringify(newStudentsList) 

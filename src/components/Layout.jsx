@@ -34,15 +34,17 @@ export default function Layout({ children }) {
   
   let HeaderComponent = <></>
 
-  if (storedRole.includes(Roles.ADMIN)) {
-    
+
+  if (!storedRole.includes(Roles.STUDENT)) {
     HeaderComponent = (
       <StudentTopBar showSelectorUser={true}/>
     );
-
-  } else if (storedRole.includes(Roles.TEACHER)) {
-    
-
+  } 
+  
+  if (storedRole.includes(Roles.STUDENT)) {
+    HeaderComponent = (
+      <StudentTopBar/>
+    );
   }
 
 
