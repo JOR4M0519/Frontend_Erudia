@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { studentService, studentDataService } from "../Dashboard/StudentLayout/StudentService";
+import { studentDataService } from "../Dashboard/StudentLayout/StudentService";
 import { BackButton } from "../../../components";
 import { configViewService } from "../Setting";
 import { EvaluationSchemeModal } from "./";
 import { useNavigate } from "react-router-dom";
+import { subjectTaskService } from "../Subject";
 
 export default function SubjectTasks() {
   const [tasks, setTasks] = useState([]);
@@ -15,11 +16,11 @@ export default function SubjectTasks() {
   const navigate = useNavigate();
   //const selectedSubject = JSON.parse(sessionStorage.getItem("selectedSubject"));
   const userState = useSelector(store => store.selectedUser);
-
+  
   useEffect(() => {
     // 🔹 Suscripción al período y materia seleccionada
     const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
-    const subjectSubscription = studentService.getSelectedSubject().subscribe((subjectString) => {
+    const subjectSubscription = subjectTaskService.getSelectedSubject().subscribe((subjectString) => {
       if (subjectString) {
         setSelectedSubject(JSON.parse(subjectString)); // Convertimos de string a objeto
       }
@@ -81,7 +82,7 @@ Instrucciones:
 
 
   useEffect(() => {
-    if (!selectedSubject || !selectedPeriod || !userState.id) return;
+    if (!selectedSubject?.id || !selectedPeriod || !userState?.id) return;
 
     // 🔹 Obtener la nota del periodo
     const fetchPeriodGrade = async () => {
@@ -91,26 +92,38 @@ Instrucciones:
 
     // 🔹 Obtener las tareas de la materia
     const fetchTasks = async () => {
-      const taskData = await studentDataService.getTasks(selectedSubject.id, selectedPeriod, userState.id);
-      setTasks(taskData);
+      const taskData = await studentDataService.getActivities(selectedSubject.id, selectedPeriod, userState.id);
+      setTasks(Array.isArray(taskData) ? taskData : []); //  Verificar si es un array antes de asignar
     };
-
-    
-
     fetchPeriodGrade();
     fetchTasks();
-  }, [selectedPeriod, selectedSubject, userState]);
+  }, [selectedPeriod, selectedSubject?.id, userState?.id]); // Evita que todo userState dispare el efecto
 
-  // 🔹 Obtener los detalles de la tareas de la materia
-  const fetchActivityDetail = async (taskId) => {
-    return await studentDataService.getTaskDetails(taskId);
-    
+
+  const fetchActivityDetail = async (activityId, userId) => {
+    try {
+      const taskData = await studentDataService.getActivityDetailsStudent(activityId, userId);
+      console.log("Detalles de la actividad recibidos:", taskData);
+      return taskData;
+    } catch (error) {
+      console.error("Error obteniendo detalles de la actividad:", error);
+      return null;
+    }
   };
+  const handleTaskClick = async (activityId) => {
+    if (!userState?.id) {
+      console.warn("Intento de obtener detalles de actividad sin userId");
+      return;
+    }
 
-  const handleTaskClick = async(taskId) => {
-    const taskData = await fetchActivityDetail(taskId); 
-    if (taskData) studentService.openTaskModal(taskData); 
-  }
+    const activityData = await fetchActivityDetail(activityId, userState.id);
+
+    if (activityData) {
+      subjectTaskService.openTaskModal(activityData);
+    } else {
+      console.warn("No se pudo abrir el modal de la actividad, datos inválidos.");
+    }
+  };
 
   return (
     <div className="space-y-4">

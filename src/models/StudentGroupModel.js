@@ -1,18 +1,18 @@
 export class StudentGroupModel {
     constructor(data) {
       this.group = {
-        id: data.group?.id || null,
-        groupCode: data.group?.groupCode || "",
-        groupName: data.group?.groupName || "",
+        id: data.groups?.id || null,
+        groupCode: data.groups?.groupCode || "",
+        groupName: data.groups?.groupName || "",
         level: {
-          id: data.group?.level?.id || null,
-          levelName: data.group?.level?.levelName || "",
+          id: data.groups?.level?.id || null,
+          levelName: data.groups?.level?.levelName || "",
         },
         mentor: {
-          id: data.group?.mentor?.id || null,
-          firstName: data.group?.mentor?.firstName || "Desconocido",
-          lastName: data.group?.mentor?.lastName || "Desconocido",
-          email: data.group?.mentor?.email || "Desconocido",
+          id: data.groups?.mentor?.id || null,
+          firstName: data.groups?.mentor?.firstName || "Desconocido",
+          lastName: data.groups?.mentor?.lastName || "Desconocido",
+          email: data.groups?.mentor?.email || "Desconocido",
         },
       };
   
@@ -23,8 +23,14 @@ export class StudentGroupModel {
     // Método para agregar materias después de instanciar el objeto
     addSubjects(subjectsData) {
       this.subjects = subjectsData.map(item => ({
-        id: item.subject.id,
-        subjectName: item.subject.subjectName,
+        id: item.subjectProfessor?.subject?.id,
+        subjectName: item.subjectProfessor?.subject?.subjectName,
+        teacher: {
+          id: item.subjectProfessor?.professor?.id || null,
+          firstName: item.subjectProfessor?.professor?.firstName || "Desconocido",
+          lastName: item.subjectProfessor?.professor?.lastName || "Desconocido",
+          email: item.subjectProfessor?.professor?.email || "Desconocido",
+        },
       }));
     }
   

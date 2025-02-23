@@ -1,20 +1,20 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { studentService } from "../Dashboard/StudentLayout";
-//import { studentService } from "./StudentService";
+import { subjectTaskService } from "../Subject";
+
 
 export default function ActivityModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [taskData, setTaskData] = useState(null);
 
   useEffect(() => {
-    const subscription = studentService.getTaskModal().subscribe(({ isOpen, activityData }) => {
+    const subscription = subjectTaskService.getTaskModal().subscribe(({ isOpen, activityData }) => {
       setIsOpen(isOpen);
-      setTaskData(activityData);
+      setTaskData(activityData ?? {}); // Si activityData es undefined, usa un objeto vacío
     });
-
+  
     return () => subscription.unsubscribe();
-  }, []);
+  }, []);  
 
   if (!isOpen || !taskData) return null;
 
@@ -26,7 +26,7 @@ export default function ActivityModal() {
         <div className="bg-gray-200 px-6 py-4 flex justify-between items-center border-b border-gray-300">
           <h2 className="text-lg font-semibold text-gray-800">{taskData.name || "Sin título"}</h2>
           <button
-            onClick={() => studentService.closeTaskModal()}
+            onClick={() => subjectTaskService.closeTaskModal()}
             className="p-2 hover:bg-gray-300 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
@@ -47,7 +47,7 @@ export default function ActivityModal() {
             <span className={`font-medium ${taskData.score >= 3 ? "text-green-600" : "text-red-600"}`}>
               {taskData.score ?? "-"}
             </span>
-            <span className="text-gray-600">{taskData.knowledge || "-"}</span>
+            <span className="text-gray-600">{taskData.knowledge?.name || "-"}</span>
           </div>
         </div>
 

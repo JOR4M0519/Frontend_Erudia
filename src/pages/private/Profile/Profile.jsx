@@ -29,13 +29,13 @@ function Profile() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   
-  // ✅ **Fetch de datos personales cuando `userId` cambia**
+  //  **Fetch de datos personales cuando `userId` cambia**
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserDetails = async () => {
       try {
-        const data = await studentDataService.getFamilyMemberDetails(userId);
+        const data = await studentDataService.getUserDetails(userId);
         if (data) setUserInfo(data);
       } catch (error) {
         console.error("Error obteniendo datos del usuario:", error);
@@ -45,13 +45,14 @@ function Profile() {
     fetchUserDetails();
   }, [userId]);
 
-  // ✅ **Fetch de información familiar**
+
+  // **Fetch de la lista familiares del usuario
   useEffect(() => {
     if (!userId) return;
 
     const fetchFamilyDetails = async () => {
       try {
-        const familyData = await studentDataService.getFamilyDetails(userId);
+        const familyData = await studentDataService.getListRelativeFamily(userId);
         if (familyData) setFamilyInfo(familyData);
         
       } catch (error) {
@@ -63,10 +64,10 @@ function Profile() {
 
   }, [userId]);
 
-  // ✅ **Función para abrir el modal con detalles del familiar**
+  //  **Función para abrir el modal con detalles del familiar**
   const handleFamilyClick = async (familyMemberId, relationshipType) => {
     try {
-      const familyData = await studentDataService.getFamilyMemberDetails(familyMemberId);
+      const familyData = await studentDataService.getUserDetails(familyMemberId);
       if (familyData) {
         setSelectedFamilyMember({ ...familyData, relationshipType });
         setIsModalOpen(true);

@@ -121,3 +121,5 @@ export const request = (method, serviceType = "academy", url, data = {}) => {
     console.error("Error en la solicitud:", error);
   }
 };
+
+

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { studentDataService, studentService } from "../Dashboard/StudentLayout";
+import { studentDataService } from "../Dashboard/StudentLayout";
 import { configViewService } from "../Setting";
 import ActivityModal from "./ActivityModal";
 import { BackButton } from "../../../components";
 import { useNavigate } from "react-router-dom";
+import { subjectTaskService } from "../Subject";
 
 export default function Activities() {
   const [activities, setActivities] = useState([]);
@@ -27,7 +28,8 @@ export default function Activities() {
 
     // 🔹 Obtener todas las tareas del estudiante en el periodo seleccionado
     const fetchAllTasks = async () => {
-      const tasksData = await studentDataService.getAllTasks(selectedPeriod, userState.id);
+      const tasksData = await studentDataService.getAllActivities(selectedPeriod, userState.id);
+      
       setActivities(tasksData);
     };
 
@@ -35,8 +37,8 @@ export default function Activities() {
   }, [selectedPeriod, userState]);
 
   const handleActivityClick = async (activityId) => {
-    const activityData = await studentDataService.getTaskDetails(activityId);
-    if (activityData) studentService.openTaskModal(activityData)
+    const activityData = await studentDataService.getActivityDetailsStudent(activityId,userState.id);
+    if (activityData) subjectTaskService.openTaskModal(activityData)
   };
 
   return (
