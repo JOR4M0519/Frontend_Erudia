@@ -1,34 +1,67 @@
 import { BehaviorSubject, filter, firstValueFrom } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
 import { State, StudentGroupModel } from "../../../../models";
+import { TeacherGroupModel } from "../../../../models/TeacherGroupModel";
 
   /**
    * Actividades
    * obtiene los detalles de una actividad en especifico
-   * !!Falta recibir correctamente los datos en startDate-Endate y aotros porbablemente
+   * !!! Falta recibir correctamente los datos en startDate-Endate y aotros porbablemente
+   * !!! Toca arreglar el endpoint 'activity-grade'
   */
-const getTaskDetails = async(activityId) =>{
+const getActivityDetails = async(activityId,studentId) =>{
   try {
     const response = await request(
       "GET",
       "academy",
-      `/activity-grade/${activityId}`,
+      `/activity-grade/activities/${activityId}`,
       {}
     );
 
     if (response.status === 200) {
-      const task = response.data;
+      const data = response.data;
+      const grade = await getActivityScore(data.activity.id, studentId);
+      return {
+        id:          data.activity.id,
+        name:        data.activity.activity.activityName,
+        knowledge:   data.activity.activity.achievementGroup?.subjectKnowledge?.idKnowledge ?? "-",
+        description: data.activity.activity.description,
+        startDate:   data.activity.startDate,
+        endDate:     data.activity.endDate,
+        score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
+        comment:     grade?.comment ?? "-",
+        status:      data.activity.activity.status ?? "Sin estado",
+      };
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error al obtener tareas:", error);
+    return [];
+  }
+}
+
+  /**
+   * Actividades
+   * obtiene los detalles de la calificación de una actividad en especifico
+  */
+
+const getActivityScore = async(activityId,studentId) =>{
+  try {
+    const response = await request(
+      "GET",
+      "academy",
+      `/activity-grade/activities/${activityId}/students/${studentId}`,
+      {}
+    );
+
+    if (response.status === 200) {
+      const data = response.data;
 
       return {
         id: activityId,
-        name: task.activity.activity.activityName,
-        knowledge: task.activity.activity.achievementGroup.subjectKnowledge.idKnowledge.name,
-        description: task.activity.activity.description,
-        startDate: task.activity.startDate ?? "-",  //No se tiene aun
-        endDate: task.activity.endDate ?? "-",      //No se tiene aun
-        score: task.score ?? "-",
-        comment: task.comment ?? "Sin estado",
-        status: (new State()).getName(task.activity.activity.status),
+        score: data.score,
+        comment: data.comment,
       };
     }
 
@@ -128,28 +161,38 @@ export const studentDataService = {
   },
 
   /**
-   *Obtener las tareas de una materia en un periodo de un estudiante en particular 
+   *Obtener las tareas de una materia en un periodo de un estudiante en particular
+   * 
   */
-  getTasks: async (subjectId, periodId, studentId) => {
+   getActivities: async (subjectId, periodId, studentId) => {
+    console.log("actividades: "+ studentId)
     try {
       const response = await request(
         "GET",
         "academy",
-        `/activity-grade/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
+        `/activity-group/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
         {}
       );
 
       if (response.status === 200) {
-        return response.data.map((task) => ({
-          id: task.activity.id,
-          name: task.activity.activity.activityName,
-          description: task.activity.activity.description,
-          startDate: task.activity.startDate,
-          endDate: task.activity.endDate,
-          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
-          score: task.score ?? "-",
-          status: task.comment ?? "Sin estado",
-        }));
+        const activities = await Promise.all(
+          response.data.map(async (data) => {
+            const grade = await getActivityScore(data.activity.id, studentId); // Esperamos la promesa
+      
+            return {
+              id:          data.activity.id,
+              name:        data.activity.activityName,
+              description: data.activity.description,
+              startDate:   data.startDate,
+              endDate:     data.endDate,
+              score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
+              comment:     grade?.comment ?? "-",
+              status:      data.activity.status ?? "Sin estado",
+            };
+          })
+        );
+      
+        return activities;
       }
 
       return [];
@@ -163,36 +206,46 @@ export const studentDataService = {
    * Actividades
    * obtiene los detalles de una actividad en especifico
   */
-  getTaskDetailsStudent: async (activityId) => {
-    return getTaskDetails(activityId)
+  getActivityDetailsStudent: async (activityId,studentId) => {
+    return getActivityDetails(activityId,studentId)
   },
 
   /**
    * Recibe todas las actividades de un estudiante en general
+   * 
   */
-  getAllTasks: async (periodId, studentId) => {
+  getAllActivities: async (periodId, studentId) => {
+    
     try {
       const response = await request(
         "GET",
         "academy",
-        `/activity-grade/periods/${periodId}/users/${studentId}`,
+        `/activity-group/periods/${periodId}/users/${studentId}`,
         {}
       );
 
       if (response.status === 200) {
-        return response.data.map((task) => ({
-          id: task.activity.id,
-          name: task.activity.activity.activityName,
-          description: task.activity.activity.description,
-          startDate: task.activity.startDate,
-          endDate: task.activity.endDate,
-          subjectName: task.activity.activity.achievementGroup.subjectKnowledge.idSubject.subjectName,
-          score: task.score ?? "-",
-          status: task.comment ?? "Sin estado",
-        }));
+        const activities = await Promise.all(
+          response.data.map(async (data) => {
+            const grade = await getActivityScore(data.activity.id, studentId); // Esperamos la promesa
+      
+            return {
+              id:          data.activity.id,
+              name:        data.activity.activityName,
+              description: data.activity.description,
+              startDate:   data.startDate,
+              endDate:     data.endDate,
+              score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
+              comment:     grade?.comment ?? "-",
+              status:      data.activity.status ?? "Sin estado",
+            };
+          })
+        );
+      
+        return activities;
       }
 
-      return [];
+      return activities;
     } catch (error) {
       console.error("Error al obtener todas las tareas:", error);
       return [];
@@ -324,17 +377,11 @@ export const studentDataService = {
       studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
 
       // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/student-groups/user/${studentId}`, {});
+      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/${studentId}`, {});
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
-
-        // * Obtener materias del estudiante
-        const responseSubjects = await request("GET", "academy", `/subjects-groups/students-groups/${studentGroup.group.id}`, {});
-        
-        if (responseSubjects.status === 200) {
-          studentGroup.addSubjects(responseSubjects.data);
-          studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
-        }
+        studentGroup.addSubjects(responseGroups.data);
+        studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
       }
     } catch (error) {
       console.error("Error cargando datos del estudiante:", error);
@@ -362,26 +409,27 @@ export const teacherDataService ={
     * Obtener los datos de los grupos de acuerdo con las materias que dicta el profesor
     * !!Hace falta por desarrollar
   */
-  fetchSubjectsData: async (teacherId) => {
+  fetchGroupsData: async (teacherId, year) => {
     try {
-
-      studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
-
-      // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/student-groups/user/${studentId}`, {});
-      if (responseGroups.status === 200 && responseGroups.data.length > 0) {
-        const studentGroup = new StudentGroupModel(responseGroups.data[0]);
-
-        // * Obtener materias del estudiante
-        const responseSubjects = await request("GET", "academy", `/subjects-groups/students-groups/${studentGroup.group.id}`, {});
-        
-        if (responseSubjects.status === 200) {
-          studentGroup.addSubjects(responseSubjects.data);
-          studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
-        }
+      // Limpiar los datos previos del profesor
+      teacherDataService.clearSubjects();
+  
+      // Realizar la petición al endpoint correspondiente
+      const responseGroupsTeacher = await request(
+        "GET",
+        "academy",
+        `/subjects-groups/teacher-groups/teacher/${teacherId}/subjects?year=${year}`,
+        {}
+      );
+  
+      // Validar la respuesta y almacenar los datos
+      if (responseGroupsTeacher.status === 200 && Array.isArray(responseGroupsTeacher.data)) {
+        const studentGroup = new TeacherGroupModel(responseGroupsTeacher.data);
+        teacherDataService.setSubjects(studentGroup.toJSON());
       }
+      
     } catch (error) {
-      console.error("Error cargando datos del estudiante:", error);
+      console.error("Error cargando datos del profesor:", error);
     }
   },
 } 

@@ -52,7 +52,7 @@ export default function Layout({ children }) {
   return (
     <div className="h-screen grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
       {/* 🔹 Header fijo en la parte superior */}
-      <header className="bg-white shadow-md p-4 flex items-center justify-between col-span-2 h-20">
+      <header className="bg-white shadow-md p-4 flex items-center justify-between col-span-2 h-18">
         {HeaderComponent}
       </header>
 

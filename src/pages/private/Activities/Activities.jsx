@@ -28,7 +28,8 @@ export default function Activities() {
 
     // 🔹 Obtener todas las tareas del estudiante en el periodo seleccionado
     const fetchAllTasks = async () => {
-      const tasksData = await studentDataService.getAllTasks(selectedPeriod, userState.id);
+      const tasksData = await studentDataService.getAllActivities(selectedPeriod, userState.id);
+      
       setActivities(tasksData);
     };
 
@@ -36,7 +37,7 @@ export default function Activities() {
   }, [selectedPeriod, userState]);
 
   const handleActivityClick = async (activityId) => {
-    const activityData = await studentDataService.getTaskDetailsStudent(activityId);
+    const activityData = await studentDataService.getActivityDetailsStudent(activityId,userState.id);
     if (activityData) subjectTaskService.openTaskModal(activityData)
   };
 

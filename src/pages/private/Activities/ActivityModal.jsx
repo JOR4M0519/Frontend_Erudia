@@ -10,11 +10,11 @@ export default function ActivityModal() {
   useEffect(() => {
     const subscription = subjectTaskService.getTaskModal().subscribe(({ isOpen, activityData }) => {
       setIsOpen(isOpen);
-      setTaskData(activityData);
+      setTaskData(activityData ?? {}); // Si activityData es undefined, usa un objeto vacío
     });
-
+  
     return () => subscription.unsubscribe();
-  }, []);
+  }, []);  
 
   if (!isOpen || !taskData) return null;
 
@@ -47,7 +47,7 @@ export default function ActivityModal() {
             <span className={`font-medium ${taskData.score >= 3 ? "text-green-600" : "text-red-600"}`}>
               {taskData.score ?? "-"}
             </span>
-            <span className="text-gray-600">{taskData.knowledge || "-"}</span>
+            <span className="text-gray-600">{taskData.knowledge?.name || "-"}</span>
           </div>
         </div>
 
