@@ -7,7 +7,7 @@ const activityModalState = new BehaviorSubject({ isOpen: false, activityData: nu
  * Muestra la información corresponciente a la selección de una materia
  *  y de una actividad en especifico
  */
-export const subjectTaskService = {
+export const subjectActivityService = {
 
   getSelectedSubject: () => selectedSubject.asObservable(),
   setSelectedSubject: (subjectId) => {
@@ -21,5 +21,5 @@ export const subjectTaskService = {
 
 };
 
-export default subjectTaskService;
+export default subjectActivityService;
   

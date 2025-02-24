@@ -8,5 +8,6 @@ export { default as Notifications } from './Notifications';
 export { default as PeriodSelector } from './PeriodSelector';
 export { default as BackButton } from './BackButton';
 export { default as Selector } from './Selector';
+export { default as ConfirmDialog } from './ConfirmDialog';
 
 

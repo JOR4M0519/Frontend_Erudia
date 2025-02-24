@@ -3,34 +3,70 @@ import { request } from "../../../../services/config/axios_helper"; // Importamo
 import { State, StudentGroupModel } from "../../../../models";
 import { TeacherGroupModel } from "../../../../models/TeacherGroupModel";
 
+
+  /**
+ * Obtiene las notas de todos los estudiantes de un grupo para una actividad específica.
+ * @param {number} activityId - ID de la actividad
+ * @param {number} groupId - ID del grupo
+ * @returns {Promise<Array>} - Lista de calificaciones con información del estudiante
+ */
+  const getActivitiesScoresForGroup =   async (activityId, groupId) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/activity-grade/activities/${activityId}/groups/${groupId}`,
+        {}
+      );
+  
+      if (response.status === 200 && Array.isArray(response.data)) {
+        return response.data.map((grade) => ({
+          studentId: grade.student.id,
+          firstName: grade.student.firstName,
+          lastName: grade.student.lastName,
+          score: grade.score ?? "-",
+          comment: grade.comment ?? "-",
+        }));
+      }
+  
+      return [];
+    } catch (error) {
+      console.error(`Error al obtener las notas del grupo ${groupId} para la actividad ${activityId}:`, error);
+      return [];
+    }
+  }
+
   /**
    * Actividades
-   * obtiene los detalles de una actividad en especifico
-   * !!! Falta recibir correctamente los datos en startDate-Endate y aotros porbablemente
-   * !!! Toca arreglar el endpoint 'activity-grade'
+   * obtiene los detalles de una actividad 
+   * en especifico sin importar si esta o no calificada
+   * 
   */
 const getActivityDetails = async(activityId,studentId) =>{
   try {
+
     const response = await request(
       "GET",
       "academy",
-      `/activity-grade/activities/${activityId}`,
+      `/activity-group/activities/${activityId}`,
       {}
     );
 
+    //Posteriormente obtiene la calificación si la tiene
     if (response.status === 200) {
       const data = response.data;
-      const grade = await getActivityScore(data.activity.id, studentId);
+      const grade = await getActivityScore(activityId, studentId);
       return {
-        id:          data.activity.id,
-        name:        data.activity.activity.activityName,
-        knowledge:   data.activity.activity.achievementGroup?.subjectKnowledge?.idKnowledge ?? "-",
-        description: data.activity.activity.description,
-        startDate:   data.activity.startDate,
-        endDate:     data.activity.endDate,
+        id:          activityId,
+        name:        data.activity.activityName,
+        description: data.activity.description,
+        knowledge:   data.activity.achievementGroup?.subjectKnowledge?.idKnowledge ?? "-",
+        achievement: data.activity.achievementGroup?.achievement ?? "-",
+        startDate:   data.startDate,
+        endDate:     data.endDate,
         score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
         comment:     grade?.comment ?? "-",
-        status:      data.activity.activity.status ?? "Sin estado",
+        status:      data.activity.status ?? "Sin estado",
       };
     }
 
@@ -41,11 +77,63 @@ const getActivityDetails = async(activityId,studentId) =>{
   }
 }
 
+/**
+ * Función genérica para obtener actividades de una materia en un período
+ * @param {string} subjectId - ID de la materia
+ * @param {string} periodId - ID del período
+ * @param {string} groupId - ID del grupo
+ * @param {string} userId - ID del usuario
+ * @param {boolean} isTeacher - Indica si es profesor
+ */
+const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=false) => {
+  try {
+    const response = await request(
+      "GET",
+      "academy",
+      `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
+      {}
+    );
+
+    if (response.status !== 200) return [];
+
+    const activities = await Promise.all(
+      response.data.map(async (data) => {
+        let grades;
+
+        if (!!isTeacher) {
+          
+          // 🔹 Si es profesor, obtiene las notas de todos los estudiantes del grupo
+          grades = await getActivitiesScoresForGroup(data.activity.id, groupId);
+        } else {
+          // 🔹 Si es estudiante, obtiene solo su nota personal
+          grades = await getActivityScore(data.activity.id, userId);
+        }
+
+        return {
+          id:          data.activity.id,
+          name:        data.activity.activityName,
+          description: data.activity.description,
+          startDate:   data.startDate,
+          endDate:     data.endDate,
+          score:       isTeacher ? grades : grades?.score ?? "-",
+          comment:     isTeacher ? "-" : grades?.comment ?? "-",
+          status:      data.activity.status ?? "Sin estado",
+        };
+      })
+    );
+
+    return activities;
+  } catch (error) {
+    console.error("Error al obtener tareas:", error);
+    return [];
+  }
+};
+
+
   /**
    * Actividades
    * obtiene los detalles de la calificación de una actividad en especifico
   */
-
 const getActivityScore = async(activityId,studentId) =>{
   try {
     const response = await request(
@@ -162,44 +250,10 @@ export const studentDataService = {
 
   /**
    *Obtener las tareas de una materia en un periodo de un estudiante en particular
-   * 
+   * Corregir a Obtener las tareas de una materia en un periodo de un grupo de estudiantes
   */
-   getActivities: async (subjectId, periodId, studentId) => {
-    console.log("actividades: "+ studentId)
-    try {
-      const response = await request(
-        "GET",
-        "academy",
-        `/activity-group/subjects/${subjectId}/periods/${periodId}/users/${studentId}`,
-        {}
-      );
-
-      if (response.status === 200) {
-        const activities = await Promise.all(
-          response.data.map(async (data) => {
-            const grade = await getActivityScore(data.activity.id, studentId); // Esperamos la promesa
-      
-            return {
-              id:          data.activity.id,
-              name:        data.activity.activityName,
-              description: data.activity.description,
-              startDate:   data.startDate,
-              endDate:     data.endDate,
-              score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
-              comment:     grade?.comment ?? "-",
-              status:      data.activity.status ?? "Sin estado",
-            };
-          })
-        );
-      
-        return activities;
-      }
-
-      return [];
-    } catch (error) {
-      console.error("Error al obtener tareas:", error);
-      return [];
-    }
+   getActivities: async (subjectId, periodId, groupId, studentId) => {
+    return fetchActivities(subjectId, periodId, groupId, studentId, false);
   },
 
   /**
@@ -342,7 +396,7 @@ export const studentDataService = {
 
   /**
     * Obtiene los estudiantes que esta relacionado un familiar para accder a la info de ellos. 
-    * Se usa en el componente "StudentTopBar"
+    * Se usa en el componente "UserTopBar"
   */
   getFamilyStudents: async (familyId) => {
     try {
@@ -377,7 +431,7 @@ export const studentDataService = {
       studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
 
       // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/${studentId}`, {});
+      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}`, {});
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
         studentGroup.addSubjects(responseGroups.data);
@@ -387,52 +441,110 @@ export const studentDataService = {
       console.error("Error cargando datos del estudiante:", error);
     }
   },
-  
+
+  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
+    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
+  },
 
 };
 
-const teacherData$ = new BehaviorSubject(null);
+const teacherData$ = new BehaviorSubject({ subjects: [], studentGroupList: null });
 
-export const teacherDataService ={
+export const teacherDataService = {
   getSubjects: () => teacherData$.asObservable(),
-  getSubjectsValue: () => teacherData$.value,
+  getSubjectsValue: () => teacherData$.value?.subjects || [],
 
   setSubjects: (data) => {
-    teacherData$.next(data);
+    teacherData$.next({
+      ...(teacherData$.value || {}), // 🔹 Mantiene los valores actuales del estado
+      subjects: data || [], // 🔹 Solo actualiza `subjects`, evitando que sea `undefined`
+    });
   },
 
   clearSubjects: () => {
-    teacherData$.next(null);
+    teacherData$.next({
+      ...(teacherData$.value || {}), // 🔹 Mantiene `studentGroupList`, solo borra `subjects`
+      subjects: [], 
+    });
+  },
+
+  getStudentGroupListData: () => teacherData$.asObservable(),
+  getStudentGroupListValue: () => teacherData$.value?.studentGroupList || null,
+
+  setStudentGroupListData: (data) => {
+    teacherData$.next({
+      ...(teacherData$.value || {}), // 🔹 Mantiene `subjects`, solo actualiza `studentGroupList`
+      studentGroupList: data || null, 
+    });
+  },
+
+  clearStudentGroupListData: () => {
+    teacherData$.next({
+      ...(teacherData$.value || {}), // 🔹 Mantiene `subjects`, solo borra `studentGroupList`
+      studentGroupList: null,
+    });
+  },
+
+  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
+    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
 
   /**
-    * Obtener los datos de los grupos de acuerdo con las materias que dicta el profesor
-    * !!Hace falta por desarrollar
-  */
+   * 🔹 Obtiene los grupos de materias que dicta el profesor en un año específico.
+   * 🔹 Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
+   */
   fetchGroupsData: async (teacherId, year) => {
     try {
-      // Limpiar los datos previos del profesor
-      teacherDataService.clearSubjects();
-  
-      // Realizar la petición al endpoint correspondiente
+      teacherDataService.clearSubjects(); // 🔹 Limpia las materias anteriores
+
       const responseGroupsTeacher = await request(
         "GET",
         "academy",
         `/subjects-groups/teacher-groups/teacher/${teacherId}/subjects?year=${year}`,
         {}
       );
-  
-      // Validar la respuesta y almacenar los datos
+
       if (responseGroupsTeacher.status === 200 && Array.isArray(responseGroupsTeacher.data)) {
-        const studentGroup = new TeacherGroupModel(responseGroupsTeacher.data);
-        teacherDataService.setSubjects(studentGroup.toJSON());
+        const teacherData = new TeacherGroupModel(responseGroupsTeacher.data).toJSON();
+        
+        teacherDataService.setSubjects(teacherData.subjects || []); // 🔹 Guarda solo subjects
       }
-      
     } catch (error) {
       console.error("Error cargando datos del profesor:", error);
     }
   },
-} 
+
+  /**
+   * 🔹 Obtiene la lista de estudiantes en un grupo específico.
+   * 🔹 Mantiene `subjects` y solo actualiza `studentGroupList`.
+   */
+  fetchListUsersGroupData: async (groupId) => {
+    try {
+      // 🔹 NO se limpia `subjects`, solo obtenemos estudiantes
+      const responseGroupsTeacher = await request(
+        "GET",
+        "academy",
+        `/student-groups/groups/${groupId}/users`,
+        {}
+      );
+
+      if (responseGroupsTeacher.status === 200 && responseGroupsTeacher.data.length > 0) {
+        const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); // 🔹 Instancia base
+        studentGroupList.addStudents(responseGroupsTeacher.data); // 🔹 Agrega estudiantes
+
+        teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); // 🔹 Guarda en el estado
+      }
+    } catch (error) {
+      console.error("Error cargando lista de estudiantes:", error);
+    }
+  },
+
+  getActivitiesScoresForGroup: async (activityId, groupId) => {
+    return getActivitiesScoresForGroup(activityId,groupId)
+  },
+
+};
+
 
 //  Exportar todo en un solo archivo
 export default {studentDataService,teacherDataService};

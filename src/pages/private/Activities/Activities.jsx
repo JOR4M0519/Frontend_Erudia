@@ -5,7 +5,7 @@ import { configViewService } from "../Setting";
 import ActivityModal from "./ActivityModal";
 import { BackButton } from "../../../components";
 import { useNavigate } from "react-router-dom";
-import { subjectTaskService } from "../Subject";
+import { subjectActivityService } from "../Subject";
 
 export default function Activities() {
   const [activities, setActivities] = useState([]);
@@ -38,7 +38,7 @@ export default function Activities() {
 
   const handleActivityClick = async (activityId) => {
     const activityData = await studentDataService.getActivityDetailsStudent(activityId,userState.id);
-    if (activityData) subjectTaskService.openTaskModal(activityData)
+    if (activityData) subjectActivityService.openTaskModal(activityData)
   };
 
   return (

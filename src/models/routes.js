@@ -4,13 +4,23 @@ export const PublicRoutes = {
   
 export const PrivateRoutes = {
   PRIVATE:          '/private',
+  
   DASHBOARD:        '/dashboard',
+  HOME:             '/home',
+  ACTIVITIES_SUBJECT:'/subjectTasks',
+  ASISTANCE:        '/assistance',
+  ACTIVITIES_GRADING:'/activities-grading',
+
   SEARCH:           '/search',
+  
   PROFILE:          '/profile',
+  
   SUBJECTS:         '/subjects',
+
   ACTIVITIES:       '/activities',
   STUDENTTRACKING:  '/student-tracking',
   ADMIN:            '/admin',  
   GRADES:           '/grades-general',
   SETTINGS:         '/settings',
+  
 };

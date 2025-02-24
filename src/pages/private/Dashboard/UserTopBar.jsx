@@ -13,7 +13,7 @@ import { useSubscribeToDataService , useSubscribeToService } from "../../../serv
 import { decodeRoles, hasAccess } from "../../../utilities";
 
 
-export default function StudentTopBar({showSelectorUser=false,showSelectorYear=false}) {
+export default function UserTopBar({showSelectorUser=false,showSelectorYear=false}) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const userState = useSelector(store => store.user);

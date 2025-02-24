@@ -4,7 +4,6 @@ import { request } from "../../../services/config/axios_helper";
 
 export default function EvaluationSchemeModal({ isOpen, onClose, subjectId, groupId,periodId }) {
   const [schemeEvaluation, setSchemeEvaluation] = useState([]);
-
   useEffect(() => {
     if (!subjectId || !groupId || !isOpen) return; // 🔹 Evita la ejecución innecesaria
 

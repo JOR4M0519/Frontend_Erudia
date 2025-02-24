@@ -3,14 +3,13 @@ import { useEffect, useState } from "react";
 import { decodeRoles } from "../../../utilities";
 import { Roles } from "../../../models";
 import { Layout } from "../../../components";
-import {StudentTopBar} from "./";
 import { studentDataService, StudentLayout } from "./StudentLayout";
 import { configViewService } from "../Setting";
+import { TeacherLayout } from "./TeacherLayout";
 
 export default function Dashboard() {
-  const userState = useSelector(store => store.user);
-  const storedRole = decodeRoles(userState.roles) || [];
   const selectedUser = useSelector(store => store.selectedUser);
+  const storedRole = decodeRoles(selectedUser.roles) || [];
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periods, setPeriods] = useState([]);
 
@@ -35,12 +34,11 @@ export default function Dashboard() {
   let LayoutComponent = null;
   let HeaderComponent = null;
 
-  // if (storedRole.includes(Roles.ADMIN)) {
-  //   LayoutComponent = <StudentLayout/>;
-  //   HeaderComponent = (
-  //     <StudentTopBar />
-  //   );
-  // }
+  if (storedRole.includes(Roles.STUDENT)) return <StudentLayout/>
+  
+  if (storedRole.includes(Roles.TEACHER)) return <TeacherLayout/>
+
+  //if (storedRole.includes(Roles.ADMIN)) return <AdminLayout/>
 
   return <StudentLayout/>;
 }

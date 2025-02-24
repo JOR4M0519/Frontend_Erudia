@@ -18,6 +18,8 @@ npm run dev
     npm install rxjs
     npm install react-toastify
     npm install framer-motion
+    npm install react-datepicker    
+    npm install sweetalert2
 
 
     npm install tailwindcss @tailwindcss/vite

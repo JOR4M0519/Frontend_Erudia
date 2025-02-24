@@ -4,7 +4,7 @@ import { SearchModal } from "../windows/Search";
 import { Roles } from "../models";
 import { useSelector } from "react-redux";
 import { decodeRoles } from "../utilities";
-import StudentTopBar from "../pages/private/Dashboard/StudentTopBar";
+import {UserTopBar} from "../pages/private/Dashboard";
 import { configViewService } from "../pages/private/Setting";
 import {Breadcrumbs} from "./";
 export default function Layout({ children }) {
@@ -37,13 +37,13 @@ export default function Layout({ children }) {
 
   if (!storedRole.includes(Roles.STUDENT)) {
     HeaderComponent = (
-      <StudentTopBar showSelectorUser={true}/>
+      <UserTopBar showSelectorUser={true}/>
     );
   } 
   
   if (storedRole.includes(Roles.STUDENT)) {
     HeaderComponent = (
-      <StudentTopBar/>
+      <UserTopBar/>
     );
   }
 
