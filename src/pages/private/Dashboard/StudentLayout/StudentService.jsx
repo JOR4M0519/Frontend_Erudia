@@ -108,7 +108,7 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
           // 🔹 Si es estudiante, obtiene solo su nota personal
           grades = await getActivityScore(data.activity.id, userId);
         }
-
+        //console.log("Data: " , data)
         return {
           id:          data.activity.id,
           name:        data.activity.activityName,
@@ -118,6 +118,12 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
           score:       isTeacher ? grades : grades?.score ?? "-",
           comment:     isTeacher ? "-" : grades?.comment ?? "-",
           status:      data.activity.status ?? "Sin estado",
+          subject:{
+            id:         data.activity?.achievementGroup?.subjectKnowledge?.idSubject.id,
+            name:       data.activity?.achievementGroup?.subjectKnowledge?.idSubject.subjectName
+          },
+          knowledge:   data.activity?.achievementGroup?.subjectKnowledge?.idKnowledge,
+          achievement: data.activity?.achievementGroup?.achievement
         };
       })
     );

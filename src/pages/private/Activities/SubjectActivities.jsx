@@ -13,6 +13,7 @@ import { StudentList } from "../Dashboard/TeacherLayout";
 import SubjectHeader from "../Subject/SubjectHeader";
 
 
+
 export default function SubjectActivities() {
   const [tasks, setTasks] = useState([]);
   const [periodGrade, setPeriodGrade] = useState("-");
@@ -189,7 +190,7 @@ export default function SubjectActivities() {
       console.warn("Intento de obtener detalles de actividad sin userId");
       return;
     }
-    console.log(activity,selectedSubject)
+    //console.log(activity,selectedSubject)
   
     if (isTeacher) {
       // 🔹 Si es PROFESOR, lo redirige a la vista de calificación con la actividad completa
@@ -254,10 +255,15 @@ Instrucciones:
     }
   }
 };
+console.log(selectedSubject?.group)
 return (
   <div className="space-y-6">
     {/* 🔹 Encabezado con la materia y nota */}
     <SubjectHeader
+      isTeacher={isTeacher}
+      groupInfo={selectedSubject?.group}
+      activities={tasks}
+
       subjectName={selectedSubject?.subjectName}
       periodGrade={periodGrade}
       onOpenScheme={() => setIsSchemeModalOpen(true)}
@@ -279,9 +285,9 @@ return (
     <EvaluationSchemeModal
       isOpen={isSchemeModalOpen}
       onClose={() => setIsSchemeModalOpen(false)}
-      subjectId={selectedSubject?.id || 1}
-      groupId={studentDataService.getStudentDataValue()?.group?.id}
-      periodId={selectedPeriod}
+                //Para el estudiante                                  //Para el profesor
+      groupId={studentDataService.getStudentDataValue()?.group?.id ?? selectedSubject?.group?.id}
+      
     />
   </div>
 );

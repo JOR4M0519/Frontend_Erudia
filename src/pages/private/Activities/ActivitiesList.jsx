@@ -8,14 +8,14 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
   const toggleExpand = (taskId) => {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
-
+  console.log(tasks)
   return (
     <div className="bg-gray-100 rounded-lg overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
         <div className="col-span-4">Tarea</div>
         <div className="col-span-4">Descripción</div>
         <div className="col-span-2 text-center">Entrega</div>
-        <div className="col-span-2 text-center">Acción</div>
+        <div className="col-span-2 text-center">Notas</div>
       </div>
 
       <div className="divide-y divide-gray-200">
@@ -34,18 +34,18 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
                   {new Date(task.endDate).toLocaleDateString()}
                 </div>
                 <div className="col-span-2 flex justify-center">
-                  {isTeacher && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpand(task.id);
-                      }}
-                      className="text-gray-600 hover:text-black flex items-center gap-1"
-                    >
-                      {expandedTaskId === task.id ? "Ocultar" : "Ver Notas"}
-                      {expandedTaskId === task.id ? <ChevronUp /> : <ChevronDown />}
-                    </button>
-                  )}
+                {/* Columna del profesor */}
+                {isTeacher ? (
+                  <ButtonTeacherSchollStudentList
+                    task={task}
+                    expandedTaskId={expandedTaskId}
+                    toggleExpand={toggleExpand}
+                  />
+                ) : 
+                (
+                  <span className="text-gray-700">{task.score}</span>
+                )}
+                {/* Columna del estudiante de las notas */}
                 </div>
               </div>
 
@@ -80,3 +80,18 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
     </div>
   );
 }
+
+export const ButtonTeacherSchollStudentList = ({ task, expandedTaskId, toggleExpand }) => {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleExpand(task.id);
+      }}
+      className="text-gray-600 hover:text-black flex items-center gap-1"
+    >
+      {expandedTaskId === task.id ? "Ocultar" : "Ver Notas"}
+      {expandedTaskId === task.id ? <ChevronUp /> : <ChevronDown />}
+    </button>
+  );
+};

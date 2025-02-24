@@ -9,5 +9,7 @@ export { default as PeriodSelector } from './PeriodSelector';
 export { default as BackButton } from './BackButton';
 export { default as Selector } from './Selector';
 export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as CancelButton } from './Button/CancelButton';
+export { default as XButton } from './Button/XButton';
 
 
