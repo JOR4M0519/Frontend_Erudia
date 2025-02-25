@@ -9,8 +9,8 @@ export default function SubjectHeader({
   groupInfo,
   onOpenScheme,
   onOpenLogro,
+  customActionContent // Nuevo prop para contenido personalizado
 }) {
-
   
   // Cálculo de promedio (solo para profesores)
   const calculateAverage = () => {
@@ -61,7 +61,7 @@ export default function SubjectHeader({
               <div className="flex items-center mt-2 bg-indigo-50 px-3 py-1 rounded-lg w-fit">
                 <Users className="w-4 h-4 text-indigo-600 mr-2" />
                 <span className="text-sm text-indigo-700 font-medium">
-                  {groupInfo.groupName} ({groupInfo.groupCode}) - {groupInfo.level?.levelName}
+                  {groupInfo.groupName} {groupInfo.groupCode && `(${groupInfo.groupCode})`} {groupInfo.level?.levelName && `- ${groupInfo.level.levelName}`}
                 </span>
               </div>
             )}
@@ -70,41 +70,48 @@ export default function SubjectHeader({
 
         {/* Sección de calificación y acciones */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Tarjeta de calificación */}
-          <div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200 w-full sm:w-auto flex items-center justify-center">
-            <div className="flex items-center space-x-3">
-              <div className="bg-white p-2 rounded-full">
-                <Star className={`w-5 h-5 ${scoreColor}`} />
+          {/* Si hay contenido personalizado, lo mostramos en lugar del contenido predeterminado */}
+          {customActionContent ? (
+            customActionContent
+          ) : (
+            <>
+              {/* Tarjeta de calificación */}
+              <div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200 w-full sm:w-auto flex items-center justify-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white p-2 rounded-full">
+                    <Star className={`w-5 h-5 ${scoreColor}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-medium">{scoreText}</p>
+                    <p className={`text-xl font-bold ${scoreColor}`}>{average}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-medium">{scoreText}</p>
-                <p className={`text-xl font-bold ${scoreColor}`}>{average}</p>
+
+              {/* Botones de acción */}
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {onOpenScheme && (
+                  <button
+                    onClick={onOpenScheme}
+                    className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-600 font-medium rounded-lg px-4 py-2 hover:bg-blue-100 transition"
+                  >
+                    <BarChart2 className="w-4 h-4" />
+                    <span>Esquema Evaluación</span>
+                  </button>
+                )}
+
+                {onOpenLogro && (
+                  <button
+                    onClick={onOpenLogro}
+                    className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 text-green-600 font-medium rounded-lg px-4 py-2 hover:bg-green-100 transition"
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>Logro</span>
+                  </button>
+                )}
               </div>
-            </div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {onOpenScheme && (
-              <button
-                onClick={onOpenScheme}
-                className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-600 font-medium rounded-lg px-4 py-2 hover:bg-blue-100 transition"
-              >
-                <BarChart2 className="w-4 h-4" />
-                <span>Esquema Evaluación</span>
-              </button>
-            )}
-
-            {onOpenLogro && (
-              <button
-                onClick={onOpenLogro}
-                className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 text-green-600 font-medium rounded-lg px-4 py-2 hover:bg-green-100 transition"
-              >
-                <Award className="w-4 h-4" />
-                <span>Logro</span>
-              </button>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

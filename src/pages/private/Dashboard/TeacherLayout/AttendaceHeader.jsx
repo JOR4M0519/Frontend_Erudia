@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { CalendarDays, Book } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useSelector } from "react-redux";
+import SubjectHeader from "../../Subject/SubjectHeader";
 
 // 🔹 Simulación de Fetch API: Días habilitados del mes (Temporalmente no se usa)
 const fetchAllowedDates = async () => {
@@ -35,46 +36,45 @@ export default function AttendanceHeader({ selectedDate, setSelectedDate, subjec
   // 🔹 Verifica si la fecha está permitida (Temporalmente sin efecto)
   const isDateAllowed = (date) => allowedDates.some((allowedDate) => allowedDate.toDateString() === date.toDateString());
 
-  return (
-    <div className="bg-gray-200 p-4 rounded-xl flex justify-between items-center relative">
-      {/* 🔹 Materia actual con su código */}
-      <div className="flex flex-col text-gray-700 font-medium">
-        <div className="flex items-center gap-2">
-          <Book className="w-5 h-5" />
-          <span>{subject?.subjectName || "Materia no especificada"}</span>
-        </div>
-        <span className="text-sm text-gray-600">
-          {subject?.group?.groupName ? `Grupo: ${subject.group.groupName}` : "Grupo no especificado"}
-        </span>
-      </div>
-
-      {/* 🔹 Selector de fecha con react-datepicker */}
-      <div className="relative">
-        <DatePicker disabled
-          selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)} // 🔹 Permite seleccionar cualquier fecha dentro del rango
-          //highlightDates={allowedDates} // 🔹 (Activar en el futuro)
-          dateFormat="dd/MM/yyyy"
-          minDate={new Date(new Date().setMonth(new Date().getMonth() - 6))} // 🔹 Máximo 6 meses atrás
-          maxDate={new Date(reduxSelectedDate)} // 🔹 No permite elegir días en el futuro
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md shadow hover:bg-gray-400 transition cursor-pointer"
-        />
-        
-        {/* Esta función permite filtrar las fechas disponibles
-         <DatePicker 
-          selected={selectedDate}
-          onChange={(date) => isDateAllowed(date) && setSelectedDate(date)}
-          highlightDates={allowedDates}
-          dateFormat="dd/MM/yyyy"
-          minDate={new Date(new Date().setMonth(new Date().getMonth() - 6))} // 🔹 Máximo 6 meses atrás
-          maxDate={new Date()} // 🔹 No permite elegir días en el futuro
-          filterDate={isDateAllowed} // 🔹 Solo permite seleccionar los días habilitados
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md shadow hover:bg-gray-400 transition cursor-pointer"
-        /> */}
-        <CalendarDays className="absolute right-2 top-2 w-5 h-5 text-gray-500" />
-      </div>
-
-      <span className="text-lg font-medium">Asistencia</span>
+  // Componente de selección de fecha personalizado
+  const DateSelector = () => (
+    <div className="flex items-center gap-3">
+      <DatePicker
+        disabled
+        selected={selectedDate}
+        onChange={(date) => setSelectedDate(date)}
+        dateFormat="dd/MM/yyyy"
+        minDate={new Date(new Date().setMonth(new Date().getMonth() - 6))}
+        maxDate={new Date(reduxSelectedDate)}
+        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md shadow hover:bg-gray-400 transition cursor-pointer"
+      />
+      <CalendarDays className="w-5 h-5 text-gray-500" />
     </div>
+  );
+
+  // Función personalizada para renderizar acciones adicionales en el SubjectHeader
+  const renderCustomActions = () => (
+    <div className="flex items-center space-x-3">
+      <DateSelector />
+      <div className="bg-green-50 border border-green-200 text-green-600 font-medium rounded-lg px-4 py-2">
+        <span>Asistencia</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <SubjectHeader
+      subjectName={subject?.subjectName || "Materia no especificada"}
+      groupInfo={subject?.group ? {
+        groupName: subject.group.groupName || "Grupo no especificado",
+        groupCode: "",
+        level: null
+      } : null}
+      isTeacher={true}
+      periodGrade={null}
+      activities={[]}
+      // En lugar de usar los botones predeterminados, renderizamos nuestro contenido personalizado
+      customActionContent={renderCustomActions()}
+    />
   );
 }

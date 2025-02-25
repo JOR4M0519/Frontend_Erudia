@@ -61,19 +61,6 @@ export default function AsistanceGrid() {
         // 🔹 TODO: Implementar lógica de guardado
     };
 
-    const handleBackClick = async () => {
-        const confirmExit = await ConfirmDialog({
-          title: "¿Salir de esta materia?",
-          text: "Si sales, perderás cualquier progreso no guardado.",
-          confirmButtonText: "Sí, salir",
-          cancelButtonText: "Cancelar",
-          type: "warning", // 🟠 Muestra una alerta de advertencia
-        });
-    
-        if (confirmExit) {
-          navigate("/dashboard/subjectTasks");
-        }
-      };
 
     return (
         <div className="space-y-6">
