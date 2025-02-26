@@ -1,71 +1,115 @@
-import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
-import { studentDataService } from "../Dashboard/StudentLayout";
-import { useSelector } from "react-redux";
-import {ObservationModal} from "./";
-import { BackButton } from "../../../components";
+import React, { useEffect, useState } from "react";
+import { Download, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { studentDataService } from "../Dashboard/StudentLayout";
+import { BackButton } from "../../../components";
+
+import {TrackingHeader} from "./";
+
+import {StudentModal} from "./";
+import {ObservationModal} from "./";
+import StudentList from "./StudenList";
 
 export default function StudentTracking() {
   const [selectedObservation, setSelectedObservation] = useState(null);
   const [observations, setObservations] = useState([]);
+  const [filteredObservations, setFilteredObservations] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
   const navigate = useNavigate();
   const userState = useSelector((store) => store.selectedUser);
+  const isTeacher = userState.role === "teacher";
 
   useEffect(() => {
     if (!userState.id) return;
-
-    // 🔹 Obtener observaciones del estudiante
+    // Se obtienen las observaciones (para profesor y estudiante se usa el mismo endpoint)
     const fetchObservations = async () => {
       const data = await studentDataService.getStudentObservations(userState.id);
       setObservations(data);
+      setFilteredObservations(data);
     };
-
     fetchObservations();
   }, [userState]);
 
+  useEffect(() => {
+    let filtered = observations;
+    if (searchTerm.length >= 4) {
+      filtered = filtered.filter((obs) => {
+        // Para profesores, se busca en el nombre del estudiante
+        if (isTeacher) {
+          const studentName = `${obs.student.firstName} ${obs.student.lastName}`.toLowerCase();
+          return studentName.includes(searchTerm.toLowerCase());
+        }
+        // Para estudiantes, se busca en el título de la observación
+        return obs.title.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+    }
+    if (dateFilter) {
+      filtered = filtered.filter((obs) => obs.date === dateFilter);
+    }
+    setFilteredObservations(filtered);
+  }, [searchTerm, dateFilter, observations, isTeacher]);
+
+  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+
+  const handleDateFilter = (e) => setDateFilter(e.target.value);
+
+  const handleEditObservation = (observation, e) => {
+    e.stopPropagation();
+    console.log("Editando observación:", observation.id);
+    // Aquí se podría abrir el ObservationModal en modo edición
+    setSelectedObservation(observation);
+  };
+
+  const handleDeleteObservation = (observation, e) => {
+    e.stopPropagation();
+    console.log("Eliminando observación:", observation.id);
+    // Implementar lógica de eliminación
+  };
+
+  const handleItemClick = (observation) => {
+    if (isTeacher) {
+      // Al hacer clic en la fila, el profesor ve la información académica del estudiante
+      setSelectedStudent(observation.student);
+      setShowStudentModal(true);
+    } else {
+      setSelectedObservation(observation);
+    }
+  };
+
+  const handleCreateObservation = () => {
+    console.log("Creando nueva observación");
+    // Implementar la lógica para crear observación
+  };
+
   const handleExport = () => {
     console.log("Exportando observador...");
-    // Aquí puedes agregar lógica para exportar datos a CSV/PDF
+    // Lógica para exportar datos (CSV/PDF)
   };
 
   return (
     <div className="space-y-4">
-      {/* 🔹 Encabezado */}
-      <div className="flex items-center justify-between gap-20">
-        <div className="flex items-center gap-10 flex-1 bg-gray-200 rounded-full p-4">
-          <span className="font-medium text-gray-800 px-4">Observaciones del Estudiante</span>
-        </div>
-      </div>
+      <TrackingHeader 
+        isTeacher={isTeacher}
+        userState={userState}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        onDateFilter={handleDateFilter}
+        onCreateObservation={handleCreateObservation}
+      />
 
-      {/* 🔹 Tabla de Observaciones */}
-      <div className="bg-gray-100 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-        <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
-          <div className="col-span-4">Observador</div>
-          <div className="col-span-4 text-center">Fecha</div>
-          <div className="col-span-4 text-center">Profesor</div>
-        </div>
+      <StudentList
+        observations={filteredObservations}
+        isTeacher={isTeacher}
+        onEditObservation={handleEditObservation}
+        onDeleteObservation={handleDeleteObservation}
+        onItemClick={handleItemClick}
+      />
 
-        <div className="divide-y divide-gray-200">
-          {observations.length > 0 ? (
-            observations.map((observation) => (
-              <div
-                key={observation.id}
-                onClick={() => setSelectedObservation(observation)}
-                className="grid grid-cols-12 gap-4 p-3 hover:bg-gray-300 transition-colors items-center cursor-pointer rounded-lg bg-gray-200 m-2"
-              >
-                <div className="col-span-4 font-medium text-gray-700">{observation.title}</div>
-                <div className="col-span-4 text-center text-gray-600">{observation.date}</div>
-                <div className="col-span-4 text-center text-gray-700">{observation.teacher.firstName+" "+observation.teacher.lastName}</div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-center p-4">No hay observaciones disponibles.</p>
-          )}
-        </div>
-      </div>
-
-      {/* 🔹 Botón de Exportar */}
       <div className="flex justify-end">
         <button
           onClick={handleExport}
@@ -76,14 +120,35 @@ export default function StudentTracking() {
         </button>
       </div>
 
+      {isTeacher && (
+        <div className="fixed bottom-8 right-8">
+          <button
+            onClick={handleCreateObservation}
+            className="flex items-center justify-center p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+
       <BackButton onClick={() => navigate("/dashboard")} />
 
-      {/* 🔹 Modal de Observación */}
       {selectedObservation && (
         <ObservationModal
           isOpen={!!selectedObservation}
           observation={selectedObservation}
           onClose={() => setSelectedObservation(null)}
+        />
+      )}
+
+      {selectedStudent && (
+        <StudentModal
+          student={selectedStudent}
+          isOpen={showStudentModal}
+          onClose={() => {
+            setShowStudentModal(false);
+            setSelectedStudent(null);
+          }}
         />
       )}
     </div>

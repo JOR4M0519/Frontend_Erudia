@@ -1,61 +1,58 @@
 import React, { useState, useEffect } from "react";
 import { X, Save, Award,Loader2  } from "lucide-react";
-import { CancelButton,XButton } from "../../../components";
+import { CancelButton,ConfirmDialog,XButton } from "../../../components";
+import { configViewService } from "../Setting";
+import { teacherDataService } from "../Dashboard/StudentLayout";
 
 
 export default function AchievementModal({ isOpen, onClose, activity, onSave }) {
     const [selectedKnowledge, setSelectedKnowledge] = useState(null);
-    const [achievement, setAchievement] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [knowledge, setKnowledge] = useState([]);
+    const [selectedPeriod, setSelectedPeriod] = useState(null);
+    
 
     useEffect(() => {
-        if (isOpen) {
-            const fetchSabers = async () => {
-                const data = [
-                    { id: "1", name: "Saber A", achievement: "Logro correspondiente al Saber A" },
-                    { id: "2", name: "Saber B", achievement: "Logro correspondiente al Saber B" },
-                    { id: "3", name: "Saber C", achievement: "Logro correspondiente al Saber C" },
-                ];
-                setKnowledge(data);
+        // 🔹 Suscripción al período seleccionado
+        const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
 
-                if (activity?.knowledge) {
-                    setSelectedKnowledge(activity.knowledge);
-                    setAchievement(activity.achievement || "");
-                } else {
-                    setSelectedKnowledge(null);
-                    setAchievement("");
+        return () => {
+        periodSubscription.unsubscribe();
+        };
+    }, []);
+        
+    useEffect(() => {
+        if (isOpen) {
+            const fetchKnowledges = async () => {
+                if (!activity?.subject?.id || !selectedPeriod) return;
+    
+                try {
+                    const data = await teacherDataService.getKnowledgesBySubject(selectedPeriod, activity.subject.id);
+                    setKnowledge(data.map((k) => k.knowledge)); // Mapeamos para extraer solo el objeto knowledge
+    
+                    if (activity.knowledge) {
+                        setSelectedKnowledge(activity.knowledge);
+                    } else {
+                        setSelectedKnowledge(null);
+                    }
+                } catch (error) {
+                    console.error("Error al obtener los conocimientos:", error);
+                    setKnowledge([]);
                 }
             };
-
-            fetchSabers();
+    
+            fetchKnowledges();
         }
-    }, [isOpen, activity]);
-
+    }, [isOpen, activity?.subject, selectedPeriod]);
+    
     const handleSaberChange = (e) => {
         const knowledgeId = e.target.value;
-        const selectedSaber = knowledge.find((s) => s.id === knowledgeId) || null;
-        setSelectedKnowledge(selectedSaber);
-        setAchievement(selectedSaber ? selectedSaber.achievement : "");
+        const selectedKnowledge = knowledge.find((s) => s.id === knowledgeId) || null;
+        setSelectedKnowledge(selectedKnowledge);
     };
-
+    console.log(knowledge)
     const handleClose = async () => {
-        if (
-            (activity?.knowledge?.id || "") !== (selectedKnowledge?.id || "") ||
-            (activity?.achievement || "") !== achievement
-        ) {
-            const isConfirmed = await ConfirmDialog({
-                title: "¿Salir sin guardar?",
-                text: "Tienes cambios sin guardar. ¿Seguro que deseas salir?",
-                confirmButtonText: "Sí, salir",
-                cancelButtonText: "Cancelar",
-                type: "warning",
-            });
-
-            if (!isConfirmed) return;
-        }
-
-        onClose();
+      onClose();
     };
 
     const handleSave = async () => {
@@ -63,7 +60,6 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
             setIsSaving(true);
             await onSave({
                 activityId: activity.id,
-                achievement: achievement,
                 knowledge: selectedKnowledge,
             });
             setIsSaving(false);
@@ -117,15 +113,15 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
                             onChange={handleSaberChange}
                         >
                             <option value="">Seleccione un saber</option>
-                            {knowledge.map((saber) => (
-                                <option key={saber.id} value={saber.id}>
-                                    {saber.name}
+                            {knowledge.map((knowledge) => (
+                                <option key={knowledge.id} value={knowledge.id}>
+                                    {knowledge.name}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    <div className="mt-4">
+                    {/* <div className="mt-4">
                         <label htmlFor="achievement" className="block text-sm font-medium text-gray-700">
                             Logro de Aprendizaje
                         </label>
@@ -135,7 +131,7 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
                         >
                             {achievement || "Seleccione un saber para ver el logro correspondiente."}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-end space-x-2">

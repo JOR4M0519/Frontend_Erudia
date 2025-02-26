@@ -495,6 +495,32 @@ export const teacherDataService = {
     return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
 
+  getKnowledgesBySubject: async (periodId,subjectId) =>{
+    
+    const response = await request(
+      "GET",
+      "academy",
+      `/subject_knowledge/periods/${periodId}/subjects/${subjectId}`,
+      {}
+    );
+    try{
+      if (response.status === 200 ) {
+        return  response.data.map((knowledge) => ({
+          knowledge:{
+            id:         knowledge.idKnowledge.id,
+            name:       knowledge.idKnowledge.name,
+            percentege: knowledge.idKnowledge.percentege
+          }
+        }));
+        
+      }
+    } catch (error) {
+    console.error("Error cargando datos del profesor:", error);
+  }
+
+    return []
+  },
+
   /**
    * 🔹 Obtiene los grupos de materias que dicta el profesor en un año específico.
    * 🔹 Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
