@@ -8,7 +8,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
   const toggleExpand = (taskId) => {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
-  console.log(tasks)
+  
   return (
     <div className="bg-gray-100 rounded-lg overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">

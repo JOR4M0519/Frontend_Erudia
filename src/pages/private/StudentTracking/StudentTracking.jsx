@@ -1,79 +1,174 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Download, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { studentDataService } from "../Dashboard/StudentLayout";
+import { studentDataService, teacherDataService } from "../Dashboard/StudentLayout";
 import { BackButton } from "../../../components";
 
-import {TrackingHeader} from "./";
-
-import {StudentModal} from "./";
-import {ObservationModal} from "./";
+import { TrackingHeader } from "./";
+import { StudentModal } from "./";
+import { ObservationModal } from "./";
 import StudentList from "./StudenList";
+import { PrivateRoutes, Roles, StudentTrackingModel } from "../../../models";
+import { decodeRoles, hasAccess } from "../../../utilities";
 
 export default function StudentTracking() {
   const [selectedObservation, setSelectedObservation] = useState(null);
   const [observations, setObservations] = useState([]);
   const [filteredObservations, setFilteredObservations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  // Inicializamos dateFilter como objeto con startDate y endDate
+  const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null });
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   const navigate = useNavigate();
   const userState = useSelector((store) => store.selectedUser);
-  const isTeacher = userState.role === "teacher";
+  const storedRole = decodeRoles(userState.roles) || [];
+  const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
+  console.log(isTeacher)
+  // Función para calcular la fecha mínima entre las observaciones
+  const computeMinObservationDate = (observationsList) => {
+    if (!observationsList.length) return null;
+  
+    const dates = observationsList
+      .map((obs) => {
+        const dateValue = obs.date || (obs.period && obs.period.startDate);
+        return dateValue ? new Date(dateValue) : null;
+      })
+      .filter((date) => date instanceof Date && !isNaN(date)); // Filtrar fechas inválidas
+  
+    if (dates.length === 0) return null;
+  
+    const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
+    return minDate.toISOString().split("T")[0];
+  };
+  
+  const computeMaxObservationDate = (observationsList) => {
+    if (!observationsList.length) return new Date().toISOString().split("T")[0];
+  
+    const dates = observationsList
+      .map((obs) => {
+        const dateValue = obs.date || (obs.period && obs.period.startDate);
+        return dateValue ? new Date(dateValue) : null;
+      })
+      .filter((date) => date instanceof Date && !isNaN(date)); // Filtrar fechas inválidas
+  
+    if (dates.length === 0) return new Date().toISOString().split("T")[0];
+  
+    const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
+    return maxDate.toISOString().split("T")[0];
+  };
+  
 
   useEffect(() => {
     if (!userState.id) return;
-    // Se obtienen las observaciones (para profesor y estudiante se usa el mismo endpoint)
     const fetchObservations = async () => {
-      const data = await studentDataService.getStudentObservations(userState.id);
-      setObservations(data);
-      setFilteredObservations(data);
-    };
-    fetchObservations();
-  }, [userState]);
-
-  useEffect(() => {
-    let filtered = observations;
-    if (searchTerm.length >= 4) {
-      filtered = filtered.filter((obs) => {
-        // Para profesores, se busca en el nombre del estudiante
+      try {
+        let data = [];
+       
         if (isTeacher) {
-          const studentName = `${obs.student.firstName} ${obs.student.lastName}`.toLowerCase();
-          return studentName.includes(searchTerm.toLowerCase());
+          data = await teacherDataService.getStudentListObservations(userState.id);
+        } else {
+          data = await studentDataService.getStudentObservations(userState.id);
         }
-        // Para estudiantes, se busca en el título de la observación
-        return obs.title.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        if (data && Array.isArray(data)) {
+          setObservations(data);
+          setFilteredObservations(data);
+        } else {
+          console.warn("Los datos recibidos no son un array:", data);
+        }
+      } catch (error) {
+        console.error("Error al obtener las observaciones:", error);
+      }
+    };
+
+    fetchObservations();
+  }, [userState, isTeacher]);
+
+  // Cuando se cargan las observaciones, calculamos la fecha mínima y, si no está definida, la seteamos en dateFilter.startDate
+  useEffect(() => {
+    if (observations.length > 0) {
+      const minDate = computeMinObservationDate(observations);
+      if (!dateFilter.startDate && minDate) {
+        setDateFilter(prev => ({ ...prev, startDate: minDate }));
+      }
+    }
+  }, [observations]);
+
+  // Actualizamos los filtros cada vez que searchTerm, dateFilter o observations cambien
+  useEffect(() => {
+    let filtered = [...observations];
+
+    // Función para normalizar texto (eliminar acentos)
+    const normalizeText = (text) => {
+      return text
+        .normalize("NFD")           // Descompone los caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, "") // Elimina los diacríticos (acentos)
+        .toLowerCase();             // Convierte a minúsculas
+    };
+
+    // Filtrar por término de búsqueda (mínimo 3 caracteres)
+    if (searchTerm && searchTerm.length >= 3) {
+      const normalizedSearchTerm = normalizeText(searchTerm);
+      
+      filtered = filtered.filter((obs) => {
+        if (isTeacher && obs.student) {
+          const studentName = `${obs.student.firstName} ${obs.student.lastName}`;
+          const normalizedStudentName = normalizeText(studentName);
+          return normalizedStudentName.includes(normalizedSearchTerm);
+        }
+        
+        if (!obs.situation) return false;
+        const normalizedSituation = normalizeText(obs.situation);
+        return normalizedSituation.includes(normalizedSearchTerm);
       });
     }
-    if (dateFilter) {
-      filtered = filtered.filter((obs) => obs.date === dateFilter);
+
+    // Filtrar por rango de fechas
+    if (dateFilter.startDate || dateFilter.endDate) {
+      filtered = filtered.filter((obs) => {
+        // Usamos obs.date o, de lo contrario, obs.period.startDate
+        const dateToUse = obs.date ? new Date(obs.date) : (obs.period && obs.period.startDate ? new Date(obs.period.startDate) : null);
+        if (!dateToUse) return true; // Si no hay fecha, mostramos la observación
+        const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+        const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+        const passesStartDate = !startDate || dateToUse >= startDate;
+        const passesEndDate = !endDate || dateToUse <= endDate;
+        return passesStartDate && passesEndDate;
+      });
     }
+
     setFilteredObservations(filtered);
   }, [searchTerm, dateFilter, observations, isTeacher]);
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+  // Actualiza el searchTerm
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
-  const handleDateFilter = (e) => setDateFilter(e.target.value);
+  // Actualiza el dateFilter (se reciben nuevos valores y se fusionan con los existentes)
+  const handleDateFilter = (newDateFilter) => {
+    setDateFilter({
+      startDate: newDateFilter.startDate || null,
+      endDate: newDateFilter.endDate || null,
+    });
+  };
+  
 
   const handleEditObservation = (observation, e) => {
     e.stopPropagation();
-    console.log("Editando observación:", observation.id);
-    // Aquí se podría abrir el ObservationModal en modo edición
     setSelectedObservation(observation);
   };
 
   const handleDeleteObservation = (observation, e) => {
     e.stopPropagation();
-    console.log("Eliminando observación:", observation.id);
     // Implementar lógica de eliminación
   };
 
   const handleItemClick = (observation) => {
     if (isTeacher) {
-      // Al hacer clic en la fila, el profesor ve la información académica del estudiante
       setSelectedStudent(observation.student);
       setShowStudentModal(true);
     } else {
@@ -82,16 +177,19 @@ export default function StudentTracking() {
   };
 
   const handleCreateObservation = () => {
-    console.log("Creando nueva observación");
+    
     // Implementar la lógica para crear observación
   };
 
   const handleExport = () => {
-    console.log("Exportando observador...");
+    
     // Lógica para exportar datos (CSV/PDF)
   };
 
-  return (
+   // Calcula la fecha mínima y máxima para pasar al header
+   const minDate = useMemo(() => computeMinObservationDate(observations), [observations]);
+   const maxDate = useMemo(() => computeMaxObservationDate(observations), [observations]);
+   return (
     <div className="space-y-4">
       <TrackingHeader 
         isTeacher={isTeacher}
@@ -100,6 +198,8 @@ export default function StudentTracking() {
         onSearchChange={handleSearchChange}
         onDateFilter={handleDateFilter}
         onCreateObservation={handleCreateObservation}
+        minDate={minDate}  // Se pasa la fecha mínima permitida para el filtro
+        maxDate={maxDate}
       />
 
       <StudentList
@@ -131,7 +231,7 @@ export default function StudentTracking() {
         </div>
       )}
 
-      <BackButton onClick={() => navigate("/dashboard")} />
+      <BackButton onClick={() => navigate(PrivateRoutes.DASHBOARD)} />
 
       {selectedObservation && (
         <ObservationModal

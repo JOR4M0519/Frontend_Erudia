@@ -5,7 +5,7 @@ import { CalendarDays, UserCircle, Search } from "lucide-react";
 import { Selector } from "../../../components";
 import { configViewService } from "../Setting";
 import { studentDataService, teacherDataService } from "./StudentLayout/StudentService";
-import { PrivateRoutes } from "../../../models";
+import { PrivateRoutes, Roles } from "../../../models";
 import { searchService } from "../../../windows/Search";
 import { setSelectedUser } from "../../../redux/states/user";
 import { userDataService } from "../../../services/userDataService";
@@ -20,9 +20,9 @@ export default function UserTopBar({showSelectorUser=false,showSelectorYear=fals
   const selectedUser = useSelector(store => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
 
-  const isTeacher = hasAccess(storedRole, ["profesor"]);
-  const isAdmin = hasAccess(storedRole, ["admin"]);
-  const isStudent = hasAccess(storedRole, ["estudiante"]);
+  const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
+  const isAdmin = hasAccess(storedRole, [Roles.ADMIN]);
+  const isStudent = hasAccess(storedRole, [Roles.STUDENT]);
 
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periods, setPeriods] = useState([]);

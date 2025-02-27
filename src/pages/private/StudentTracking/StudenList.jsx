@@ -9,24 +9,25 @@ export default function StudentList({
   onItemClick,
 }) {
   return (
-    <div className="bg-gray-100 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+    <div className="bg-gray-100 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto p-4">
       <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
         {isTeacher ? (
           <>
             <div className="col-span-3">Estudiante</div>
-            <div className="col-span-3">Observador</div>
+            <div className="col-span-3">Situación</div>
             <div className="col-span-2 text-center">Fecha</div>
-            <div className="col-span-2 text-center">Curso</div>
+            <div className="col-span-2 text-center">Tipo</div>
             <div className="col-span-2 text-center">Acciones</div>
           </>
         ) : (
           <>
-            <div className="col-span-4">Observador</div>
+            <div className="col-span-4">Situación</div>
             <div className="col-span-4 text-center">Fecha</div>
             <div className="col-span-4 text-center">Profesor</div>
           </>
         )}
       </div>
+
       <div className="divide-y divide-gray-200">
         {observations.length > 0 ? (
           observations.map((obs) => (

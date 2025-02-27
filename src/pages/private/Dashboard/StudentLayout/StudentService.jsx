@@ -1,7 +1,8 @@
 import { BehaviorSubject, filter, firstValueFrom } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
-import { State, StudentGroupModel } from "../../../../models";
+import { State, StudentGroupModel, StudentTrackingModel } from "../../../../models";
 import { TeacherGroupModel } from "../../../../models/TeacherGroupModel";
+import { StudentTracking } from "../../StudentTracking";
 
 
   /**
@@ -521,6 +522,8 @@ export const teacherDataService = {
     return []
   },
 
+  
+
   /**
    * 🔹 Obtiene los grupos de materias que dicta el profesor en un año específico.
    * 🔹 Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
@@ -545,6 +548,24 @@ export const teacherDataService = {
       console.error("Error cargando datos del profesor:", error);
     }
   },
+
+  getStudentListObservations: async (teacherId) => {
+    try {
+      const responseObservations = await request(
+        "GET",
+        "academy",
+        `/student-tracking/teachers/${teacherId}`,
+        {}
+      );
+
+      if (responseObservations.status === 200 && Array.isArray(responseObservations.data)) {
+        return responseObservations.data.map((obs) => new StudentTrackingModel(obs).toJSON());
+      }
+    } catch (error) {
+      console.error("Error cargando datos del profesor:", error);
+    }
+  },
+
 
   /**
    * 🔹 Obtiene la lista de estudiantes en un grupo específico.

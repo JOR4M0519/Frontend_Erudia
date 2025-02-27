@@ -16,11 +16,15 @@ export default function StudentItem({
       {isTeacher ? (
         <>
           <div className="col-span-3 font-medium text-gray-700">
-            {observation.student.firstName} {observation.student.lastName}
+            {observation?.student?.firstName ?? ""} {observation?.student?.lastName ?? ""}
           </div>
-          <div className="col-span-3 text-gray-700">{observation.title}</div>
-          <div className="col-span-2 text-center text-gray-600">{observation.date}</div>
-          <div className="col-span-2 text-center text-gray-700">{observation.student.course}</div>
+          <div className="col-span-3 text-gray-700">{observation?.situation ?? "Sin situación"}</div>
+          <div className="col-span-2 text-center text-gray-600">
+            {observation?.period?.startDate ?? "Sin fecha"}
+          </div>
+          <div className="col-span-2 text-center text-gray-700">
+            {observation?.trackingType?.type ?? "Sin tipo"}
+          </div>
           <div className="col-span-2 text-center flex justify-center space-x-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={(e) => onEditObservation(observation, e)}
@@ -38,10 +42,12 @@ export default function StudentItem({
         </>
       ) : (
         <>
-          <div className="col-span-4 font-medium text-gray-700">{observation.title}</div>
-          <div className="col-span-4 text-center text-gray-600">{observation.date}</div>
+          <div className="col-span-4 font-medium text-gray-700">{observation?.situation ?? "Sin situación"}</div>
+          <div className="col-span-4 text-center text-gray-600">
+            {observation?.period?.startDate ?? "Sin fecha"}
+          </div>
           <div className="col-span-4 text-center text-gray-700">
-            {observation.teacher.firstName} {observation.teacher.lastName}
+            {observation?.professor?.firstName ?? ""} {observation?.professor?.lastName ?? ""}
           </div>
         </>
       )}

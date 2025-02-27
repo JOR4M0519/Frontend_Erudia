@@ -255,7 +255,7 @@ Instrucciones:
     }
   }
 };
-console.log(selectedSubject?.group)
+
 return (
   <div className="space-y-6">
     {/* 🔹 Encabezado con la materia y nota */}
