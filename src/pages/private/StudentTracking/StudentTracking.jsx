@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Download, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { studentDataService, teacherDataService } from "../Dashboard/StudentLayout";
 import { BackButton } from "../../../components";
@@ -141,6 +141,10 @@ export default function StudentTracking() {
     }
 
     setFilteredObservations(filtered);
+
+    // Guardar las observaciones filtradas en sessionStorage
+    sessionStorage.setItem('filteredObservations', JSON.stringify(filtered));
+
   }, [searchTerm, dateFilter, observations, isTeacher]);
 
   // Actualiza el searchTerm
@@ -159,7 +163,17 @@ export default function StudentTracking() {
 
   const handleEditObservation = (observation, e) => {
     e.stopPropagation();
-    setSelectedObservation(observation);
+    
+    // Encontrar el índice de la observación seleccionada
+    const currentIndex = filteredObservations.findIndex(obs => obs.id === observation.id);
+    
+    navigate(PrivateRoutes.STUDENTTRACKING + PrivateRoutes.STUDENTTRACKINGDETAILS, { 
+      state: { 
+        observation,
+        currentIndex,
+        totalObservations: filteredObservations.length
+      }
+    });
   };
 
   const handleDeleteObservation = (observation, e) => {
@@ -177,7 +191,7 @@ export default function StudentTracking() {
   };
 
   const handleCreateObservation = () => {
-    
+    navigate(`${PrivateRoutes.STUDENTTRACKING}${PrivateRoutes.STUDENTTRACKINGDETAILS}?nuevo=true`);
     // Implementar la lógica para crear observación
   };
 
@@ -251,6 +265,7 @@ export default function StudentTracking() {
           }}
         />
       )}
+      <Outlet />
     </div>
   );
 }

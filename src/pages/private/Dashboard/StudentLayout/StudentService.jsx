@@ -455,7 +455,7 @@ export const studentDataService = {
 
 };
 
-const teacherData$ = new BehaviorSubject({ subjects: [], studentGroupList: null });
+const teacherData$ = new BehaviorSubject({ subjects: [], studentGroupList: null, directionGroupList: [] });
 
 export const teacherDataService = {
   getSubjects: () => teacherData$.asObservable(),
@@ -489,6 +489,27 @@ export const teacherDataService = {
     teacherData$.next({
       ...(teacherData$.value || {}), // 🔹 Mantiene `subjects`, solo borra `studentGroupList`
       studentGroupList: null,
+    });
+  },
+
+  getDirectionGroupsListValue: () => teacherData$.value?.directionGroupList || null,
+   /**
+   * 🔹 Borra `directionGroupList`, manteniendo `subjects`
+   */
+   clearDirectionGroups: () => {
+    teacherData$.next({
+      ...teacherData$.value,
+      directionGroupList: [],
+    });
+  },
+
+  /**
+   * 🔹 Guarda `directionGroupList`, manteniendo `subjects`
+   */
+  setDirectionGroups: (data) => {
+    teacherData$.next({
+      ...teacherData$.value,
+      directionGroupList: data || [],
     });
   },
 
@@ -535,7 +556,7 @@ export const teacherDataService = {
       const responseGroupsTeacher = await request(
         "GET",
         "academy",
-        `/subjects-groups/teacher-groups/teacher/${teacherId}/subjects?year=${year}`,
+        `/subjects-groups/teacher-groups/teachers/${teacherId}/subjects?year=${year}`,
         {}
       );
 
@@ -543,11 +564,46 @@ export const teacherDataService = {
         const teacherData = new TeacherGroupModel(responseGroupsTeacher.data).toJSON();
         
         teacherDataService.setSubjects(teacherData.subjects || []); // 🔹 Guarda solo subjects
+        
       }
     } catch (error) {
       console.error("Error cargando datos del profesor:", error);
     }
   },
+
+
+  /**
+   * Obtiene los grupos de los que el profesor es director de curso,
+   * y actualiza sólo directionGroupList manteniendo el resto del estado
+   */
+  fetchDirectionSubjectsData: async (teacherId, year) => {
+    try {
+      // Limpiamos la lista de dirección de grupo antes de cargar los nuevos
+      teacherDataService.clearDirectionGroups();
+      
+      const responseGroupsTeacher = await request(
+        "GET",
+        "academy",
+        `/student-groups/mentors/${teacherId}/students`,
+        {}
+      );
+
+      if (responseGroupsTeacher.status === 200 && Array.isArray(responseGroupsTeacher.data)) {
+        const teacherData = new TeacherGroupModel([]);
+        
+        // Agrupar estudiantes en sus respectivos grupos
+        teacherData.addStudentDirectionGroup(responseGroupsTeacher.data);
+        
+        // IMPORTANTE: Solo actualizamos directionGroupList, sin modificar subjects
+        teacherDataService.setDirectionGroups(teacherData.directionGroupList || []);
+      } else {
+        console.warn("La respuesta no contiene datos válidos.");
+      }
+    } catch (error) {
+      console.error("Error cargando datos del profesor:", error);
+    }
+  },
+
 
   getStudentListObservations: async (teacherId) => {
     try {

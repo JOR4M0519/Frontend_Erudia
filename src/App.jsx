@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Navigate, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AuthGuard, RoleGuard, MultiRoleGuard } from './guards';
 import { PrivateRoutes, PublicRoutes, Roles } from './models';
@@ -15,7 +15,7 @@ import { Dashboard } from './pages/private/Dashboard';
 import { Admin } from './pages/private/Admin';
 import { Subject } from './pages/private/Subject';
 import { Activities } from './pages/private/Activities';
-import { StudentTracking } from './pages/private/StudentTracking';
+import { DetailStudentTracking, StudentTracking } from './pages/private/StudentTracking';
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
@@ -61,9 +61,32 @@ function App() {
                   <Route path={PrivateRoutes.ACTIVITIES} element={<Activities />} />
                 </Route>
 
+                {/* <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
+                  <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />}>
+                    <Route 
+                      path={PrivateRoutes.STUDENTTRACKING+PrivateRoutes.STUDENTTRACKINGDETAILS} 
+                      element={<DetailStudentTracking />} 
+                    />
+                  </Route>
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
+                </Route> */}
+                {/* <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
+                  <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />} />
+                  <Route path={PrivateRoutes.STUDENTTRACKINGDETAILS} element={<DetailStudentTracking />} />
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
+                </Route> */}
+
                 <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
                   <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />} />
+                  <Route
+                    path={PrivateRoutes.STUDENTTRACKING + PrivateRoutes.STUDENTTRACKINGDETAILS}
+                    element={<DetailStudentTracking />}
+                  />
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
                 </Route>
+
+
+
 
                 <Route element={<MultiRoleGuard navKey="SETTINGS" />}>
                   <Route path={PrivateRoutes.SETTINGS} element={<Settings />} />

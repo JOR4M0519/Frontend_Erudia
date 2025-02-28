@@ -19,6 +19,8 @@ export const PrivateRoutes = {
 
   ACTIVITIES:       '/activities',
   STUDENTTRACKING:  '/student-tracking',
+  STUDENTTRACKINGDETAILS:  '/tracking-details',
+
   ADMIN:            '/admin',  
   GRADES:           '/grades-general',
   SETTINGS:         '/settings',

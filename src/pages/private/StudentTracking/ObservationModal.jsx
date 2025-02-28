@@ -1,8 +1,26 @@
 import React from "react";
 import { X, Pencil } from "lucide-react";
 
-export default function ObservationModal({ isOpen, observation, onClose }) {
-  if (!isOpen || !observation) return null;
+export default function ObservationModal({ isOpen, observationData, onClose }) {
+  if (!isOpen ) return null;
+  //if (!isOpen || !observation) return null;
+  
+  const testObservation = {
+    title: "Falta de Atención en Clase",
+    date: "2024-02-27",
+    teacher: {
+      firstName: "María",
+      lastName: "Gómez",
+    },
+    situation:
+      "El estudiante ha mostrado dificultades para mantener la atención en clase, a pesar de múltiples llamados de atención por parte del docente.",
+    commitment:
+      "El estudiante se compromete a participar activamente en clase y reducir distracciones, además de llevar un registro de tareas completadas.",
+    followUp:
+      "Se realizará un seguimiento semanal durante el próximo mes para evaluar mejoras en la concentración y participación.",
+  };
+
+  const observation = observationData || testObservation;
 
   const handleSave = () => {
     // Implementar lógica de guardado

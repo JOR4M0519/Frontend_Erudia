@@ -1,330 +1,541 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { Download, ArrowLeft, Edit, Trash2, MessageCircle } from "lucide-react";
-import { studentDataService, teacherDataService } from "../Dashboard/StudentLayout";
-import { BackButton } from "../../../components";
-import TrackingHeader from "./TrackingHeader";
-import { PrivateRoutes, Roles } from "../../../models";
-import { decodeRoles, hasAccess } from "../../../utilities";
+import { useState, useEffect } from "react"
+import { Download, Edit, Trash2, ChevronRight, ChevronLeft } from "lucide-react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import { PrivateRoutes, StudentGroupModel } from "../../../models"
+import { BackButton, CancelButton } from "../../../components"
 
-const DetailStudentTracking = () => {
-  const { studentId, observationId } = useParams();
-  const [student, setStudent] = useState(null);
-  const [observations, setObservations] = useState([]);
-  const [filteredObservations, setFilteredObservations] = useState([]);
-  const [selectedObservation, setSelectedObservation] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null });
-  const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
-  const userState = useSelector((store) => store.selectedUser);
-  const storedRole = decodeRoles(userState.roles) || [];
-  const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
+/**
+ * Se necesita hacer una refactorirzación
+ */
 
-  // Función para calcular la fecha mínima entre las observaciones
-  const computeMinObservationDate = (observationsList) => {
-    if (!observationsList.length) return null;
+export default function DetailStudentTracking() {
+  const [isEditing, setIsEditing] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [totalObservations, setTotalObservations] = useState(0)
+  const [filteredObservations, setFilteredObservations] = useState([])
+  const [observationData, setObservationData] = useState({})
+  const [isCreatingNew, setIsCreatingNew] = useState(false)
+  const [studentGroups, setStudentGroups] = useState([])
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [selectedGroup, setSelectedGroup] = useState(null)
+  const [loading, setLoading] = useState(false)
   
-    const dates = observationsList
-      .map((obs) => {
-        const dateValue = obs.date || (obs.period && obs.period.startDate);
-        return dateValue ? new Date(dateValue) : null;
-      })
-      .filter((date) => date instanceof Date && !isNaN(date));
+  // Obtener la información del profesor desde Redux
+  const userState = useSelector((store) => store.selectedUser)
+  const location = useLocation()
+  const navigate = useNavigate()
   
-    if (dates.length === 0) return null;
   
-    const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
-    return minDate.toISOString().split("T")[0];
-  };
-  
-  const computeMaxObservationDate = (observationsList) => {
-    if (!observationsList.length) return new Date().toISOString().split("T")[0];
-  
-    const dates = observationsList
-      .map((obs) => {
-        const dateValue = obs.date || (obs.period && obs.period.startDate);
-        return dateValue ? new Date(dateValue) : null;
-      })
-      .filter((date) => date instanceof Date && !isNaN(date));
-  
-    if (dates.length === 0) return new Date().toISOString().split("T")[0];
-  
-    const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
-    return maxDate.toISOString().split("T")[0];
-  };
 
-  // Cargar datos del estudiante y sus observaciones
+  // Cargar los grupos de estudiantes al inicio
   useEffect(() => {
-    const fetchStudentData = async () => {
-      setLoading(true);
+    const fetchStudentGroups = async () => {
+      setLoading(true)
       try {
-        let studentData;
-        let observationsData = [];
+        // Aquí deberías hacer la llamada a tu API para obtener los grupos
+        // Por ejemplo:
+        // const response = await api.getStudentGroups()
+        // setStudentGroups(response.data)
         
-        if (isTeacher) {
-          studentData = await teacherDataService.getStudentById(studentId);
-          observationsData = await teacherDataService.getStudentObservations(studentId);
-        } else {
-          studentData = await studentDataService.getStudentById(userState.id);
-          observationsData = await studentDataService.getStudentObservations(userState.id);
-        }
+        // Por ahora, simulamos datos de ejemplo
+        // Esto debería reemplazarse con tu llamada a la API real
+        const mockGroups = [
+          new StudentGroupModel({
+            group: {
+              id: 1,
+              groupCode: "G1",
+              groupName: "Grupo 1",
+              level: {
+                id: 1,
+                levelName: "Primaria"
+              },
+              mentor: {
+                id: 1,
+                firstName: "Juan",
+                lastName: "Pérez",
+                email: "juan@example.com"
+              }
+            }
+          }),
+          new StudentGroupModel({
+            group: {
+              id: 2,
+              groupCode: "G2",
+              groupName: "Grupo 2",
+              level: {
+                id: 1,
+                levelName: "Primaria"
+              },
+              mentor: {
+                id: 2,
+                firstName: "María",
+                lastName: "López",
+                email: "maria@example.com"
+              }
+            }
+          })
+        ]
         
-        setStudent(studentData);
-        setObservations(observationsData);
-        setFilteredObservations(observationsData);
+        // Simulamos algunos estudiantes en los grupos
+        mockGroups[0].students = [
+          { id: 1, firstName: "Ana", lastName: "García" },
+          { id: 2, firstName: "Pedro", lastName: "Martínez" }
+        ]
         
-        // Si hay un observationId en los parámetros, seleccionar esa observación
-        if (observationId) {
-          const foundObservation = observationsData.find(obs => obs.id === observationId);
-          if (foundObservation) {
-            setSelectedObservation(foundObservation);
-          }
-        }
+        mockGroups[1].students = [
+          { id: 3, firstName: "Luis", lastName: "Rodríguez" },
+          { id: 4, firstName: "Sofía", lastName: "Fernández" }
+        ]
+        
+        setStudentGroups(mockGroups)
       } catch (error) {
-        console.error("Error al cargar datos del estudiante:", error);
+        console.error("Error al cargar los grupos de estudiantes:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    if (studentId || userState.id) {
-      fetchStudentData();
     }
-  }, [studentId, observationId, userState.id, isTeacher]);
-
-  // Actualiza los filtros cuando cambia searchTerm, dateFilter o observations
+    
+    fetchStudentGroups()
+  }, [])
+  
+  // Determinar si estamos creando una nueva observación o editando una existente
   useEffect(() => {
-    let filtered = [...observations];
-
-    // Función para normalizar texto (eliminar acentos)
-    const normalizeText = (text) => {
-      return text
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-    };
-
-    // Filtrar por término de búsqueda (mínimo 3 caracteres)
-    if (searchTerm && searchTerm.length >= 3) {
-      const normalizedSearchTerm = normalizeText(searchTerm);
+    // Comprobar si la URL contiene "crear" o algún parámetro que indique modo de creación
+    const isNewObservation = location.search.includes("nuevo=true")
+    
+    if (isNewObservation) {
+      setIsCreatingNew(true)
+      setIsEditing(true)
+      // Inicializar con datos vacíos o predeterminados
+      setObservationData({
+        date: new Date().toISOString().split('T')[0], // Fecha actual
+        teacherName: `${userState.firstName || ''} ${userState.lastName || ''}`.trim(),
+        teacherId: userState.id,
+        behavior: '',
+        commitment: '',
+        followUp: ''
+      })
+    } else {
+      // Modo de visualización/edición de observación existente
+      setIsCreatingNew(false)
       
-      filtered = filtered.filter((obs) => {
-        if (!obs.situation) return false;
-        const normalizedSituation = normalizeText(obs.situation);
-        return normalizedSituation.includes(normalizedSearchTerm);
-      });
+      // Obtener la observación actual de los datos de la ruta
+      const observation = location.state?.observation ?? {}
+      setObservationData(observation)
+      
+      // Obtener el índice actual y total desde el state de la navegación o desde sessionStorage
+      if (location.state?.currentIndex !== undefined) {
+        setCurrentIndex(location.state.currentIndex)
+      }
+      
+      if (location.state?.totalObservations) {
+        setTotalObservations(location.state.totalObservations)
+      }
+      
+      // Cargar las observaciones filtradas desde sessionStorage
+      const storedObservations = sessionStorage.getItem('filteredObservations')
+      if (storedObservations) {
+        try {
+          const parsedObservations = JSON.parse(storedObservations)
+          setFilteredObservations(parsedObservations)
+          
+          // Si no tenemos el índice desde location.state, buscarlo en las observaciones cargadas
+          if (location.state?.currentIndex === undefined && observation?.id) {
+            const index = parsedObservations.findIndex(obs => obs.id === observation.id)
+            if (index !== -1) {
+              setCurrentIndex(index)
+            }
+          }
+          
+          // Si no tenemos el total desde location.state, usar la longitud del array
+          if (!location.state?.totalObservations) {
+            setTotalObservations(parsedObservations.length)
+          }
+        } catch (error) {
+          console.error("Error al cargar observaciones desde sessionStorage:", error)
+        }
+      }
     }
+  }, [location, userState])
 
-    // Filtrar por rango de fechas
-    if (dateFilter.startDate || dateFilter.endDate) {
-      filtered = filtered.filter((obs) => {
-        const dateToUse = obs.date ? new Date(obs.date) : (obs.period && obs.period.startDate ? new Date(obs.period.startDate) : null);
-        if (!dateToUse) return true;
-        const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
-        const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
-        const passesStartDate = !startDate || dateToUse >= startDate;
-        const passesEndDate = !endDate || dateToUse <= endDate;
-        return passesStartDate && passesEndDate;
-      });
+
+  const routeBefore =() =>{
+    navigate(PrivateRoutes.STUDENTTRACKING);
+  } 
+
+  // Manejar cambio de grupo
+  const handleGroupChange = (e) => {
+    const groupId = parseInt(e.target.value)
+    const group = studentGroups.find(g => g.group.id === groupId)
+    setSelectedGroup(group)
+    setSelectedStudent(null) // Resetear el estudiante seleccionado
+    
+    // Actualizar el director de grupo si corresponde
+    if (group) {
+      setObservationData(prev => ({
+        ...prev,
+        groupDirector: `${group.group.mentor.firstName} ${group.group.mentor.lastName}`,
+        groupDirectorId: group.group.mentor.id,
+        course: `${group.group.level.levelName} - ${group.group.groupName}`
+      }))
     }
-
-    setFilteredObservations(filtered);
-  }, [searchTerm, dateFilter, observations]);
-
-  // Manejadores de eventos
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleDateFilter = (newDateFilter) => {
-    setDateFilter({
-      startDate: newDateFilter.startDate || null,
-      endDate: newDateFilter.endDate || null,
-    });
-  };
-
-  const handleEditObservation = (observation) => {
-    // Implementar edición de observación
-    console.log("Editar observación:", observation);
-  };
-
-  const handleDeleteObservation = (observation) => {
-    // Implementar eliminación de observación
-    console.log("Eliminar observación:", observation);
-  };
-
-  const handleCreateObservation = () => {
-    // Implementar creación de observación
-    console.log("Crear nueva observación para el estudiante:", student);
-  };
-
-  const handleExport = () => {
-    // Implementar exportación de datos
-    console.log("Exportar observaciones del estudiante:", student);
-  };
-
-  const handleBack = () => {
-    navigate(PrivateRoutes.STUDENT_TRACKING);
-  };
-
-  // Calcular fechas mínima y máxima para el filtro
-  const minDate = computeMinObservationDate(observations);
-  const maxDate = computeMaxObservationDate(observations);
-
-  if (loading) {
-    return <div className="flex justify-center p-8">Cargando información del estudiante...</div>;
+  }
+  
+  // Manejar cambio de estudiante
+  const handleStudentChange = (e) => {
+    const studentId = parseInt(e.target.value)
+    if (selectedGroup) {
+      const student = selectedGroup.students.find(s => s.id === studentId)
+      setSelectedStudent(student)
+      
+      if (student) {
+        setObservationData(prev => ({
+          ...prev,
+          studentId: student.id,
+          studentName: `${student.firstName} ${student.lastName}`
+        }))
+      }
+    }
   }
 
-  if (!student) {
-    return <div className="p-8">No se encontró información del estudiante.</div>;
+  const handleFieldChange = (field, value) => {
+    setObservationData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleDelete = (id) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar esta observación?")) {
+      console.log("Deleting observation:", id)
+      // Implementar lógica de eliminación
+      
+      // Después de eliminar, volver a la lista
+      routeBefore
+    }
+  }
+  
+  const handleSave = () => {
+    // Validar que se haya seleccionado un estudiante en caso de creación
+    if (isCreatingNew && !selectedStudent) {
+      alert("Por favor, selecciona un estudiante")
+      return
+    }
+    
+    if (isCreatingNew) {
+      console.log("Creating new observation:", observationData)
+      // Aquí implementar la lógica para crear una nueva observación
+      // Por ejemplo, una llamada a la API
+    } else {
+      console.log("Updating observation:", observationData)
+      // Aquí implementar la lógica para actualizar la observación existente
+    }
+    
+    // Después de guardar, si es una nueva, redirigir a la lista
+    if (isCreatingNew) {
+      routeBefore
+    } else {
+      // Si es una edición, mantener en la misma página pero desactivar el modo edición
+      setIsEditing(false)
+    }
+  }
+
+  const handleNext = () => {
+    if (currentIndex < filteredObservations.length - 1) {
+      const nextIndex = currentIndex + 1
+      const nextObservation = filteredObservations[nextIndex]
+      
+      navigate(PrivateRoutes.STUDENTTRACKING + PrivateRoutes.STUDENTTRACKINGDETAILS, {
+        state: { 
+          observation: nextObservation,
+          currentIndex: nextIndex,
+          totalObservations
+        }
+      })
+    }
+  }
+  
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1
+      const prevObservation = filteredObservations[prevIndex]
+      
+      navigate(PrivateRoutes.STUDENTTRACKING + PrivateRoutes.STUDENTTRACKINGDETAILS, {
+        state: { 
+          observation: prevObservation,
+          currentIndex: prevIndex,
+          totalObservations
+        }
+      })
+    }
+  }
+
+  const handleCancel = () => {
+    if (isCreatingNew) {
+      // Si estamos creando una nueva observación, volver a la lista
+      if (window.confirm("¿Estás seguro de que deseas cancelar? Los cambios no se guardarán.")) {
+        routeBefore
+      }
+    } else {
+      // Si estamos editando, solo desactivar el modo edición
+      setIsEditing(false)
+    }
+  }
+
+  // Extraer valores para mostrarlos en la barra de información
+  const studentName = isCreatingNew && selectedStudent 
+    ? `${selectedStudent.firstName} ${selectedStudent.lastName}`
+    : observationData?.studentName || 
+      (observationData?.student ? `${observationData.student.firstName} ${observationData.student.lastName}` : '')
+  
+  const observationDate = observationData?.date || 
+    (observationData?.period?.startDate) || ''
+  
+  const courseName = isCreatingNew && selectedGroup
+    ? `${selectedGroup.group.level.levelName} - ${selectedGroup.group.groupName}`
+    : observationData?.course || ''
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 p-6">
+      {/* Navegación entre estudiantes - Solo visible si no es creación nueva */}
+      {!isCreatingNew && totalObservations > 0 && (
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            <span>Estudiante {currentIndex + 1} de {totalObservations}</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Main Content */}
+      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+        {/* Title - Diferente según el modo */}
+        <h2 className="text-xl font-bold text-gray-800">
+          {isCreatingNew ? "Nueva Observación de Estudiante" : "Detalles de la Observación"}
+        </h2>
+        
+        {/* Selector de Grupo y Estudiante - Solo en modo creación */}
+        {isCreatingNew && (
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-gray-800">Seleccionar Estudiante</h3>
+            
+            {loading ? (
+              <p>Cargando grupos...</p>
+            ) : (
+              <>
+                {/* Selector de Grupo */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Grupo</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={selectedGroup?.group.id || ''}
+                    onChange={handleGroupChange}
+                  >
+                    <option value="">Seleccionar grupo</option>
+                    {studentGroups.map(group => (
+                      <option key={group.group.id} value={group.group.id}>
+                        {group.group.level.levelName} - {group.group.groupName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Selector de Estudiante (visible solo cuando se ha seleccionado un grupo) */}
+                {selectedGroup && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Estudiante</label>
+                    <select 
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={selectedStudent?.id || ''}
+                      onChange={handleStudentChange}
+                    >
+                      <option value="">Seleccionar estudiante</option>
+                      {selectedGroup.students.map(student => (
+                        <option key={student.id} value={student.id}>
+                          {student.firstName} {student.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        
+        {/* Student Info Bar */}
+        <div className="flex items-center justify-between bg-gray-100 rounded-lg p-4">
+          <div className="grid grid-cols-3 gap-8 flex-1">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Estudiante</h3>
+              <p className="text-gray-900">{studentName || 'No seleccionado'}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Fecha</h3>
+              {isEditing ? (
+                <input
+                  type="date"
+                  value={observationData.date || ''}
+                  onChange={(e) => handleFieldChange('date', e.target.value)}
+                  className="w-full p-1 mt-1 border border-gray-300 rounded-lg"
+                />
+              ) : (
+                <p className="text-gray-900">{observationDate}</p>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Curso</h3>
+              <p className="text-gray-900">{courseName || 'No definido'}</p>
+            </div>
+          </div>
+
+          {/* Action Buttons - No mostrar en modo creación */}
+          {!isCreatingNew && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleDelete(observationData?.id)}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Eliminar"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Editar"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={() => window.print()}
+                className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Descargar"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Details Section */}
+        <div className="space-y-6">
+          <DetailField 
+            label="Responsable" 
+            value={`${userState.name || ''}`.trim()} 
+            isEditing={false} // No permitimos editar el profesor, se toma del usuario actual
+            readOnly={true}
+          />
+          <DetailField 
+            label="Director de grupo" 
+            value={observationData?.groupDirector || ''} 
+            isEditing={isEditing && !isCreatingNew} // Solo editable en modo edición para observaciones existentes
+            onChange={(value) => handleFieldChange('groupDirector', value)}
+            readOnly={isCreatingNew} // En modo creación, se obtiene automáticamente al seleccionar el grupo
+          />
+          <DetailField
+            label="Descripción del comportamiento"
+            value={observationData?.behavior || observationData?.situation || ''}
+            isEditing={isEditing}
+            onChange={(value) => handleFieldChange('behavior', value)}
+            multiline
+          />
+          <DetailField 
+            label="Descarga y compromiso" 
+            value={observationData?.commitment || ''} 
+            isEditing={isEditing}
+            onChange={(value) => handleFieldChange('commitment', value)}
+            multiline 
+          />
+          <DetailField 
+            label="Seguimiento" 
+            value={observationData?.followUp || ''} 
+            isEditing={isEditing}
+            onChange={(value) => handleFieldChange('followUp', value)}
+            multiline 
+          />
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-between pt-6 border-t">
+          {/* Navegación - Solo mostrar si no es creación nueva y no está en modo edición */}
+          {!isCreatingNew && !isEditing && (
+            <div className="flex gap-4">
+              <button
+                onClick={handlePrevious}
+                className={`flex items-center gap-2 px-4 py-2 ${currentIndex > 0 ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'} transition-colors`}
+                disabled={currentIndex <= 0}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Estudiante anterior
+              </button>
+              
+              <button
+                onClick={handleNext}
+                className={`flex items-center gap-2 px-4 py-2 ${currentIndex < totalObservations - 1 ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'} transition-colors`}
+                disabled={currentIndex >= totalObservations - 1}
+              >
+                Siguiente estudiante
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          
+          {/* Botones de acción para el modo edición */}
+          {isEditing && (
+            <div className="flex gap-4 ml-auto">
+              <CancelButton onClick={routeBefore} confirmExit={true} />
+              <button
+                onClick={handleSave}
+                className="px-6 py-2 bg-[#D4AF37] text-white rounded-lg hover:bg-[#C19B2C] transition-colors"
+              >
+                {isCreatingNew ? "Crear" : "Guardar"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <BackButton onClick={routeBefore}>
+        Volver a la lista
+      </BackButton>
+    </div>
+  )
+}
+
+function DetailField({ label, value, isEditing, onChange, multiline = false, readOnly = false }) {
+  const handleChange = (e) => {
+    if (onChange) {
+      onChange(e.target.value)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Botón de regreso */}
-      <button 
-        onClick={handleBack} 
-        className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
-      >
-        <ArrowLeft className="w-4 h-4 mr-1" />
-        <span>Volver a la lista de seguimiento</span>
-      </button>
-      
-      {/* Header con el nombre del estudiante */}
-      <TrackingHeader 
-        isTeacher={isTeacher}
-        userState={userState}
-        searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
-        onDateFilter={handleDateFilter}
-        onCreateObservation={handleCreateObservation}
-        minDate={minDate}
-        maxDate={maxDate}
-        title={`Detalle de ${student.firstName} ${student.lastName}`}
-      />
-
-      {/* Información del estudiante */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Información del estudiante</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Nombre completo</p>
-            <p className="font-medium">{student.firstName} {student.lastName}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Curso</p>
-            <p className="font-medium">{student.group?.name || "No asignado"}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Documento</p>
-            <p className="font-medium">{student.documentNumber || "No disponible"}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Correo electrónico</p>
-            <p className="font-medium">{student.email || "No disponible"}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Lista de observaciones */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Observaciones</h3>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>Exportar</span>
-          </button>
-        </div>
-
-        {filteredObservations.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No hay observaciones para mostrar.
-          </div>
+    <div className="space-y-2">
+      <h3 className="font-medium text-gray-900">{label}</h3>
+      {isEditing ? (
+        multiline ? (
+          <textarea
+            value={value}
+            onChange={handleChange}
+            readOnly={readOnly}
+            className={`w-full p-3 border border-gray-300 rounded-lg ${!readOnly ? "focus:ring-2 focus:ring-blue-500 focus:border-blue-500" : "bg-gray-50"} min-h-[100px]`}
+          />
         ) : (
-          <div className="space-y-4">
-            {filteredObservations.map((observation) => (
-              <div 
-                key={observation.id} 
-                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        {new Date(observation.date || observation.period?.startDate).toLocaleDateString('es-ES')}
-                      </span>
-                      <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        {observation.type || "Observación general"}
-                      </span>
-                    </div>
-                    <h4 className="font-medium text-gray-800 mb-1">{observation.situation}</h4>
-                    <p className="text-gray-600 text-sm line-clamp-2">{observation.description}</p>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleEditObservation(observation)}
-                      className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100"
-                      title="Editar"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteObservation(observation)}
-                      className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                {observation.comments && observation.comments.length > 0 && (
-                  <div className="mt-3 pt-3 border-t">
-                    <div className="flex items-center gap-1 text-gray-500 text-sm mb-2">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{observation.comments.length} comentario(s)</span>
-                    </div>
-                    <div className="space-y-2">
-                      {observation.comments.slice(0, 2).map((comment, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded p-2 text-sm">
-                          <div className="font-medium text-gray-700">{comment.author}</div>
-                          <div className="text-gray-600">{comment.text}</div>
-                        </div>
-                      ))}
-                      {observation.comments.length > 2 && (
-                        <button className="text-sm text-blue-600 hover:underline">
-                          Ver todos los comentarios
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Botón flotante para crear observación (solo para profesores) */}
-      {isTeacher && (
-        <div className="fixed bottom-8 right-8">
-          <button
-            onClick={handleCreateObservation}
-            className="flex items-center justify-center p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-        </div>
+          <input
+            type="text"
+            value={value}
+            onChange={handleChange}
+            readOnly={readOnly}
+            className={`w-full p-3 border border-gray-300 rounded-lg ${!readOnly ? "focus:ring-2 focus:ring-blue-500 focus:border-blue-500" : "bg-gray-50"}`}
+          />
+        )
+      ) : (
+        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{value || "..."}</p>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default DetailStudentTracking;
