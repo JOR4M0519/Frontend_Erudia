@@ -16,6 +16,7 @@ export const PrivateRoutes = {
   PROFILE:          '/profile',
   
   SUBJECTS:         '/subjects',
+  DIRECTOR_GROUP_SUBJECTS: '/direction-group',
 
   ACTIVITIES:       '/activities',
   STUDENTTRACKING:  '/student-tracking',

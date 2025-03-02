@@ -20,7 +20,7 @@ const fetchAllowedDates = async () => {
   ];
 };
 
-export default function AttendanceHeader({ selectedDate, setSelectedDate, subject }) {
+const AttendanceHeader = ({ selectedDate, setSelectedDate, subject }) => {
   const [allowedDates, setAllowedDates] = useState([]); // 🔹 Guardará los días permitidos
   const reduxSelectedDate = useSelector((state) => state.date.selectedDate);
 
@@ -78,3 +78,5 @@ export default function AttendanceHeader({ selectedDate, setSelectedDate, subjec
     />
   );
 }
+
+export default AttendanceHeader;

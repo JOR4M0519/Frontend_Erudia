@@ -11,11 +11,11 @@ export default function SubjectHeader({
   onOpenLogro,
   customActionContent // Nuevo prop para contenido personalizado
 }) {
-  
+
   // Cálculo de promedio (solo para profesores)
   const calculateAverage = () => {
     if (!activities || !activities.length) return "N/A";
-    
+
     const allScores = activities.reduce((acc, activity) => {
       if (activity.score && activity.score.length > 0) {
         const scores = activity.score.map((item) => item.score);
@@ -23,7 +23,7 @@ export default function SubjectHeader({
       }
       return acc;
     }, []);
-    
+
     return allScores.length > 0
       ? (allScores.reduce((sum, cur) => sum + cur, 0) / allScores.length).toFixed(2)
       : "N/A";
@@ -51,12 +51,12 @@ export default function SubjectHeader({
           <div className="bg-blue-100 p-3 rounded-lg">
             <BookOpen className="w-8 h-8 text-blue-600" />
           </div>
-          
+
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-800">
               {subjectName || "Materia"}
             </h2>
-            
+
             {isTeacher && groupInfo && (
               <div className="flex items-center mt-2 bg-indigo-50 px-3 py-1 rounded-lg w-fit">
                 <Users className="w-4 h-4 text-indigo-600 mr-2" />
@@ -76,17 +76,20 @@ export default function SubjectHeader({
           ) : (
             <>
               {/* Tarjeta de calificación */}
-              <div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200 w-full sm:w-auto flex items-center justify-center">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-white p-2 rounded-full">
-                    <Star className={`w-5 h-5 ${scoreColor}`} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">{scoreText}</p>
-                    <p className={`text-xl font-bold ${scoreColor}`}>{average}</p>
+              {periodGrade !== null && periodGrade !== undefined && (
+                <div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200 w-full sm:w-auto flex items-center justify-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white p-2 rounded-full">
+                      <Star className={`w-5 h-5 ${scoreColor}`} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-medium">{scoreText}</p>
+                      <p className={`text-xl font-bold ${scoreColor}`}>{average}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
 
               {/* Botones de acción */}
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

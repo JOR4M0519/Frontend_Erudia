@@ -114,7 +114,8 @@ const SubjectDirector = ({ directionSubjects = [] }) => {
     
     const subjectString = JSON.stringify(group);
     subjectActivityService.setSelectedSubject(subjectString);
-    navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT);
+
+    navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.DIRECTOR_GROUP_SUBJECTS);
   };
 
   return (

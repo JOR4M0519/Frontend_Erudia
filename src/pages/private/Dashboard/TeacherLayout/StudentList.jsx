@@ -3,13 +3,18 @@ import { useSelector } from "react-redux";
 import { ChevronDown, ChevronUp, CheckSquare, XSquare } from "lucide-react";
 import { teacherDataService } from "../StudentLayout/StudentService";
 import { subjectActivityService } from "../../Subject";
+import { BackButton } from "../../../../components";
+import { useNavigate } from "react-router-dom";
+import { PrivateRoutes } from "../../../../models";
 
-export default function StudentList({ onStudentClick, showAttendance = false }) {
+
+export default function StudentList({ onStudentClick, showAttendance = false}) {
   const userState = useSelector((store) => store.selectedUser);
   const [studentList, setStudentList] = useState({ students: [] });
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [attendance, setAttendance] = useState({}); // 🔹 Estado de asistencia
+
 
   // 🔹 Suscribirse a la materia seleccionada
   useEffect(() => {
@@ -115,6 +120,7 @@ export default function StudentList({ onStudentClick, showAttendance = false }) 
           </div>
         )}
       </div>
+      
     </div>
   );
 }

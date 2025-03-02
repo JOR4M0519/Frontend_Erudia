@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { PrivateRoutes, Roles } from "../../../../models";
 import { HomeStudent, teacherDataService } from "../StudentLayout";
 import { ActivitiesGrading, ActivityModal, SubjectActivities} from "../../Activities";
-import { AsistanceGrid } from ".";
+import { AsistanceGrid, DirectionGroupsGrid } from ".";
 
 export default function TeacherLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
@@ -34,6 +34,7 @@ export default function TeacherLayout() {
         <Route path={PrivateRoutes.ACTIVITIES_SUBJECT} element={<SubjectActivities />} />
         <Route path={PrivateRoutes.ASISTANCE} element={<AsistanceGrid />} />
         <Route path={PrivateRoutes.ACTIVITIES_GRADING} element={<ActivitiesGrading />} />
+        <Route path={PrivateRoutes.DIRECTOR_GROUP_SUBJECTS} element={<DirectionGroupsGrid />} />
       </Routes>
       <ActivityModal /> 
     </div>

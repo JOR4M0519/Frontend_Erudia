@@ -4,7 +4,7 @@ import { ActivityModal, SubjectActivities} from "../../Activities";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 
-import { AsistanceGrid } from "../TeacherLayout";
+import { AsistanceGrid, DirectionGroupsGrid } from "../TeacherLayout";
 import { PrivateRoutes } from "../../../../models";
 
 export default function StudentLayout() {
