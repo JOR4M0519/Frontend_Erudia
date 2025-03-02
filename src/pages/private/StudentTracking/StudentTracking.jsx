@@ -2,11 +2,10 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Download, Plus } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { studentDataService, teacherDataService } from "../Dashboard/StudentLayout";
+import { studentDataService, StudentModal, teacherDataService } from "../Dashboard/StudentLayout";
 import { BackButton } from "../../../components";
 
 import { TrackingHeader } from "./";
-import { StudentModal } from "./";
 import { ObservationModal } from "./";
 import StudentList from "./StudenList";
 import { PrivateRoutes, Roles, StudentTrackingModel } from "../../../models";

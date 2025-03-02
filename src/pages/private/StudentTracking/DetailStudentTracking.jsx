@@ -272,18 +272,6 @@ export default function DetailStudentTracking() {
     }
   }
 
-  const handleCancel = () => {
-    if (isCreatingNew) {
-      // Si estamos creando una nueva observación, volver a la lista
-      if (window.confirm("¿Estás seguro de que deseas cancelar? Los cambios no se guardarán.")) {
-        routeBefore
-      }
-    } else {
-      // Si estamos editando, solo desactivar el modo edición
-      setIsEditing(false)
-    }
-  }
-
   // Extraer valores para mostrarlos en la barra de información
   const studentName = isCreatingNew && selectedStudent 
     ? `${selectedStudent.firstName} ${selectedStudent.lastName}`

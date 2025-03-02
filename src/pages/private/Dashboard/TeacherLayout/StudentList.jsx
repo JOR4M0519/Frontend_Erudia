@@ -68,7 +68,6 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-      {/* 🔹 Botón para Expandir/Colapsar */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex justify-between items-center bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-gray-700 font-medium transition-all"
@@ -77,7 +76,6 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
         {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
       </button>
 
-      {/* 🔹 Contenedor Expandible */}
       <div className={`transition-all overflow-hidden ${isExpanded ? "max-h-screen mt-2" : "max-h-0"}`}>
         {studentList.students.length === 0 ? (
           <p className="text-gray-500 text-center p-2">No hay estudiantes disponibles.</p>
@@ -86,16 +84,19 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
             {studentList.students.map((student, index) => (
               <div
                 key={student.id}
+                onClick={() => onStudentClick && onStudentClick(student, 'info')} // Pasamos 'info' para indicar que es clic en la fila
                 className="flex items-center justify-between p-3 bg-white hover:bg-gray-200 rounded-lg cursor-pointer transition-colors shadow-sm"
               >
                 <span className="text-gray-700">
                   {index + 1}. {student.name}
                 </span>
 
-                {/* 🔹 Si `showAttendance` es true, mostrar botones de asistencia */}
                 {showAttendance ? (
                   <button
-                    onClick={() => toggleAttendance(student.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevenir que se propague al div padre
+                      toggleAttendance(student.id);
+                    }}
                     className={`flex items-center gap-2 px-4 py-1 rounded-full ${
                       attendance[student.id] ? "bg-red-500 text-white" : "bg-green-500 text-white"
                     }`}
@@ -111,7 +112,13 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
                     )}
                   </button>
                 ) : (
-                  <button onClick={() => onStudentClick && onStudentClick(student)} className="text-gray-400 hover:text-gray-600">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevenir que se propague al div padre
+                      onStudentClick && onStudentClick(student, 'grades');
+                    }} 
+                    className="text-gray-400 hover:text-gray-600"
+                  >
                     Ver Detalle
                   </button>
                 )}
@@ -120,7 +127,6 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
           </div>
         )}
       </div>
-      
     </div>
   );
 }
