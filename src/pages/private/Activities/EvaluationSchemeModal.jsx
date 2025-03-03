@@ -1,4 +1,4 @@
-import { X, Edit, Save, Loader2 } from "lucide-react";
+import { X, Edit, Save, Loader2, BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { request } from "../../../services/config/axios_helper";
@@ -6,7 +6,6 @@ import { configViewService } from "../Setting";
 import { subjectActivityService } from "../Subject";
 import { decodeRoles, hasAccess } from "../../../utilities";
 import { Roles } from "../../../models";
-//import { decodeRoles, hasAccess, Roles } from "../../../utils/roleUtils"; // Asumiendo que estos imports son correctos
 
 export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
   const [schemeEvaluation, setSchemeEvaluation] = useState([]);
@@ -17,24 +16,27 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [actualGroupId, setActualGroupId] = useState(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
-  // Verificar si el usuario es profesor
   const userState = useSelector((store) => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
   const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
 
   useEffect(() => {
-    // Suscripción al periodo seleccionado
     const periodSubscription = configViewService.getSelectedPeriod().subscribe(period => {
       setSelectedPeriod(period);
     });
     
-    // Suscripción a la materia seleccionada
     const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe(subjectString => {
       if (subjectString) {
         try {
           const parsedSubject = JSON.parse(subjectString);
           setSelectedSubject(parsedSubject);
+          if (!groupId && parsedSubject?.group?.id) {
+            setActualGroupId(parsedSubject.group.id);
+          }
         } catch (error) {
           console.error("Error al parsear la materia:", error);
           setError("Error al procesar los datos de la materia");
@@ -42,31 +44,39 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
       }
     });
     
-    // Limpiar suscripciones al desmontar el componente
+    if (groupId) {
+      setActualGroupId(groupId);
+    }
+    
     return () => {
       periodSubscription.unsubscribe();
       subjectSubscription.unsubscribe();
     };
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
-    // Verificar que tengamos todos los datos necesarios para hacer la petición
-    if (!isOpen || !groupId || !selectedPeriod || !selectedSubject?.id) {
+    if (!isOpen || !actualGroupId || !selectedPeriod || !selectedSubject?.id) {
       return;
     }
     
     fetchSchemeEvaluation();
-  }, [groupId, isOpen, selectedPeriod, selectedSubject?.id]);
+  }, [actualGroupId, isOpen, selectedPeriod, selectedSubject?.id]);
   
   const fetchSchemeEvaluation = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
+      console.log("Fetching scheme with:", {
+        period: selectedPeriod,
+        subjectId: selectedSubject.id,
+        groupId: actualGroupId
+      });
+
       const response = await request(
         "GET", 
         "academy", 
-        `/achievements-group/periods/${selectedPeriod}/subjects/${selectedSubject.id}/groups/${groupId}`
+        `/achievements-group/periods/${selectedPeriod}/subjects/${selectedSubject.id}/groups/${actualGroupId}`
       );
       
       if (response.status === 200 && Array.isArray(response.data)) {
@@ -107,7 +117,6 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     
     setIsSaving(true);
     try {
-      // Simular actualización - reemplazar por el endpoint correcto
       const response = await request(
         "PUT",
         "academy",
@@ -116,7 +125,6 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
       );
       
       if (response.status === 200) {
-        // Actualizar el estado local
         setSchemeEvaluation(prev => 
           prev.map(scheme => 
             scheme.id === item.id 
@@ -125,6 +133,9 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
           )
         );
         setEditingId(null);
+        // Mostrar mensaje de éxito
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
       }
     } catch (error) {
       console.error("Error al actualizar el logro:", error);
@@ -139,106 +150,188 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     setEditValue("");
   };
 
-  // Si el modal no está abierto, no renderizar nada
+  const handleCloseModal = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 300);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md  bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] flex flex-col">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+      onClick={handleCloseModal}
+    >
+      <div 
+        className={`bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col transition-all duration-300 transform ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">Esquema de Evaluación</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg transition-all duration-300 hover:bg-blue-200 hover:rotate-3">
+              <BookOpen className="w-5 h-5 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800">Esquema de Evaluación</h2>
+          </div>
           <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            onClick={handleCloseModal}
+            className="p-2 rounded-full hover:bg-white/80 transition-colors duration-200 hover:rotate-90 transform"
             aria-label="Cerrar"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
           </button>
         </div>
+
+        {/* Success message toast */}
+        {showSuccessMessage && (
+          <div className="absolute top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg transition-all duration-500 transform animate-slideInRight">
+            <div className="flex items-center">
+              <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p>¡Logro actualizado correctamente!</p>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <div className="flex flex-col justify-center items-center h-64">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-blue-500" />
+                </div>
+              </div>
+              <p className="text-gray-500 mt-4 animate-pulse">Cargando esquema de evaluación...</p>
             </div>
           ) : error ? (
-            <div className="bg-red-50 text-red-700 p-4 rounded-md">
-              <p>{error}</p>
+            <div className="bg-red-50 text-red-700 p-5 rounded-lg border border-red-100 shadow-sm animate-fadeIn">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error al cargar</h3>
+                  <p className="mt-2 text-sm text-red-700">{error}</p>
+                  <button 
+                    onClick={fetchSchemeEvaluation}
+                    className="mt-3 px-4 py-2 bg-white border border-red-300 rounded-md text-red-600 text-sm hover:bg-red-50 transition-colors duration-200 flex items-center gap-2 hover:shadow-md"
+                  >
+                    <Loader2 className="w-4 h-4" /> Reintentar
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full border-collapse">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
                   <tr>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">Saber</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b w-16">%</th>
+                    <th className="py-3 px-4 text-center text-sm font-medium text-gray-700 border-b w-20">%</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">Logro</th>
                     {isTeacher && (
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b w-20">Acción</th>
+                      <th className="py-3 px-4 text-center text-sm font-medium text-gray-700 border-b w-24">Acción</th>
                     )}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200">
                   {schemeEvaluation.length > 0 ? (
-                    schemeEvaluation.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 border-b">{item.knowledge.name}</td>
-                        <td className="py-3 px-4 border-b text-center">{item.knowledge.percentage}%</td>
-                        <td className="py-3 px-4 border-b">
+                    schemeEvaluation.map((item, index) => (
+                      <tr 
+                        key={item.id} 
+                        className={`hover:bg-blue-50 transition-colors duration-200 animate-fadeIn`}
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <td className="py-3 px-4 text-gray-700 font-medium">{item.knowledge.name}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center justify-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium text-sm hover:scale-110 transition-transform duration-200">
+                            {item.knowledge.percentage}%
+                          </span>
+                        </td>
+                        <td className={`py-3 px-4 text-gray-600 ${editingId === item.id ? 'bg-blue-50' : ''}`}>
                           {editingId === item.id ? (
-                            <textarea
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              rows={3}
-                            />
+                            <div className="animate-fadeIn">
+                              <textarea
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-300 resize-none transition-all duration-200 shadow-sm"
+                                rows={3}
+                                placeholder="Ingrese el logro..."
+                                autoFocus
+                              />
+                            </div>
                           ) : (
-                            item.achievement.description
+                            <div className="block py-1 relative overflow-hidden hover:bg-blue-50 rounded-lg p-2 transition-colors duration-200">
+                              {item.achievement.description}
+                            </div>
                           )}
                         </td>
                         {isTeacher && (
-                          <td className="py-3 px-4 border-b">
-                            {editingId === item.id ? (
-                              <div className="flex space-x-2">
+                          <td className="py-3 px-4">
+                            <div className="flex justify-center">
+                              {editingId === item.id ? (
+                                <div className="flex space-x-2 animate-fadeIn">
+                                  <button
+                                    onClick={() => handleSaveClick(item)}
+                                    disabled={isSaving}
+                                    className="p-2 rounded-lg text-green-600 hover:bg-green-100 transition-all duration-200 flex items-center gap-1 hover:shadow-md"
+                                    title="Guardar"
+                                  >
+                                    {isSaving ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span className="text-xs">Guardando...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Save className="w-4 h-4" />
+                                        <span className="text-xs">Guardar</span>
+                                      </>
+                                    )}
+</button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="p-2 rounded-lg text-red-600 hover:bg-red-100 transition-all duration-200 flex items-center gap-1 hover:shadow-md"
+                                    title="Cancelar"
+                                  >
+                                    <X className="w-4 h-4" />
+                                    <span className="text-xs">Cancelar</span>
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
-                                  onClick={() => handleSaveClick(item)}
-                                  disabled={isSaving}
-                                  className="p-1 rounded text-green-600 hover:bg-green-50"
-                                  title="Guardar"
+                                  onClick={() => handleEditClick(item)}
+                                  className="p-2 rounded-lg text-blue-600 hover:bg-blue-100 transition-all duration-200 group flex items-center gap-1 hover:shadow-md"
+                                  title="Editar"
                                 >
-                                  {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <Save className="w-4 h-4" />
-                                  )}
+                                  <Edit className="w-4 h-4 transition-transform duration-200 group-hover:rotate-12" />
+                                  <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">Editar</span>
                                 </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  className="p-1 rounded text-red-600 hover:bg-red-50"
-                                  title="Cancelar"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleEditClick(item)}
-                                className="p-1 rounded text-blue-600 hover:bg-blue-50"
-                                title="Editar"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            )}
+                              )}
+                            </div>
                           </td>
                         )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isTeacher ? 4 : 3} className="py-8 px-4 text-center text-gray-500">
-                        No hay datos disponibles.
+                      <td 
+                        colSpan={isTeacher ? 4 : 3} 
+                        className="py-12 text-center text-gray-500 bg-gray-50"
+                      >
+                        <div className="flex flex-col items-center justify-center space-y-3 animate-fadeIn">
+                          <BookOpen className="w-12 h-12 text-gray-300 animate-bounce" />
+                          <p>No hay datos disponibles en este momento.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -249,19 +342,19 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-3 px-6 py-4 border-t">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50 rounded-b-xl">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            onClick={handleCloseModal}
+            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 hover:shadow-md"
           >
             Cerrar
           </button>
           {isTeacher && (
             <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={handleCloseModal}
+              className="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md group"
             >
-              Aceptar
+              <span className="group-hover:translate-x-1 inline-block transition-transform duration-200">Aceptar</span>
             </button>
           )}
         </div>

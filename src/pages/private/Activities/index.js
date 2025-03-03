@@ -5,3 +5,4 @@ export { default as ActivityModal } from './ActivityModal';
 export { default as EvaluationSchemeModal } from './EvaluationSchemeModal';
 export { default as ActivitiesGrading } from './ActivitiesGrading';
 export { default as ActivitiesList } from './ActivitiesList';
+export { default as CreateActivityModal } from './CreateActivityModal';

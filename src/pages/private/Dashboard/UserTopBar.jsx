@@ -11,6 +11,7 @@ import { setSelectedUser } from "../../../redux/states/user";
 import { userDataService } from "../../../services/userDataService";
 import { useSubscribeToDataService , useSubscribeToService } from "../../../services/hooks";
 import { decodeRoles, hasAccess } from "../../../utilities";
+import { use } from "react";
 
 
 export default function UserTopBar({showSelectorUser=false,showSelectorYear=false}) {
@@ -43,7 +44,6 @@ export default function UserTopBar({showSelectorUser=false,showSelectorYear=fals
     const fetchStudents = async () => {
       try {
         const response = await studentDataService.getFamilyStudents(userState.id);
-
         const studentsWithRoles = await Promise.all(response.map(async student => ({
           ...student,
           roles: await userDataService.getRoleGroups(student.username) || userState.roles // Agregar los roles del usuario a cada estudiante-En caso que no tenga agregar roles del usuario logeado
@@ -51,7 +51,7 @@ export default function UserTopBar({showSelectorUser=false,showSelectorYear=fals
 
         
         //Agregar el usuario logeado
-        if (response.length > 0) {
+        if (response.length >= 0) {
           const userAsStudent = {
             id: userState.id,
             name: userState.name,

@@ -4,7 +4,7 @@ import { Roles } from "./roles";
 export const SideBarRoles = {
     DASHBOARD:      [Roles.ADMIN,Roles.USER],
     PROFILE:        [Roles.ADMIN,Roles.USER],
-    GRADES:         [Roles.ADMIN,Roles.USER],
+    GRADES:         [Roles.ADMIN],
     SUBJECTS:       [Roles.ADMIN,Roles.USER],
     ACTIVITIES:     [Roles.ADMIN,Roles.TEACHER],
     STUDENTTRACKING:[Roles.ADMIN,Roles.TEACHER],

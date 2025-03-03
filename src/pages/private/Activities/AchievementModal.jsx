@@ -6,12 +6,13 @@ import { teacherDataService } from "../Dashboard/StudentLayout";
 
 
 export default function AchievementModal({ isOpen, onClose, activity, onSave }) {
-    const [selectedKnowledge, setSelectedKnowledge] = useState(null);
+    const [selectedKnowledge, setSelectedKnowledge] = useState({});
     const [isSaving, setIsSaving] = useState(false);
-    const [knowledge, setKnowledge] = useState([]);
+    const [knowledges, setKnowledges] = useState([]);
     const [selectedPeriod, setSelectedPeriod] = useState(null);
     
 
+    // 🔹 Suscripción al período seleccionado (usando useEffect
     useEffect(() => {
         // 🔹 Suscripción al período seleccionado
         const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
@@ -26,9 +27,9 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
             const fetchKnowledges = async () => {
                 if (!activity?.subject?.id || !selectedPeriod) return;
     
-                try {
+                try { 
                     const data = await teacherDataService.getKnowledgesBySubject(selectedPeriod, activity.subject.id);
-                    setKnowledge(data.map((k) => k.knowledge)); // Mapeamos para extraer solo el objeto knowledge
+                    setKnowledges(data.map((k) => k.knowledge)); // Mapeamos para extraer solo el objeto knowledge
     
                     if (activity.knowledge) {
                         setSelectedKnowledge(activity.knowledge);
@@ -37,7 +38,7 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
                     }
                 } catch (error) {
                     console.error("Error al obtener los conocimientos:", error);
-                    setKnowledge([]);
+                    setKnowledges([]);
                 }
             };
     
@@ -45,12 +46,11 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
         }
     }, [isOpen, activity?.subject, selectedPeriod]);
     
-    const handleSaberChange = (e) => {
+    const handleKnowledgeChange = (e) => {
         const knowledgeId = e.target.value;
-        const selectedKnowledge = knowledge.find((s) => s.id === knowledgeId) || null;
+        const selectedKnowledge = knowledges.find((s) => s.id == knowledgeId) || null;
         setSelectedKnowledge(selectedKnowledge);
     };
-    console.log(knowledge)
     const handleClose = async () => {
       onClose();
     };
@@ -103,17 +103,17 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="saber" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="knowledge" className="block text-sm font-medium text-gray-700">
                             Saber
                         </label>
                         <select
-                            id="saber"
+                            id="knowledge"
                             className="w-full border border-gray-300 rounded-lg p-2 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             value={selectedKnowledge?.id || ""}
-                            onChange={handleSaberChange}
+                            onChange={handleKnowledgeChange}
                         >
                             <option value="">Seleccione un saber</option>
-                            {knowledge.map((knowledge) => (
+                            {knowledges.map((knowledge) => (
                                 <option key={knowledge.id} value={knowledge.id}>
                                     {knowledge.name}
                                 </option>

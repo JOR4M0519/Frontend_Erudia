@@ -6,11 +6,13 @@ import { PrivateRoutes } from "../../../models";
 import SubjectHeader from "../Subject/SubjectHeader";
 import AchievementModal from "./AchievementModal";
 import EvaluationSchemeModal from "./EvaluationSchemeModal";
+import { format } from 'date-fns'; // Agregar este import para manejo de fechas
 
 export default function ActivitiesGrading() {
   const location = useLocation();
   const navigate = useNavigate();
   const [activity, setActivity] = useState(null);
+  const [editedActivity, setEditedActivity] = useState(null);
   const [subject, setSubject] = useState(null);
   const [students, setStudents] = useState([]);
   const [grades, setGrades] = useState({});
@@ -18,8 +20,8 @@ export default function ActivitiesGrading() {
   const [isSchemeModalOpen, setIsSchemeModalOpen] = useState(false);
   const [comments, setComments] = useState({});
   const [isCompact, setIsCompact] = useState(false);
-
-
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!location.state?.activity || !location.state?.subject) {
@@ -28,11 +30,12 @@ export default function ActivitiesGrading() {
       return;
     }
     setActivity(location.state.activity);
+    setEditedActivity(location.state.activity); // Inicializar el estado de edición
     setSubject(location.state.subject);
-    
     // 🔹 Obtener lista de estudiantes y sus notas
     const fetchStudents = async () => {
       try {
+        setIsLoading(true);
         const studentList = await teacherDataService.getActivitiesScoresForGroup(
           location.state.activity.id,
           location.state.subject.group.id
@@ -53,6 +56,8 @@ export default function ActivitiesGrading() {
         setComments(initialComments);
       } catch (error) {
         console.error("Error cargando estudiantes:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchStudents();
@@ -61,65 +66,77 @@ export default function ActivitiesGrading() {
   // 🔹 Función para guardar calificaciones
   const handleSaveGrades = async () => {
     try {
-      // Tu lógica para guardar las calificaciones
-      console.log("Saving grades:", grades);
-      // Simulación de guardado exitoso
+      setIsLoading(true);
+      
+      // Preparar los datos para enviar al servidor
+      const gradesData = students.map(student => ({
+        studentId: student.studentId,
+        activityId: activity.id,
+        score: grades[student.studentId] || null,
+        comment: comments[student.studentId] || ""
+      }));
+      
+      // Llamada a la API para guardar las calificaciones
+      await teacherDataService.saveActivityScores(activity.id, gradesData);
+      
       alert("Calificaciones guardadas con éxito");
     } catch (error) {
       console.error("Error al guardar calificaciones:", error);
-      alert("Error al guardar las calificaciones");
+      alert("Error al guardar las calificaciones: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-    // Función para alternar entre vista normal y compacta
-    const toggleCompactView = () => {
-      setIsCompact(!isCompact);
-    };
+  // Función para alternar entre vista normal y compacta
+  const toggleCompactView = () => {
+    setIsCompact(!isCompact);
+  };
   
-     // Renderizado de cada fila de estudiante
-     const renderStudentRow = (student) => (
-      <div className="py-2 px-3 flex flex-col md:flex-row md:items-center bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
-        {/* Información del estudiante */}
-        <div className="w-full md:w-1/5 mb-1 md:mb-0">
-          <span className="font-medium text-gray-800 text-sm">
-            {student.firstName} {student.lastName}
-          </span>
+  // Renderizado de cada fila de estudiante
+  const renderStudentRow = (student) => (
+    <div className="py-2 px-3 flex flex-col md:flex-row md:items-center bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
+      {/* Información del estudiante */}
+      <div className="w-full md:w-1/5 mb-1 md:mb-0">
+        <span className="font-medium text-gray-800 text-sm">
+          {student.firstName} {student.lastName}
+        </span>
+      </div>
+  
+      <div className="w-full md:w-4/5 flex flex-col sm:flex-row gap-2">
+        {/* 🔹 Área de Comentario - PRIMERO el comentario (sin etiqueta) */}
+        <div className="flex-grow">
+          <textarea
+            id={`comment-${student.studentId}`}
+            rows={isCompact ? "1" : "2"}
+            className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 overflow-y-auto ${isCompact ? 'max-h-8' : ''}`}
+            value={comments[student.studentId] || ''}
+            onChange={(e) =>
+              setComments({ ...comments, [student.studentId]: e.target.value })
+            }
+            aria-label={`Comentario para ${student.firstName} ${student.lastName}`}
+          />
         </div>
   
-        <div className="w-full md:w-4/5 flex flex-col sm:flex-row gap-2">
-          {/* 🔹 Área de Comentario - PRIMERO el comentario (sin etiqueta) */}
-          <div className="flex-grow">
-            <textarea
-              id={`comment-${student.studentId}`}
-              rows={isCompact ? "1" : "2"}
-              className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 overflow-y-auto ${isCompact ? 'max-h-8' : ''}`}
-              value={comments[student.studentId] || ''}
-              onChange={(e) =>
-                setComments({ ...comments, [student.studentId]: e.target.value })
-              }
-              aria-label={`Comentario para ${student.firstName} ${student.lastName}`}
-            />
-          </div>
-  
-          {/* 🔹 Input de Nota - DESPUÉS la nota (sin etiqueta) */}
-          <div className="flex-none w-16">
-            <input
-              id={`grade-${student.studentId}`}
-              type="number"
-              min="0"
-              max="10"
-              step="0.1"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              value={grades[student.studentId] || ''}
-              onChange={(e) => 
-                setGrades({ ...grades, [student.studentId]: e.target.value })
-              }
-              aria-label={`Nota para ${student.firstName} ${student.lastName}`}
-            />
-          </div>
+        {/* 🔹 Input de Nota - DESPUÉS la nota (sin etiqueta) */}
+        <div className="flex-none w-16">
+          <input
+            id={`grade-${student.studentId}`}
+            type="number"
+            min="0"
+            max="10"
+            step="0.1"
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            value={grades[student.studentId] || ''}
+            onChange={(e) => 
+              setGrades({ ...grades, [student.studentId]: e.target.value })
+            }
+            aria-label={`Nota para ${student.firstName} ${student.lastName}`}
+          />
         </div>
       </div>
-    );
+    </div>
+  );
 
   // 🔹 Botón de Logro
   const handleOpenLogro = () => {
@@ -129,8 +146,9 @@ export default function ActivitiesGrading() {
   // 🔹 Función para guardar el logro
   const handleSaveLogro = async (data) => {
     try {
-      // Aquí iría tu llamada a la API para actualizar el logro
-      console.log("Guardando logro:", data);
+      setIsLoading(true);
+      // Llamada a la API para actualizar el logro
+      await teacherDataService.updateActivityAchievement(activity.id, data.achievement);
       
       // Actualizar el estado local con el nuevo logro
       setActivity(prev => ({
@@ -142,111 +160,269 @@ export default function ActivitiesGrading() {
     } catch (error) {
       console.error("Error al guardar el logro:", error);
       throw error; // Propaga el error para manejarlo en el componente del modal
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Nueva función para manejar la actualización de la actividad
+  const handleActivityUpdate = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Preparar los datos para enviar
+      const activityData = {
+        id: editedActivity.id,
+        name: editedActivity.name,
+        description: editedActivity.description,
+        startDate: editedActivity.startDate,
+        endDate: editedActivity.endDate,
+        status: editedActivity.status
+      };
+      
+      //!!! Agregar Llamada a la API para actualizar la actividad
+      await teacherDataService.updateActivity(activityData);
+      
+      // Actualizar el estado local con los nuevos datos
+      setActivity(editedActivity);
+      setIsEditing(false);
+      
+      alert("Información de la actividad actualizada con éxito");
+    } catch (error) {
+      console.error("Error al actualizar la actividad:", error);
+      alert("Error al actualizar la información de la actividad: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // 🔹 Botón de Esquema (si lo necesitas)
   const handleOpenScheme = () => {
-    setIsSchemeModalOpen()
+    setIsSchemeModalOpen(true);
   };
+
+  // Agregar este nuevo componente de edición antes del listado de estudiantes
+  const renderActivityEditForm = () => (
+    <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-gray-800">Información de la Actividad</h3>
+        <button 
+          onClick={() => setIsEditing(!isEditing)}
+          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          disabled={isLoading}
+        >
+          {isEditing ? "Cancelar" : "Editar"}
+        </button>
+      </div>
+        
+      {isEditing ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre
+            </label>
+            <input
+              type="text"
+              value={editedActivity.name}
+              onChange={(e) => setEditedActivity({...editedActivity, name: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción
+            </label>
+            <textarea
+              value={editedActivity.description}
+              onChange={(e) => setEditedActivity({...editedActivity, description: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              rows="2"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de inicio
+            </label>
+            <input
+              type="date"
+              value={editedActivity.startDate}
+              onChange={(e) => setEditedActivity({...editedActivity, startDate: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de fin
+            </label>
+            <input
+              type="date"
+              value={editedActivity.endDate}
+              onChange={(e) => setEditedActivity({...editedActivity, endDate: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estado
+            </label>
+            <select
+              value={editedActivity.status}
+              onChange={(e) => setEditedActivity({...editedActivity, status: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              disabled={isLoading}
+            >
+              <option value="A">Activo</option>
+              <option value="I">Inactivo</option>
+            </select>
+          </div>
+      
+          <div className="md:col-span-2 flex justify-end">
+            <button
+              onClick={handleActivityUpdate}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              disabled={isLoading}
+            >
+              {isLoading ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Nombre:</p>
+            <p className="text-gray-900">{activity.name}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium text-gray-500">Descripción:</p>
+            <p className="text-gray-900">{activity.description}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium text-gray-500">Fecha de inicio:</p>
+            <p className="text-gray-900">{format(new Date(activity.startDate), 'dd/MM/yyyy')}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium text-gray-500">Fecha de fin:</p>
+            <p className="text-gray-900">{format(new Date(activity.endDate), 'dd/MM/yyyy')}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium text-gray-500">Estado:</p>
+            <p className="text-gray-900">
+              {activity.status === 'A' ? 'Activo' : 'Inactivo'}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   if (!activity || !subject) {
     return <p className="text-gray-500 text-center">Cargando información...</p>;
   }
-  console.log(subject)
+
   return (
     <div className="space-y-6">
-      {/* 🔹 Reutilizando SubjectHeader */}
       <SubjectHeader
         isTeacher={true} // O la condición que tengas para saber si es profesor
         subjectName={`${subject.subjectName} - ${activity.name}`}
         periodGrade={null} // Si no usas la nota de periodo aquí, puedes poner null
         activities={[activity]} // Si deseas que calcule un promedio de esta actividad (o más)
         groupInfo={subject.group} // Para mostrar info del grupo
-        onOpenScheme={() => setIsSchemeModalOpen(true)} // Opcional
+        onOpenScheme={handleOpenScheme} // Corregido
         onOpenLogro={handleOpenLogro}   // Opcional
       />
       
+      {/* Agregar el formulario de edición aquí */}
+      {renderActivityEditForm()}
+      
       <div className="max-w-6xl mx-auto">
-      {/* 🔹 Lista de Estudiantes */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-bold text-gray-800">Lista de estudiantes</h3>
-          <button 
-            onClick={toggleCompactView}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-          >
-            {isCompact ? "Expandir campos" : "Ajustar campos"}
-          </button>
-        </div>
-        
-        {/* Cabecera de la tabla */}
-        <div className="py-2 px-3 flex flex-col md:flex-row md:items-center bg-gray-100 rounded-t-md font-medium text-gray-700 text-sm border-b-2 border-gray-200">
-          <div className="w-full md:w-1/5 mb-1 md:mb-0">
-            <span>Estudiante</span>
-          </div>
-          
-          <div className="w-full md:w-4/5 flex flex-col sm:flex-row gap-2">
-            <div className="flex-grow">
-              <span>Comentario</span>
-            </div>
-            <div className="flex-none w-16 text-center">
-              <span>Nota</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Cuerpo de la tabla */}
-        <div className="overflow-y-auto max-h-screen">
-          {students.length > 0 ? (
-            <div>
-              {students.map((student) => (
-                <div key={student.studentId}>
-                  {renderStudentRow(student)}
+            {/* 🔹 Lista de Estudiantes */}
+            <div className="bg-white p-4 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-bold text-gray-800">Lista de estudiantes</h3>
+                <button 
+                  onClick={toggleCompactView}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                >
+                  {isCompact ? "Expandir campos" : "Ajustar campos"}
+                </button>
+              </div>
+              
+              {/* Cabecera de la tabla */}
+              <div className="py-2 px-3 flex flex-col md:flex-row md:items-center bg-gray-100 rounded-t-md font-medium text-gray-700 text-sm border-b-2 border-gray-200">
+                <div className="w-full md:w-1/5 mb-1 md:mb-0">
+                  <span>Estudiante</span>
                 </div>
-              ))}
+                
+                <div className="w-full md:w-4/5 flex flex-col sm:flex-row gap-2">
+                  <div className="flex-grow">
+                    <span>Comentario</span>
+                  </div>
+                  <div className="flex-none w-16 text-center">
+                    <span>Nota</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Cuerpo de la tabla */}
+              <div className="overflow-y-auto max-h-screen">
+                {students.length > 0 ? (
+                  <div>
+                    {students.map((student) => (
+                      <div key={student.studentId}>
+                        {renderStudentRow(student)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center p-4 text-sm">
+                    No hay estudiantes en este grupo.
+                  </p>
+                )}
+              </div>
             </div>
-          ) : (
-            <p className="text-gray-500 text-center p-4 text-sm">
-              No hay estudiantes en este grupo.
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  
-      
-      {/* 🔹 Botón para guardar calificaciones */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSaveGrades}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Guardar Calificaciones
-        </button>
-      </div>
-      
-      {/* 🔹 Botón de regreso */}
-      <BackButton
-        confirmExit={true}
-        onClick={() =>
-          navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT)
-        }
-      />
-      
-      {/* 🔹 Modal de Logro */}
-      <AchievementModal 
-        isOpen={isAchieveModalOpen}
-        onClose={() => setIsAchieveModalOpen(false)}
-        activity={activity}
-        onSave={handleSaveLogro}
-      />
-      <EvaluationSchemeModal
-        isOpen={isSchemeModalOpen}
-        onClose={() => setIsSchemeModalOpen(false)}
-        //Para el profesor
-        groupId={subject.group?.id}
-      />
-    </div>
-  );
-}
+          </div>
+        
+            
+            {/* 🔹 Botón para guardar calificaciones */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveGrades}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Guardar Calificaciones
+              </button>
+            </div>
+            
+            {/* 🔹 Botón de regreso */}
+            <BackButton
+              confirmExit={true}
+              onClick={() =>
+                navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT)
+              }
+            />
+            
+            {/* 🔹 Modal de Logro */}
+            <AchievementModal 
+              isOpen={isAchieveModalOpen}
+              onClose={() => setIsAchieveModalOpen(false)}
+              activity={activity}
+              onSave={handleSaveLogro}
+            />
+            <EvaluationSchemeModal
+              isOpen={isSchemeModalOpen}
+              onClose={() => setIsSchemeModalOpen(false)}
+              //Para el profesor
+              groupId={subject.group?.id}
+            />
+          </div>
+        );
+      }

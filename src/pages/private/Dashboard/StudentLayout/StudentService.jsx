@@ -430,7 +430,7 @@ export const studentDataService = {
   },
 
   /**
-    * Obtener los datos del estudiante seleccionado de sus materias y grupo asignado
+    * Obtener los datos del estudiante seleccionado de sus materias y grupo asignado !!! Falta poner el año lectivo
   */
   fetchStudentData: async (studentId) => {
     try {
@@ -438,7 +438,7 @@ export const studentDataService = {
       studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
 
       // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}`, {});
+      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
         studentGroup.addSubjects(responseGroups.data);
@@ -531,7 +531,7 @@ export const teacherDataService = {
           knowledge:{
             id:         knowledge.idKnowledge.id,
             name:       knowledge.idKnowledge.name,
-            percentege: knowledge.idKnowledge.percentege
+            percentage: knowledge.idKnowledge.percentage
           }
         }));
         
@@ -646,10 +646,6 @@ export const teacherDataService = {
     } catch (error) {
       console.error("Error cargando lista de estudiantes:", error);
     }
-  },
-
-  getActivitiesScoresForGroup: async (activityId, groupId) => {
-    return getActivitiesScoresForGroup(activityId,groupId)
   },
 
 };
