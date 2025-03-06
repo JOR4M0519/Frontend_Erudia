@@ -12,6 +12,7 @@ import { CheckSquare, Plus } from "lucide-react"; // Íconos
 import { StudentList } from "../Dashboard/TeacherLayout";
 import SubjectHeader from "../Subject/SubjectHeader";
 import { CreateActivityModal } from "./"; // Importamos el nuevo componente
+import { StudentModal } from "../Dashboard/StudentLayout";
 
 export default function SubjectActivities() {
   const [tasks, setTasks] = useState([]);
@@ -20,6 +21,9 @@ export default function SubjectActivities() {
   const [isSchemeModalOpen, setIsSchemeModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Estado para controlar el modal de creación
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
   const navigate = useNavigate();
   const userState = useSelector((store) => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
@@ -120,6 +124,11 @@ export default function SubjectActivities() {
     });
   };
 
+  const handleItemClick = (student) => {
+    setSelectedStudent(student);
+    setShowStudentModal(true);    
+};
+
   return (
     <div className="space-y-6">
       {/* 🔹 Encabezado con la materia y nota */}
@@ -138,6 +147,7 @@ export default function SubjectActivities() {
       {/* 🔹 Funcionalidades extra solo para profesores */}
       {isTeacher && (
         <TeacherActions
+          handleItemClick={handleItemClick}
           onNavigateAssistance={() => navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ASISTANCE)}
           onCreateActivity={() => setIsCreateModalOpen(true)}
         />
@@ -160,12 +170,26 @@ export default function SubjectActivities() {
         periodId={selectedPeriod}
         onSave={handleCreateActivity}
       />
+
+      {selectedStudent && (
+              <StudentModal
+                student={selectedStudent}
+                isOpen={showStudentModal}
+                onClose={() => {
+                  setShowStudentModal(false);
+                  setSelectedStudent(null);
+                }}
+              />
+            )}
     </div>
   );
 }
 
-/* 🔹 Componente separado para las opciones del profesor */
-function TeacherActions({ onNavigateAssistance, onCreateActivity }) {
+/* Componente separado para las opciones del profesor */
+function TeacherActions({handleItemClick, onNavigateAssistance, onCreateActivity }) {
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -179,7 +203,7 @@ function TeacherActions({ onNavigateAssistance, onCreateActivity }) {
         </button>
       </div>
 
-      <StudentList onStudentClick={(student) => console.log("Ver detalles de:", student)} />
+      <StudentList onStudentClick={handleItemClick} />
 
       <div className="flex justify-end mt-4">
         <button
@@ -190,6 +214,7 @@ function TeacherActions({ onNavigateAssistance, onCreateActivity }) {
           Crear actividad
         </button>
       </div>
+      
     </div>
   );
 }

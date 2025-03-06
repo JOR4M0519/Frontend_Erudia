@@ -82,9 +82,10 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
         ) : (
           <div className="space-y-2 mt-2">
             {studentList.students.map((student, index) => (
+
               <div
                 key={student.id}
-                onClick={() => onStudentClick && onStudentClick(student, 'info')} // Pasamos 'info' para indicar que es clic en la fila
+                onClick={() => onStudentClick(student) } // Pasamos 'info' para indicar que es clic en la fila
                 className="flex items-center justify-between p-3 bg-white hover:bg-gray-200 rounded-lg cursor-pointer transition-colors shadow-sm"
               >
                 <span className="text-gray-700">

@@ -7,7 +7,7 @@ export default function StudentItem({
   onEditObservation,
   onDeleteObservation,
   onItemClick,
-}) {
+}){
   return (
     <div
       onClick={() => onItemClick(observation)}
@@ -20,7 +20,7 @@ export default function StudentItem({
           </div>
           <div className="col-span-3 text-gray-700">{observation?.situation ?? "Sin situación"}</div>
           <div className="col-span-2 text-center text-gray-600">
-            {observation?.period?.startDate ?? "Sin fecha"}
+            {observation?.date ?? "Sin fecha"}
           </div>
           <div className="col-span-2 text-center text-gray-700">
             {observation?.trackingType?.type ?? "Sin tipo"}
@@ -44,10 +44,10 @@ export default function StudentItem({
         <>
           <div className="col-span-4 font-medium text-gray-700">{observation?.situation ?? "Sin situación"}</div>
           <div className="col-span-4 text-center text-gray-600">
-            {observation?.period?.startDate ?? "Sin fecha"}
+            {observation?.date ?? "Sin fecha"}
           </div>
           <div className="col-span-4 text-center text-gray-700">
-            {observation?.professor?.firstName ?? ""} {observation?.professor?.lastName ?? ""}
+            {observation?.teacher?.firstName ?? ""} {observation?.teacher?.lastName ?? ""}
           </div>
         </>
       )}

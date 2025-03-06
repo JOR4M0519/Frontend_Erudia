@@ -25,7 +25,6 @@ export default function StudentTracking() {
   const userState = useSelector((store) => store.selectedUser);
   const storedRole = decodeRoles(userState.roles) || [];
   const isTeacher = hasAccess(storedRole, [Roles.TEACHER]);
-  console.log(isTeacher)
   // Función para calcular la fecha mínima entre las observaciones
   const computeMinObservationDate = (observationsList) => {
     if (!observationsList.length) return null;
@@ -185,6 +184,7 @@ export default function StudentTracking() {
       setSelectedStudent(observation.student);
       setShowStudentModal(true);
     } else {
+      console.log(observation);
       setSelectedObservation(observation);
     }
   };
@@ -249,7 +249,7 @@ export default function StudentTracking() {
       {selectedObservation && (
         <ObservationModal
           isOpen={!!selectedObservation}
-          observation={selectedObservation}
+          observationData={selectedObservation}
           onClose={() => setSelectedObservation(null)}
         />
       )}

@@ -67,11 +67,6 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     setError(null);
     
     try {
-      console.log("Fetching scheme with:", {
-        period: selectedPeriod,
-        subjectId: selectedSubject.id,
-        groupId: actualGroupId
-      });
 
       const response = await request(
         "GET", 

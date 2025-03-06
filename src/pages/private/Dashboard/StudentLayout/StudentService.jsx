@@ -11,7 +11,7 @@ import { StudentTracking } from "../../StudentTracking";
  * @param {number} groupId - ID del grupo
  * @returns {Promise<Array>} - Lista de calificaciones con información del estudiante
  */
-  const getActivitiesScoresForGroup =   async (activityId, groupId) => {
+  const getActivitiesScoresForGroup =  async (activityId, groupId) => {
     try {
       const response = await request(
         "GET",
@@ -289,13 +289,14 @@ export const studentDataService = {
         const activities = await Promise.all(
           response.data.map(async (data) => {
             const grade = await getActivityScore(data.activity.id, studentId); // Esperamos la promesa
-      
+            console.log()
             return {
               id:          data.activity.id,
               name:        data.activity.activityName,
               description: data.activity.description,
               startDate:   data.startDate,
               endDate:     data.endDate,
+              subject:     data.activity?.achievementGroup?.subjectKnowledge?.idSubject?.subjectName,
               score:       grade?.score ?? "-",   // Verifica si `grade` existe antes de acceder a `score`
               comment:     grade?.comment ?? "-",
               status:      data.activity.status ?? "Sin estado",
@@ -327,9 +328,10 @@ export const studentDataService = {
 
       if (response.status === 200) {
         return response.data.map((data) => ({
+          
           id: data.id,
           title: "Observador",
-          date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "-",
+          date: data.date ? new Date(data.date).toLocaleDateString() : "-",
           teacher: data.professor ?? "Desconocido",
           situation: data.situation ?? "Sin información",
           commitment: data.compromise ?? "Sin compromiso",
@@ -453,6 +455,65 @@ export const studentDataService = {
     return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
 
+/**
+ * Obtiene información académica de un estudiante usando métodos existentes
+ * @param {number} studentId - ID del estudiante
+ * @returns {Promise<Object>} - Datos académicos del estudiante
+ */
+getStudentAcademicProfile: async (studentId) => {
+  try {
+    // Utilizamos Promise.all para ejecutar todas las peticiones en paralelo
+    const [
+      userDetails,
+      familyList,
+      observations
+    ] = await Promise.all([
+      studentDataService.getUserDetails(studentId),
+      studentDataService.getListRelativeFamily(studentId),
+      studentDataService.getStudentObservations(studentId)
+    ]);
+
+    // Intentamos obtener el grupo del estudiante
+    await studentDataService.fetchStudentData(studentId);
+    const studentGroupData = studentDataService.getStudentDataValue();
+
+    // Extraer el nombre completo y dividirlo en nombre y apellido
+    const fullName = userDetails?.name || "";
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0] || "";
+    // Asumimos que el resto son apellidos
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Construir objeto con la información disponible
+    const studentInfo = {
+      id: studentId,
+      firstName: firstName,
+      lastName: lastName,
+      email: userDetails?.personalInfo?.celular || "", // El email está en el campo celular según el ejemplo
+      course: studentGroupData?.group?.groupName || "No asignado",
+      academicLevel: studentGroupData?.group?.level?.levelName || "No especificado",
+      observationsCount: observations?.length || 0,
+      family: Array.isArray(familyList) && familyList.length > 0 
+        ? familyList.map(relative => 
+            `${relative.user?.firstName || ""} ${relative.user?.lastName || ""} (${relative.relationship || ""})`
+          ) 
+        : [],
+      mentor: studentGroupData?.group?.mentor 
+        ? {
+            id: studentGroupData.group.mentor.id,
+            name: `${studentGroupData.group.mentor.firstName} ${studentGroupData.group.mentor.lastName}`,
+            email: studentGroupData.group.mentor.email
+          } 
+        : null
+    };
+
+    return studentInfo;
+  } catch (error) {
+    console.error("Error al obtener información académica del estudiante:", error);
+    return null;
+  }
+}
+
 };
 
 const teacherData$ = new BehaviorSubject({ subjects: [], studentGroupList: null, directionGroupList: [] });
@@ -516,6 +577,12 @@ export const teacherDataService = {
   getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
     return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
+
+  
+  getActivitiesScoresForGroup: async (activityId, groupId) => {
+    return getActivitiesScoresForGroup(activityId, groupId);
+  },
+
 
   getKnowledgesBySubject: async (periodId,subjectId) =>{
     

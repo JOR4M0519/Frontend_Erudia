@@ -19,7 +19,6 @@ export default function ObservationModal({ isOpen, observationData, onClose }) {
     followUp:
       "Se realizará un seguimiento semanal durante el próximo mes para evaluar mejoras en la concentración y participación.",
   };
-
   const observation = observationData || testObservation;
 
   const handleSave = () => {
