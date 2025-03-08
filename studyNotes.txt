@@ -22,6 +22,9 @@ npm run dev
     npm install framer-motion
     npm install react-datepicker    
     npm install sweetalert2
+    npm install tailwind-scrollbar
+    react-hook-form
+
 
 
     npm install tailwindcss @tailwindcss/vite

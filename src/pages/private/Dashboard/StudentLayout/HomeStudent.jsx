@@ -3,13 +3,22 @@ import { SchedulePreview } from "../../../../windows/Schedule/index";
 import { studentDataService} from "./index";
 import { Bell, Info, CircleX } from "lucide-react";
 import { SubjectGrid } from "../../Subject";
+import { Roles } from "../../../../models";
+import { decodeRoles, hasAccess } from "../../../../utilities";
+import { useSelector } from "react-redux";
 
 
 export default function HomeStudent() {
   const [isDirectorModalOpen, setIsDirectorModalOpen] = useState(false);
   const [isNovedadesOpen, setIsNovedadesOpen] = useState(false);
-
   const [studentData, setStudentData] = useState(null); // 🔹 Estado para los datos del estudiante
+  
+  const userState = useSelector(store => store.selectedUser);
+  const storedRole = decodeRoles(userState?.roles) ?? [];
+
+  const isTeacher = hasAccess(storedRole,[Roles.TEACHER]); // 🔹 Variable para determinar si el usuario es profesor
+
+  console.log(isTeacher)
   useEffect(() => {
     const subscription = studentDataService.getStudentData().subscribe(setStudentData);
     
@@ -40,13 +49,13 @@ export default function HomeStudent() {
   <div className="fixed bottom-6 right-6 flex space-x-4">
     <SchedulePreview />
 
-    <div
+    {!isTeacher &&(<div
       className="cursor-pointer bg-white hover:shadow-lg transition-shadow p-3 flex flex-col items-center rounded-full text-center border border-gray-300 shadow-sm"
       onClick={() => setIsDirectorModalOpen(true)}
     >
       <Info className="w-6 h-6 text-gray-600" />
       <span className="text-xs text-gray-700 font-medium mt-1">Director de grupo</span>
-    </div>
+    </div>)}
   </div>
 </div>
 

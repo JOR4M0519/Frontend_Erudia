@@ -47,6 +47,17 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require('tailwind-scrollbar')({
+      nocompatible: true, // para mejor compatibilidad entre navegadores
+      preferredStrategy: 'pseudoclasses', // mejor rendimiento
+    }),
+  ],
+  // Opcional: añadir variantes para el scrollbar
+  variants: {
+    scrollbar: ['rounded', 'dark']
+  }
+  
 }
 

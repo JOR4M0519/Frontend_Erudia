@@ -6,13 +6,13 @@ import { Layout } from "../../../components";
 import { studentDataService, StudentLayout } from "./StudentLayout";
 import { configViewService } from "../Setting";
 import { TeacherLayout } from "./TeacherLayout";
+import { Admin } from "../Admin";
 
 export default function Dashboard() {
   const selectedUser = useSelector(store => store.selectedUser);
   const storedRole = decodeRoles(selectedUser.roles) || [];
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periods, setPeriods] = useState([]);
-
 
   // 🔹 Suscribirse a los períodos disponibles
   useEffect(() => {
@@ -31,39 +31,28 @@ export default function Dashboard() {
     configViewService.loadPeriods();
   }, []);
 
-  let LayoutComponent = null;
-  let HeaderComponent = null;
-
-  if (storedRole.includes(Roles.STUDENT)) return <StudentLayout/>
+  // Renderizar el layout correspondiente según el rol del usuario
+  if (storedRole.includes(Roles.STUDENT)) {
+    return <StudentLayout />;
+  }
   
-  if (storedRole.includes(Roles.TEACHER)) return <TeacherLayout/>
+  if (storedRole.includes(Roles.TEACHER)) {
+    return <TeacherLayout />;
+  }
 
-  //if (storedRole.includes(Roles.ADMIN)) return <AdminLayout/>
+  if (storedRole.includes(Roles.ADMIN)) {
+    // Verificar si estamos en una ruta de administración
+    const isAdminRoute = window.location.pathname.startsWith('/admin');
+    
+    // Si estamos en una ruta de administración, mostrar el Admin
+    if (isAdminRoute) {
+      return <Admin />;
+    } else {
+      // Si el admin está en una ruta no administrativa, mostrar el layout por defecto
+      return <StudentLayout />;
+    }
+  }
 
-  return <StudentLayout/>;
+  // Si no hay un rol específico, mostrar el layout de estudiante por defecto
+  return <StudentLayout />;
 }
-
-        {/* {storedRole.includes("ADMIN") ? (
-          <StudentLayout />
-        ) : (
-          <>
-            <div className="grid md:grid-cols-2 gap-6">
-              <ProfileSection />
-              <PersonalInfoSection />
-            </div>
-            <ActionCards />
-          </>
-        )} */}
-            {/* <div className="grid md:grid-cols-2 gap-6">
-                <ProfileSection />
-                <PersonalInfoSection />
-            </div>
-
-            <ActionCards /> */}
-
-            {/* <RoutesWithNotFound>
-                <Route path="/" element={<Navigate to={PrivateRoutes.DASHBOARD} />} />
-                <Route element={<RoleGuard rol={Roles.ADMIN} />}>
-                    <Route path={PrivateRoutes.ADMIN} element={<Layout requiredRole={Roles.ADMIN}><Admin/></Layout>} />
-                </Route>
-            </RoutesWithNotFound> */}

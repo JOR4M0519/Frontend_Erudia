@@ -11,5 +11,6 @@ export { default as Selector } from './Selector';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as CancelButton } from './Button/CancelButton';
 export { default as XButton } from './Button/XButton';
+export { default as BaseButton } from './Button/BaseButton';
 
 

@@ -42,7 +42,7 @@ function App() {
                 <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
 
                 <Route element={<MultiRoleGuard navKey="ADMIN" />}>
-                  <Route path={PrivateRoutes.ADMIN} element={<Admin />} />
+                  <Route path={`${PrivateRoutes.ADMIN}/*`} element={<Admin />} />
                 </Route>
 
                 <Route element={<MultiRoleGuard navKey="PROFILE" />}>

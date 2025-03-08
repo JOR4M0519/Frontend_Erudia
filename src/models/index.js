@@ -6,3 +6,4 @@ export * from './ProfileRoles';
 export * from './studentGroupModel';
 export * from './state';
 export * from './StudentTrackingModel';
+export * from './AttendanceModel';

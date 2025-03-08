@@ -35,13 +35,12 @@ const Login = () => {
     
         try {
             const response = await request("POST", "gtw", "/public/login", { username, password });
-    
+               
             if (response.status === 200) {
                 const responseData = response.data; // Axios maneja la conversión automática de JSON
                 
                 if (responseData.token) {
                     //setAuthHeader(token); // Guarda el token, roles y nombre en sessionStorage
-
                     dispatch(createUser({...encodeUserInfo(responseData.user.id,responseData.token)}));
                     navigate(`${PrivateRoutes.DASHBOARD}`);
                 }
