@@ -111,7 +111,7 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
           // 🔹 Si es estudiante, obtiene solo su nota personal
           grades = await getActivityScore(data.activity.id, userId);
         }
-        console.log("Data: " , data)
+
         return {
           id:          data.activity.id,
           activityGroupId: data.id,
@@ -517,6 +517,7 @@ getStudentAcademicProfile: async (studentId) => {
     const lastName = nameParts.slice(1).join(" ") || "";
 
     // Construir objeto con la información disponible
+    console.log(familyList)
     const studentInfo = {
       id: studentId,
       firstName: firstName,
@@ -526,10 +527,13 @@ getStudentAcademicProfile: async (studentId) => {
       academicLevel: studentGroupData?.group?.level?.levelName || "No especificado",
       observationsCount: observations?.length || 0,
       family: Array.isArray(familyList) && familyList.length > 0 
-        ? familyList.map(relative => 
-            `${relative.user?.firstName || ""} ${relative.user?.lastName || ""} (${relative.relationship || ""})`
-          ) 
-        : [],
+    ? familyList.map(relative => ({
+        id: relative.id,
+        name: relative.name || `${relative.user?.firstName || ""} ${relative.user?.lastName || ""}`.trim(),
+        email: relative.email || "",
+        relationship: relative.relationship || ""
+      }))
+    : [],
       mentor: studentGroupData?.group?.mentor 
         ? {
             id: studentGroupData.group.mentor.id,
@@ -720,46 +724,6 @@ export const teacherDataService = {
     }
   },
 
-   // Nuevo método para obtener el historial de asistencia para un grupo y materia
-   async getAttendanceHistoryForGroup(group, subject, period) {
-    try {
-      const response = await request(
-        'GET', 
-        'academy', 
-        `/attendance/groups/${group}/subjects/${subject}/periods/${period}/users`
-      );
-      
-      if (response.status !== 200) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching attendance history:", error);
-      throw error;
-    }
-  },
-  
-  // Método para guardar/actualizar la asistencia
-  async saveAttendanceRecords(attendanceData) {
-    try {
-      const response = await request(
-        'POST',
-        'academy',
-        '/attendance/save',
-        attendanceData
-      );
-      
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error("Error saving attendance records:", error);
-      throw error;
-    }
-  },
 
 };
 

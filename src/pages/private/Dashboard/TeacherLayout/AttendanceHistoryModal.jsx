@@ -7,6 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { teacherDataService } from "../StudentLayout";
 import { AttendanceStatus, AttendanceStatusLabels, AttendanceStatusColors, AttendanceProcessor } from "../../../../models";
 import { XButton, CancelButton, BaseButton } from "../../../../components";
+import { attendanceService } from "./attendanceService";
 
 // Registrar el idioma español para el DatePicker
 registerLocale("es", es);
@@ -39,7 +40,7 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
     try {
       setIsLoading(true);
       setError(null);
-      const data = await teacherDataService.getAttendanceHistoryForGroup(group, subject, period);
+      const data = await attendanceService.getAttendanceHistoryForGroup(group, subject, period);
       const processedData = AttendanceProcessor.processAttendanceData(data);
       setAttendanceData(processedData);
 
@@ -174,7 +175,7 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
 
       // Solo enviar si hay cambios
       if (attendanceRecords.length > 0) {
-        await teacherDataService.saveAttendanceRecords(attendanceRecords);
+        await attendanceService.saveAttendanceRecords(attendanceRecords);
         // Recargar los datos para reflejar los cambios guardados
         await fetchAttendanceData();
       }
