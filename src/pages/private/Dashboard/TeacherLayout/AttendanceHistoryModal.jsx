@@ -8,6 +8,7 @@ import { teacherDataService } from "../StudentLayout";
 import { AttendanceStatus, AttendanceStatusLabels, AttendanceStatusColors, AttendanceProcessor } from "../../../../models";
 import { XButton, CancelButton, BaseButton } from "../../../../components";
 import { attendanceService } from "./attendanceService";
+import Swal from "sweetalert2";
 
 // Registrar el idioma español para el DatePicker
 registerLocale("es", es);
@@ -41,23 +42,31 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
       setIsLoading(true);
       setError(null);
       const data = await attendanceService.getAttendanceHistoryForGroup(group, subject, period);
+      console.log("attendanceData", data);
       const processedData = AttendanceProcessor.processAttendanceData(data);
-      setAttendanceData(processedData);
-
-      // Inicializar el estado de edición con los datos actuales
+      
+      // Inicializar el estado de edición con los datos recién procesados
       const initialEditedState = {};
       processedData.students.forEach(student => {
-        initialEditedState[student.id] = { ...processedData.attendanceMap[student.id] };
+        initialEditedState[student.id] = {};
+        
+        processedData.dates.forEach(date => {
+          if (processedData.attendanceMap[student.id]?.[date]) {
+            initialEditedState[student.id][date] = {...processedData.attendanceMap[student.id][date]};
+          }
+        });
       });
+      
       setEditedAttendance(initialEditedState);
-
+      setAttendanceData(processedData);
+  
       // Establecer fechas mínima y máxima para el filtro
       if (processedData.dates && processedData.dates.length > 0) {
         const parsedDates = processedData.dates
           .map(date => parseISO(date))
           .filter(date => isValid(date))
           .sort((a, b) => a.getTime() - b.getTime());
-
+  
         if (parsedDates.length > 0) {
           setMinDate(parsedDates[0]);
           setMaxDate(parsedDates[parsedDates.length - 1]);
@@ -65,10 +74,10 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
           setDateRange([null, null]);
         }
       }
-
+  
       // Resetear el modo de edición
       setIsEditMode(false);
-
+  
     } catch (err) {
       console.error("Error fetching attendance data:", err);
       setError("No se pudo cargar el historial de asistencia. Intente nuevamente.");
@@ -76,7 +85,6 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
       setIsLoading(false);
     }
   };
-
   // Filtrar fechas según el rango seleccionado
   const filteredDates = useMemo(() => {
     if (!attendanceData || !attendanceData.dates) return [];
@@ -117,82 +125,186 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
     return Math.ceil(filteredDates.length / DAYS_PER_PAGE);
   }, [filteredDates, DAYS_PER_PAGE]);
 
-  // Función para cambiar el estado de asistencia de un estudiante en una fecha
-  const toggleAttendanceStatus = (studentId, date) => {
-    // Solo permitir cambios en modo de edición
-    if (!isEditMode) return;
+// Función para cambiar el estado de asistencia de un estudiante en una fecha y horario
+const toggleAttendanceStatus = (studentId, date, scheduleId, recordId) => {
+  // Solo permitir cambios en modo de edición
+  if (!isEditMode) return;
 
-    const currentStatus = editedAttendance[studentId]?.[date] || AttendanceStatus.ABSENT;
-    let newStatus;
+  const currentStatus = editedAttendance[studentId]?.[date]?.[scheduleId]?.status || AttendanceStatus.ABSENT;
+  let newStatus;
 
-    // Ciclo entre los estados: P -> A -> T -> P
-    if (currentStatus === AttendanceStatus.PRESENT) {
-      newStatus = AttendanceStatus.ABSENT;
-    } else if (currentStatus === AttendanceStatus.ABSENT) {
-      newStatus = AttendanceStatus.TARDY;
-    } else {
-      newStatus = AttendanceStatus.PRESENT;
-    }
+  // Ciclo entre los estados: P -> A -> T -> P
+  if (currentStatus === AttendanceStatus.PRESENT) {
+    newStatus = AttendanceStatus.ABSENT;
+  } else if (currentStatus === AttendanceStatus.ABSENT) {
+    newStatus = AttendanceStatus.TARDY;
+  } else {
+    newStatus = AttendanceStatus.PRESENT;
+  }
 
-    setEditedAttendance(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [date]: newStatus
+  setEditedAttendance(prev => ({
+    ...prev,
+    [studentId]: {
+      ...prev[studentId],
+      [date]: {
+        ...prev[studentId]?.[date],
+        [scheduleId]: {
+          id: recordId,
+          status: newStatus,
+          recordedAt: new Date().toISOString()
+        }
       }
-    }));
-  };
+    }
+  }));
+};
+
 
   // Función para guardar los cambios de asistencia
-  const handleSaveAttendance = async () => {
-    try {
-      setIsSaving(true);
-      setError(null);
+// Función para guardar los cambios de asistencia
+const handleSaveAttendance = async () => {
+  try {
+    setIsSaving(true);
+    setError(null);
 
-      // Preparar los datos para enviar al servidor
-      const attendanceRecords = [];
-
-      attendanceData.students.forEach(student => {
-        attendanceData.dates.forEach(date => {
-          // Solo incluir registros que han cambiado
-          const originalStatus = attendanceData.attendanceMap[student.id]?.[date];
-          const newStatus = editedAttendance[student.id]?.[date];
-
-          if (newStatus && newStatus !== originalStatus) {
-            // Buscar el ID del horario para esta combinación de grupo y materia
-            // Nota: Esto es una simplificación, puede que necesites ajustar según tu estructura de datos
-            const scheduleId = 1; // Deberías obtener esto de tus datos
-
-            attendanceRecords.push({
-              studentId: student.id,
-              scheduleId: scheduleId,
+    // Recopilar todos los cambios
+    const changes = [];
+    
+    attendanceData.students.forEach(student => {
+      const studentId = student.id;
+      
+      attendanceData.dates.forEach(date => {
+        // Obtener los horarios para esta fecha y estudiante del conjunto original de datos
+        const schedulesForThisDateAndStudent = attendanceData.originalData
+          .filter(record => record.attendanceDate === date && record.student.id === studentId)
+          .map(record => record.schedule.id);
+        
+        const uniqueSchedulesForDate = [...new Set(schedulesForThisDateAndStudent)];
+        
+        uniqueSchedulesForDate.forEach(scheduleId => {
+          const originalRecord = attendanceData.attendanceMap[studentId]?.[date]?.[scheduleId];
+          const editedRecord = editedAttendance[studentId]?.[date]?.[scheduleId];
+          
+          if (originalRecord && editedRecord && originalRecord.status !== editedRecord.status) {
+            // Hay un cambio en un registro existente
+            changes.push({
+              id: originalRecord.id,
+              student: { id: studentId },
+              schedule: { id: scheduleId },
               attendanceDate: date,
-              status: newStatus
+              status: editedRecord.status,
+              recordedAt: new Date().toISOString()
             });
           }
         });
       });
+    });
 
-      // Solo enviar si hay cambios
-      if (attendanceRecords.length > 0) {
-        await attendanceService.saveAttendanceRecords(attendanceRecords);
-        // Recargar los datos para reflejar los cambios guardados
-        await fetchAttendanceData();
-      }
-
-      // Mostrar mensaje de éxito
-      alert("Registros de asistencia guardados correctamente");
-
-      // Desactivar modo de edición
+    // Si no hay cambios, salir
+    if (changes.length === 0) {
+      Swal.fire({
+        title: 'Sin cambios',
+        text: 'No hay modificaciones para guardar',
+        icon: 'info'
+      });
       setIsEditMode(false);
-
-    } catch (err) {
-      console.error("Error saving attendance:", err);
-      setError("Error al guardar los cambios. Intente nuevamente.");
-    } finally {
-      setIsSaving(false);
+      return;
     }
-  };
+
+    // Mostrar progreso
+    Swal.fire({
+      title: 'Guardando cambios',
+      text: `Procesando ${changes.length} registros`,
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // Enviar los cambios al servidor
+    await attendanceService.updateAttendanceBatch(changes);
+    
+    // Recargar los datos
+    await fetchAttendanceData();
+
+    // Mostrar mensaje de éxito
+    await Swal.fire({
+      title: 'Éxito',
+      text: `Se guardaron ${changes.length} cambios correctamente`,
+      icon: 'success'
+    });
+
+    // Desactivar modo de edición
+    setIsEditMode(false);
+  } catch (err) {
+    console.error("Error en el proceso de guardado:", err);
+    await Swal.fire({
+      title: 'Error',
+      text: err.message || 'Error al guardar los cambios',
+      icon: 'error'
+    });
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+
+const handleDeleteDate = async (date) => {
+  try {
+    // Confirmar eliminación
+    const result = await Swal.fire({
+      title: '¿Eliminar registros?',
+      text: `¿Está seguro de eliminar todos los registros de asistencia del ${format(parseISO(date), "dd/MM/yyyy")}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Mostrar progreso
+    Swal.fire({
+      title: 'Eliminando registros',
+      text: 'Por favor espere...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // Obtener todos los IDs de registros para esta fecha
+    const idsToDelete = attendanceData.originalData
+      .filter(record => record.attendanceDate === date)
+      .map(record => record.id);
+
+    if (idsToDelete.length === 0) {
+      throw new Error('No se encontraron registros para eliminar');
+    }
+
+    // Eliminar registros
+    await attendanceService.deleteAttendanceByDate(idsToDelete);
+
+    // Recargar datos
+    await fetchAttendanceData();
+
+    // Mostrar éxito
+    await Swal.fire({
+      title: 'Éxito',
+      text: `Se eliminaron ${idsToDelete.length} registros correctamente`,
+      icon: 'success'
+    });
+
+  } catch (error) {
+    console.error("Error eliminando registros:", error);
+    await Swal.fire({
+      title: 'Error',
+      text: error.message || 'Error al eliminar los registros',
+      icon: 'error'
+    });
+  }
+};
 
   // Cancelar cambios y volver al estado original
   const handleCancelEdit = () => {
@@ -396,60 +508,113 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
               <section className="flex-1 overflow-auto">
                 {paginatedDates.length > 0 ? (
                   <table className="min-w-max w-full">
-                    {/* Encabezado con fechas */}
-                    <thead className="sticky top-0 bg-white z-0 shadow-sm">
-                      <tr className="grid grid-cols-[300px_repeat(auto-fill,60px)] border-b">
-                        <th className="font-medium p-3 bg-gray-50 border-r text-left">Estudiante</th>
-                        {paginatedDates.map((date) => (
-                          <th key={date} className="text-center font-medium p-2 text-sm bg-gray-50">
-                            <time dateTime={date}>{formatDate(date)}</time>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+  <thead className="sticky top-0 bg-white z-0 shadow-sm">
+    <tr className="bg-gray-50">
+      <th className="font-medium p-3 border-r text-left" rowSpan={2}>
+        Estudiante
+      </th>
+      {paginatedDates.map((date) => {
+        // Obtener los horarios únicos para esta fecha
+        const schedulesForDate = [...new Set(
+          attendanceData.originalData
+            .filter(record => record.attendanceDate === date)
+            .map(record => record.schedule.id)
+        )].sort((a, b) => a - b);
+        
+        return (
+          <th 
+            key={date} 
+            colSpan={schedulesForDate.length} 
+            className="text-center font-medium p-2 text-sm border-b"
+          >
+            <time dateTime={date}>{formatDate(date)}</time>
+            {isEditMode && (
+              <button
+                onClick={() => handleDeleteDate(date)}
+                className="ml-2 text-red-600 hover:text-red-800 transition-colors"
+                title="Eliminar registros de este día"
+              >
+                <XIcon className="w-4 h-4 inline" />
+              </button>
+            )}
+          </th>
+        );
+      })}
+    </tr>
+    <tr className="bg-gray-50">
+      {paginatedDates.flatMap((date) => {
+        // Obtener los horarios para esta fecha
+        const schedulesForDate = [...new Set(
+          attendanceData.originalData
+            .filter(record => record.attendanceDate === date)
+            .map(record => record.schedule.id)
+        )].sort((a, b) => a - b);
+        console.log(attendanceData)
+        return schedulesForDate.map(scheduleId => {
+          const schedule = attendanceData.schedules.find(s => s.id === scheduleId);
+          return (
+            <th key={`${date}-${scheduleId}`} className="text-xs p-2 font-medium border-r">
+              {schedule?.subjectName}<br />
+              {schedule?.startTime.substring(0, 5)}-{schedule?.endTime.substring(0, 5)}
+            </th>
+          );
+        });
+      })}
+    </tr>
+  </thead>
+  <tbody className="divide-y">
+    {attendanceData.students.map((student) => {
+      // Calcular estadísticas para este estudiante
+      const stats = AttendanceProcessor.calculateStudentStats(
+        student.id,
+        editedAttendance,
+        filteredDates
+      );
 
+      return (
+        <tr key={student.id} className="hover:bg-gray-50">
+          <td className="p-3 flex flex-col justify-center border-r">
+            <div className="font-medium text-sm">
+              {student.lastName}, {student.firstName}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Asistencia: {stats.percentage}% ({stats.present}/{stats.total})
+            </div>
+          </td>
+          
+          {paginatedDates.flatMap((date) => {
+            // Obtener los horarios para esta fecha
+            const schedulesForDate = [...new Set(
+              attendanceData.originalData
+                .filter(record => record.attendanceDate === date)
+                .map(record => record.schedule.id)
+            )].sort((a, b) => a - b);
+            
+            return schedulesForDate.map(scheduleId => {
+              const attendanceRecord = editedAttendance[student.id]?.[date]?.[scheduleId];
+              const status = attendanceRecord?.status;
+              const recordId = attendanceRecord?.id;
+              
+              return (
+                <td
+                  key={`${student.id}-${date}-${scheduleId}`}
+                  className={`text-center p-1 ${isEditMode ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+                  onClick={() => isEditMode && toggleAttendanceStatus(student.id, date, scheduleId, recordId)}
+                  title={recordId ? `ID: ${recordId}` : 'Sin registro'}
+                >
+                  <div className={`w-8 h-8 rounded-full inline-flex items-center justify-center ${status ? AttendanceStatusColors[status] : 'bg-gray-100'} ${isEditMode ? 'transition-all hover:scale-110' : ''}`}>
+                    {renderAttendanceIcon(status)}
+                  </div>
+                </td>
+              );
+            });
+          })}
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
 
-                    {/* Filas de estudiantes */}
-                    <tbody className="divide-y">
-                      {attendanceData.students.map((student) => {
-                        // Calcular estadísticas para este estudiante
-                        const stats = AttendanceProcessor.calculateStudentStats(
-                          student.id,
-                          editedAttendance,
-                          filteredDates
-                        );
-
-                        return (
-                          <tr key={student.id} className="grid grid-cols-[300px_repeat(auto-fill,60px)] hover:bg-gray-50">
-                            <td className="p-3 flex flex-col justify-center border-r">
-                              <div className="font-medium text-sm">
-                                {student.lastName}, {student.firstName}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Asistencia: {stats.percentage}% ({stats.present}/{stats.total})
-                              </div>
-                            </td>
-
-                            {paginatedDates.map((date) => {
-                              const status = editedAttendance[student.id]?.[date];
-
-                              return (
-                                <td
-                                  key={`${student.id}-${date}`}
-                                  className={`flex justify-center items-center ${isEditMode ? 'cursor-pointer hover:bg-gray-100' : ''}`}
-                                  onClick={() => toggleAttendanceStatus(student.id, date)}
-                                >
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${status ? AttendanceStatusColors[status] : 'bg-gray-100'} ${isEditMode ? 'transition-all hover:scale-110' : ''}`}>
-                                    {renderAttendanceIcon(status)}
-                                  </div>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
                 ) : (
                   <p className="flex-1 flex items-center justify-center p-8 text-gray-500">
                     No hay datos de asistencia disponibles para el rango de fechas seleccionado.

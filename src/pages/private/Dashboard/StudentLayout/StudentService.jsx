@@ -517,7 +517,6 @@ getStudentAcademicProfile: async (studentId) => {
     const lastName = nameParts.slice(1).join(" ") || "";
 
     // Construir objeto con la información disponible
-    console.log(familyList)
     const studentInfo = {
       id: studentId,
       firstName: firstName,

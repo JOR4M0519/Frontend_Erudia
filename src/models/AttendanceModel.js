@@ -19,59 +19,76 @@ export const AttendanceStatusColors = {
 };
 
 // Modelo para procesar los datos de asistencia
+// En AttendanceModel.js
 export class AttendanceProcessor {
-    // Procesa los datos del API y los organiza por estudiante y fecha
     static processAttendanceData(rawData) {
         if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-            return { students: [], dates: [], attendanceMap: {} };
+            return { students: [], dates: [], schedules: [], attendanceMap: {}, originalData: [] };
         }
 
-        // Extraer estudiantes únicos
-        const uniqueStudents = [];
-        const studentMap = new Map();
-
-        // Extraer fechas únicas y ordenarlas
-        const uniqueDates = [...new Set(rawData.map(item => item.attendanceDate))].sort();
-
-        // Crear mapa de asistencia: studentId -> date -> status
-        const attendanceMap = {};
-
-        rawData.forEach(item => {
-            const student = item.student;
-            const date = item.attendanceDate;
-            const status = item.status;
-
-            // Agregar estudiante si no existe en el mapa
-            if (!studentMap.has(student.id)) {
-                studentMap.set(student.id, true);
-                uniqueStudents.push({
-                    id: student.id,
-                    firstName: student.firstName,
-                    lastName: student.lastName,
-                    username: student.username
+        // Obtener fechas únicas ordenadas
+        const uniqueDates = [...new Set(rawData.map(record => record.attendanceDate))].sort();
+        
+        // Obtener horarios únicos
+        const scheduleMap = new Map();
+        rawData.forEach(record => {
+            const scheduleId = record.schedule.id;
+            if (!scheduleMap.has(scheduleId)) {
+                scheduleMap.set(scheduleId, {
+                    id: scheduleId,
+                    startTime: record.schedule.startTime,
+                    endTime: record.schedule.endTime,
+                    dayOfWeek: record.schedule.dayOfWeek,
+                    subjectName: record.schedule.subjectGroup.subjectProfessor.subject.subjectName
                 });
             }
+        });
+        const uniqueSchedules = Array.from(scheduleMap.values());
 
-            // Inicializar el mapa de asistencia para este estudiante si no existe
-            if (!attendanceMap[student.id]) {
-                attendanceMap[student.id] = {};
+        // Agrupar estudiantes
+        const studentMap = new Map();
+        rawData.forEach(record => {
+            const student = record.student;
+            if (!studentMap.has(student.id)) {
+                studentMap.set(student.id, student);
             }
-
-            // Guardar el estado de asistencia para esta fecha
-            attendanceMap[student.id][date] = status;
         });
 
-        // Ordenar estudiantes por apellido
-        uniqueStudents.sort((a, b) => a.lastName.localeCompare(b.lastName));
+        // Crear mapa de asistencia con IDs de registro
+        const attendanceMap = {};
+        rawData.forEach(record => {
+            const studentId = record.student.id;
+            const date = record.attendanceDate;
+            const scheduleId = record.schedule.id;
+            
+            if (!attendanceMap[studentId]) {
+                attendanceMap[studentId] = {};
+            }
+            
+            if (!attendanceMap[studentId][date]) {
+                attendanceMap[studentId][date] = {};
+            }
+            
+            // Si ya existe un registro para esta fecha y horario, mantener el más reciente
+            const existingRecord = attendanceMap[studentId][date][scheduleId];
+            if (!existingRecord || new Date(record.recordedAt) > new Date(existingRecord.recordedAt)) {
+                attendanceMap[studentId][date][scheduleId] = {
+                    id: record.id,
+                    status: record.status,
+                    recordedAt: record.recordedAt
+                };
+            }
+        });
 
         return {
-            students: uniqueStudents,
             dates: uniqueDates,
-            attendanceMap: attendanceMap
+            students: Array.from(studentMap.values()),
+            schedules: uniqueSchedules,
+            attendanceMap: attendanceMap,
+            originalData: rawData
         };
     }
 
-    // Calcula estadísticas de asistencia para un estudiante
     static calculateStudentStats(studentId, attendanceMap, dates) {
         if (!attendanceMap || !attendanceMap[studentId]) {
             return { present: 0, absent: 0, tardy: 0, total: 0, percentage: 0 };
@@ -81,15 +98,21 @@ export class AttendanceProcessor {
         let present = 0;
         let absent = 0;
         let tardy = 0;
+        let total = 0;
 
         dates.forEach(date => {
-            const status = studentAttendance[date];
-            if (status === AttendanceStatus.PRESENT) present++;
-            else if (status === AttendanceStatus.ABSENT) absent++;
-            else if (status === AttendanceStatus.TARDY) tardy++;
+            if (studentAttendance[date]) {
+                Object.values(studentAttendance[date]).forEach(record => {
+                    if (record && record.status) {
+                        total++;
+                        if (record.status === AttendanceStatus.PRESENT) present++;
+                        else if (record.status === AttendanceStatus.ABSENT) absent++;
+                        else if (record.status === AttendanceStatus.TARDY) tardy++;
+                    }
+                });
+            }
         });
 
-        const total = dates.length;
         const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
         return { present, absent, tardy, total, percentage };
