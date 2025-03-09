@@ -1,8 +1,9 @@
-import { BehaviorSubject, filter, firstValueFrom } from "rxjs";
+import { BehaviorSubject, filter, firstValueFrom, identity } from "rxjs";
 import { request } from "../../../../services/config/axios_helper"; // Importamos el request para las peticiones
 import { State, StudentGroupModel, StudentTrackingModel } from "../../../../models";
 import { TeacherGroupModel } from "../../../../models/TeacherGroupModel";
 import { StudentTracking } from "../../StudentTracking";
+import { studentTrackingService } from "../../StudentTracking/studentTrackingService";
 
 
   /**
@@ -22,6 +23,7 @@ import { StudentTracking } from "../../StudentTracking";
   
       if (response.status === 200 && Array.isArray(response.data)) {
         return response.data.map((grade) => ({
+          id: grade.id,
           studentId: grade.student.id,
           firstName: grade.student.firstName,
           lastName: grade.student.lastName,
@@ -109,9 +111,13 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
           // 🔹 Si es estudiante, obtiene solo su nota personal
           grades = await getActivityScore(data.activity.id, userId);
         }
-        //console.log("Data: " , data)
+        console.log("Data: " , data)
         return {
           id:          data.activity.id,
+          activityGroupId: data.id,
+          groupId: data.activity.achievementGroup.group.id,
+          achievementGroupId: data.activity.achievementGroup.id,
+          subjectKnowledgeId: data.activity?.achievementGroup?.subjectKnowledge?.id,
           name:        data.activity.activityName,
           description: data.activity.description,
           startDate:   data.startDate,
@@ -191,6 +197,34 @@ export const studentDataService = {
   clearStudentData: () => {
     studentData$.next(null);
   },
+
+
+/**
+ * Actualiza la información personal de un usuario
+ * @param {number} userId - ID del usuario a actualizar
+ * @param {object} personalInfo - Objeto con la información personal actualizada
+ */
+updateUserPersonalInfo: async (userId, personalInfo) => {
+  try {
+    const response = await request(
+      "PUT", 
+      "academy", 
+      `/users/detail/${userId}`,
+      personalInfo
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      return response.data;
+    }
+    throw new Error(`Error al actualizar: ${response.statusText}`);
+  } catch (error) {
+    console.error("Error actualizando información personal:", error);
+    throw error;
+  }
+},
+
+
+
   /**
    * Obtener la nota del período de una materia de un estudiante
   */
@@ -314,38 +348,7 @@ export const studentDataService = {
     }
   },
 
-  /**
-   *  Obtiene todas las observaciones de un estudiante  
-  */
-  getStudentObservations: async (studentId) => {
-    try {
-      const response = await request(
-        "GET",
-        "academy",
-        `/student-tracking/students/${studentId}`,
-        {}
-      );
 
-      if (response.status === 200) {
-        return response.data.map((data) => ({
-          
-          id: data.id,
-          title: "Observador",
-          date: data.date ? new Date(data.date).toLocaleDateString() : "-",
-          teacher: data.professor ?? "Desconocido",
-          situation: data.situation ?? "Sin información",
-          commitment: data.compromise ?? "Sin compromiso",
-          followUp: data.followUp ?? "Sin seguimiento",
-          status: data.status ?? "Pendiente",
-        }));
-      }
-
-      return [];
-    } catch (error) {
-      console.error("Error al obtener observaciones:", error);
-      return [];
-    }
-  },
 
   /**
    * Obtener lista de familiares de un usuario
@@ -381,16 +384,23 @@ export const studentDataService = {
         return {
           id: response.data.id,
           name: `${response.data.firstName ?? ""} ${response.data.middleName ?? ""} ${response.data.lastName ?? ""} ${response.data.secondLastName ?? ""}`.trim(),
+          
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          middleName: response.data.middleName,
+          secondLastName: response.data.secondLastName,
           status: response.data.user.status,
           avatar: "avatar.png",
           personalInfo: {
             codigo: response.data.id,
-            rc: `${response.data.dni} - ${response.data.idType?.name ?? "Desconocido"}`,
+            identity: `${response.data.dni} - ${response.data.idType?.name ?? "Desconocido"}`,
+            numberIdentity: `${response.data.dni  ?? "Desconocido"}`,
+            typeIdentity: `${response.data.idType?.name ?? "Desconocido"}`,
             direccion: response.data.address ?? "No disponible",
             barrio: response.data.neighborhood ?? "No disponible",
             ciudad: response.data.city ?? "No disponible",
             telefono: response.data.phoneNumber ?? "No disponible",
-            celular: response.data.user.email ?? "No disponible",
+            email: response.data.user.email ?? "No disponible",
             fechaNacimiento: response.data.dateOfBirth ? new Date(response.data.dateOfBirth).toLocaleDateString() : "No disponible",
             position: response.data.positionJob ?? "No disponible",
           },
@@ -402,6 +412,28 @@ export const studentDataService = {
       return null;
     }
   },
+  /**
+ * Obtiene la lista de tipos de identificación disponibles
+ * @returns {Promise<Array>} Lista de tipos de ID
+ */
+getIdTypes: async () => {
+  try {
+    const response = await request(
+      "GET", 
+      "academy", 
+      "/id-types"
+    );
+
+    if (response.status === 200) {
+      return response.data;
+    }
+    throw new Error(`Error al obtener tipos de ID: ${response.statusText}`);
+  } catch (error) {
+    console.error("Error obteniendo tipos de ID:", error);
+    throw error;
+  }
+},
+
 
   /**
     * Obtiene los estudiantes que esta relacionado un familiar para accder a la info de ellos. 
@@ -470,7 +502,7 @@ getStudentAcademicProfile: async (studentId) => {
     ] = await Promise.all([
       studentDataService.getUserDetails(studentId),
       studentDataService.getListRelativeFamily(studentId),
-      studentDataService.getStudentObservations(studentId)
+      studentTrackingService.getStudentObservations(studentId)
     ]);
 
     // Intentamos obtener el grupo del estudiante
@@ -512,7 +544,8 @@ getStudentAcademicProfile: async (studentId) => {
     console.error("Error al obtener información académica del estudiante:", error);
     return null;
   }
-}
+},
+
 
 };
 
@@ -584,34 +617,6 @@ export const teacherDataService = {
   },
 
 
-  getKnowledgesBySubject: async (periodId,subjectId) =>{
-    
-    const response = await request(
-      "GET",
-      "academy",
-      `/subject_knowledge/periods/${periodId}/subjects/${subjectId}`,
-      {}
-    );
-    try{
-      if (response.status === 200 ) {
-        return  response.data.map((knowledge) => ({
-          knowledge:{
-            id:         knowledge.idKnowledge.id,
-            name:       knowledge.idKnowledge.name,
-            percentage: knowledge.idKnowledge.percentage
-          }
-        }));
-        
-      }
-    } catch (error) {
-    console.error("Error cargando datos del profesor:", error);
-  }
-
-    return []
-  },
-
-  
-
   /**
    * 🔹 Obtiene los grupos de materias que dicta el profesor en un año específico.
    * 🔹 Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
@@ -637,6 +642,23 @@ export const teacherDataService = {
       console.error("Error cargando datos del profesor:", error);
     }
   },
+
+  getActiveStudentGroups: async () => {
+    try {
+      const response = await request(
+        "GET", 
+        "academy", 
+        "/student-groups/active"
+      );
+      
+      // La función request ya maneja la conversión de la respuesta a JSON
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener grupos de estudiantes activos:', error);
+      throw error;
+    }
+  },
+
 
 
   /**
@@ -671,23 +693,6 @@ export const teacherDataService = {
     }
   },
 
-
-  getStudentListObservations: async (teacherId) => {
-    try {
-      const responseObservations = await request(
-        "GET",
-        "academy",
-        `/student-tracking/teachers/${teacherId}`,
-        {}
-      );
-
-      if (responseObservations.status === 200 && Array.isArray(responseObservations.data)) {
-        return responseObservations.data.map((obs) => new StudentTrackingModel(obs).toJSON());
-      }
-    } catch (error) {
-      console.error("Error cargando datos del profesor:", error);
-    }
-  },
 
 
   /**

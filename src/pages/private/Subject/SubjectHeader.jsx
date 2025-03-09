@@ -16,20 +16,24 @@ export default function SubjectHeader({
   const calculateAverage = () => {
     if (!activities || !activities.length) return "N/A";
 
-    const allScores = activities.reduce((acc, activity) => {
-      if (activity.score && activity.score.length > 0) {
-        const scores = activity.score.map((item) => item.score);
-        return acc.concat(scores);
+    const validScores = activities.reduce((acc, activity) => {
+      if (activity.score && Array.isArray(activity.score)) {
+        // Solo incluir calificaciones que no sean null y sean números válidos
+        const validActivityScores = activity.score
+          .filter(item => item.score !== "-" && !isNaN(item.score))
+          .map(item => Number(item.score));
+        return acc.concat(validActivityScores);
       }
       return acc;
     }, []);
 
-    return allScores.length > 0
-      ? (allScores.reduce((sum, cur) => sum + cur, 0) / allScores.length).toFixed(2)
+    // Calcular promedio solo si hay calificaciones válidas
+    return validScores.length > 0
+      ? (validScores.reduce((sum, cur) => sum + cur, 0) / validScores.length).toFixed(2)
       : "N/A";
   };
 
-  // Determinar color basado en la calificación (para mejorar el feedback visual)
+  // Resto del código se mantiene igual...
   const getScoreColor = (score) => {
     if (score === "N/A") return "text-gray-500";
     const numScore = parseFloat(score);

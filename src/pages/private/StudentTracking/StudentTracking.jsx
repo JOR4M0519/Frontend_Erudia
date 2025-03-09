@@ -10,6 +10,7 @@ import { ObservationModal } from "./";
 import StudentList from "./StudenList";
 import { PrivateRoutes, Roles, StudentTrackingModel } from "../../../models";
 import { decodeRoles, hasAccess } from "../../../utilities";
+import { studentTrackingService } from "./";
 
 export default function StudentTracking() {
   const [selectedObservation, setSelectedObservation] = useState(null);
@@ -66,9 +67,9 @@ export default function StudentTracking() {
         let data = [];
        
         if (isTeacher) {
-          data = await teacherDataService.getStudentListObservations(userState.id);
+          data = await studentTrackingService.getStudentListObservations(userState.id);
         } else {
-          data = await studentDataService.getStudentObservations(userState.id);
+          data = await studentTrackingService.getStudentObservations(userState.id);
         }
         
         if (data && Array.isArray(data)) {
@@ -176,7 +177,7 @@ export default function StudentTracking() {
 
   const handleDeleteObservation = (observation, e) => {
     e.stopPropagation();
-    // Implementar lógica de eliminación
+    studentTrackingService.handleDelete(observation.id)
   };
 
   const handleItemClick = (observation) => {

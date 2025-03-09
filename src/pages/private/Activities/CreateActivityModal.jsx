@@ -1,11 +1,13 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo,forwardRef} from "react";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
 import { request } from "../../../services/config/axios_helper";
-import { BookOpen, ChevronDown, Calendar } from "lucide-react";
+import { BookOpen, ChevronDown, Calendar, Activity } from "lucide-react";
 import { XButton } from "../../../components";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { activityService } from "./activityService";
+import Swal from "sweetalert2";
 
 // Registrar el idioma español para el DatePicker
 registerLocale("es", es);
@@ -51,17 +53,12 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
   const fetchSchemeEvaluation = async () => {
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      const response = await request(
-        "GET",
-        "academy",
-        `/achievements-group/periods/${periodId}/subjects/${courseData?.subject?.id}/groups/${courseData?.group?.id}`
-      );
+      const response = await activityService.getEvaluationScheme(periodId, courseData?.subject?.id, courseData?.group?.id);
 
-      if (response.status === 200 && Array.isArray(response.data)) {
-        const transformedData = response.data.map(transformSchemeData);
-        setSchemeEvaluation(transformedData);
+      if (response.success) {
+        setSchemeEvaluation(response.data);
       } else {
         setSchemeEvaluation([]);
       }
@@ -74,18 +71,7 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
     }
   };
 
-  const transformSchemeData = (data) => ({
-    id: data.id,
-    knowledge: {
-      id: data.subjectKnowledge?.idKnowledge?.id || "N/A",
-      name: data.subjectKnowledge?.idKnowledge?.name || "Desconocido",
-      percentage: data.subjectKnowledge?.idKnowledge?.percentage || "0",
-    },
-    achievement: {
-      id: data.id,
-      description: data.achievement || "Sin descripción",
-    },
-  });
+
 
   useEffect(() => {
     if (isOpen) {
@@ -129,7 +115,7 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
     }));
     setIsDropdownOpen(false);
   };
-
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setActivityData((prev) => ({
@@ -138,48 +124,59 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      if (!activityData.knowledgeId || !activityData.achievementId) {
-        throw new Error("Debe seleccionar un saber válido");
-      }
+  try {
+    if (!activityData.knowledgeId || !activityData.achievementId) {
+      throw new Error("Debe seleccionar un saber válido");
+    }
 
-      const selectedItem = schemeEvaluation.find((item) => item.knowledge.id === activityData.knowledgeId);
-      if (!selectedItem) {
-        throw new Error("Saber seleccionado no encontrado");
-      }
+    const selectedItem = schemeEvaluation.find((item) => item.knowledge.id === activityData.knowledgeId);
+    if (!selectedItem) {
+      throw new Error("Saber seleccionado no encontrado");
+    }
 
-      const activityPayload = {
-        name: activityData.name,
-        description: activityData.description,
-        startDate: format(startDate, "yyyy-MM-dd"),
-        endDate: format(endDate, "yyyy-MM-dd"),
-        percentage: parseFloat(selectedItem.knowledge.percentage),
-        subjectId: courseData.subject.id,
-        groupId: courseData.group.id,
-        periodId: periodId,
-        knowledgeId: activityData.knowledgeId,
-        achievementId: activityData.achievementId,
+    const response = await activityService.createActivity({
+      name: activityData.name,
+      description: activityData.description,
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+      groupId: courseData.group.id,
+      achievementId: activityData.achievementId,
+      status: 'A'
+    });
+    
+    if (response.success) {
+      // Asegurarse de que los datos estén completos antes de cerrar el modal
+      const activityToSave = {
+        ...response.data,
+        group: courseData.group, // Incluir la información completa del grupo
+        subject: courseData.subject, // Incluir la información de la materia si es necesaria
       };
 
-      const response = await request("POST", "academy", "/activities", activityPayload);
-      if (response.status === 201 || response.status === 200) {
-        onSave(response.data);
+      // Mostrar SweetAlert de éxito
+      Swal.fire({
+        title: '¡Éxito!',
+        text: 'La actividad ha sido creada correctamente',
+        icon: 'success',
+        confirmButtonText: 'Aceptar'
+      }).then(() => {
+        onSave(activityToSave); // Pasar los datos completos
         onClose();
-      } else {
-        setError("Error al crear la actividad: " + (response.data?.message || "Respuesta inesperada del servidor"));
-      }
-    } catch (error) {
-      console.error("Error creando actividad:", error);
-      setError("No se pudo crear la actividad: " + (error.message || "Error desconocido"));
-    } finally {
-      setIsLoading(false);
+      });
+    } else {
+      setError("Error al crear la actividad: " + (response.message || "Respuesta inesperada del servidor"));
     }
-  };
+  } catch (error) {
+    console.error("Error creando actividad:", error);
+    setError("No se pudo crear la actividad: " + (error.message || "Error desconocido"));
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -192,18 +189,23 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
     .join(" - ");
 
   // Personalización del DatePicker
-  const CustomDatePickerInput = ({ value, onClick, label, icon }) => (
+  const CustomDatePickerInput = forwardRef(({ value, onClick, label }, ref) => (
     <div className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <div 
         className="w-full px-3 py-2 border border-gray-300 rounded-md flex justify-between items-center cursor-pointer"
         onClick={onClick}
+        ref={ref}
       >
         <span>{value}</span>
         <Calendar className="w-5 h-5 text-gray-500" />
       </div>
     </div>
-  );
+  ));
+  
+    // Opcionalmente, puedes asignar un nombre para mostrar para depuración
+    CustomDatePickerInput.displayName = "CustomDatePickerInput";
+
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">

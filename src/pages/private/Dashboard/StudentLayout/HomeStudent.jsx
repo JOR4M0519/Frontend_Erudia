@@ -18,7 +18,6 @@ export default function HomeStudent() {
 
   const isTeacher = hasAccess(storedRole,[Roles.TEACHER]); // 🔹 Variable para determinar si el usuario es profesor
 
-  console.log(isTeacher)
   useEffect(() => {
     const subscription = studentDataService.getStudentData().subscribe(setStudentData);
     

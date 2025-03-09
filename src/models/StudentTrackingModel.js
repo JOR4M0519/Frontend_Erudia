@@ -9,8 +9,9 @@ export class StudentTrackingModel {
     this.compromise = data.compromise;
     this.followUp = data.followUp;
     this.status = data.status;
+    this.date = data.date;
   }
-
+  
   isWithinDateRange(startDate, endDate) {
     const periodStart = new Date(this.period.startDate);
     const periodEnd = new Date(this.period.endDate);
@@ -25,7 +26,6 @@ export class StudentTrackingModel {
     return fullName.includes(query.toLowerCase());
   }
 
-  // ✅ Convierte la instancia en un objeto JSON
   toJSON() {
     return {
       id: this.id,
@@ -60,6 +60,7 @@ export class StudentTrackingModel {
       compromise: this.compromise,
       followUp: this.followUp,
       status: this.status,
+      date: this.date
     };
   }
 }

@@ -93,36 +93,72 @@ export default function SubjectActivities() {
       return;
     }
     if (isTeacher) {
-      // 🔹 Si es PROFESOR, lo redirige a la vista de calificación con la actividad completa
+      // En lugar de pasar la función de actualización, usaremos un callback cuando regresemos
       navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_GRADING, {
-        state: { activity, subject: selectedSubject }, // Enviar toda la actividad
+        state: { 
+          activity, 
+          subject: selectedSubject,
+          returnPath: PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT
+        }
       });
     } else {
-      // 🔹 Si es ESTUDIANTE, abre el modal con detalles de la actividad
       const activityData = await fetchActivityDetail(activity.id, userState.id);
       if (activityData) {
         subjectActivityService.openTaskModal(activityData);
       }
     }
   };
-  
-  // Función para manejar la creación de una nueva actividad
+
+  // Agregar un efecto para recargar las actividades cuando regresemos de la edición
+  useEffect(() => {
+    const loadActivities = async () => {
+      if (!selectedSubject?.id || !selectedPeriod || !userState?.id || !isTeacher) return;
+      
+      try {
+        const taskData = await teacherDataService.getActivities(
+          selectedSubject.id,
+          selectedPeriod,
+          selectedSubject?.group?.id,
+          userState.id,
+          true
+        );
+        setTasks(Array.isArray(taskData) ? taskData : []);
+      } catch (error) {
+        console.error("Error recargando actividades:", error);
+      }
+    };
+
+    loadActivities();
+  }, [selectedSubject?.id, selectedPeriod, userState?.id, isTeacher]);
+
   const handleCreateActivity = (newActivity) => {
     setTasks(prevTasks => {
       // Transformar la nueva actividad al formato esperado por la lista
       const formattedActivity = {
         id: newActivity.id,
-        name: newActivity.name,
+        name: newActivity.activityName || newActivity.name, // Manejar ambos formatos
         description: newActivity.description,
         startDate: newActivity.startDate,
         endDate: newActivity.endDate,
-        status: "A",
-        score: [],
-        comment: "-"
+        status: newActivity.status || "A",
+        achievementGroup: newActivity.achievementGroup,
+        group: newActivity.group,
+        score: [], // Array vacío para nuevas actividades
+        comment: "-",
+        // Agregar los campos adicionales que necesita la vista
+        achievementId: newActivity.achievementGroup?.id,
+        groupId: newActivity.group?.id,
+        subjectId: selectedSubject?.id,
+        periodId: selectedPeriod
       };
+  
+      // Verificar que todos los campos requeridos estén presentes
+      console.log("Nueva actividad formateada:", formattedActivity);
+      
       return [...prevTasks, formattedActivity];
     });
   };
+  
 
   const handleItemClick = (student) => {
     setSelectedStudent(student);

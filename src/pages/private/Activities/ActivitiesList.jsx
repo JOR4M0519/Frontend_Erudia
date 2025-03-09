@@ -8,7 +8,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
   const toggleExpand = (taskId) => {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
-  
+
   return (
     <div className="bg-gray-100 rounded-lg overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
@@ -30,22 +30,24 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
                 <div className="col-span-4 font-medium text-gray-700">{task.name}</div>
                 <div className="col-span-4 text-gray-600">{task.description}</div>
                 <div className="col-span-2 text-center text-gray-600">
-                  {new Date(task.startDate).toLocaleDateString()} -{" "}
-                  {new Date(task.endDate).toLocaleDateString()}
+                  {task.startDate && new Date(task.startDate + 'T00:00:00').toLocaleDateString()} -{" "}
+                  {task.endDate && new Date(task.endDate + 'T00:00:00').toLocaleDateString()}
                 </div>
                 <div className="col-span-2 flex justify-center">
-                {/* Columna del profesor */}
-                {isTeacher ? (
-                  <ButtonTeacherSchollStudentList
-                    task={task}
-                    expandedTaskId={expandedTaskId}
-                    toggleExpand={toggleExpand}
-                  />
-                ) : 
-                (
-                  <span className="text-gray-700">{task.score}</span>
-                )}
-                {/* Columna del estudiante de las notas */}
+                  {/* Columna del profesor */}
+                  {isTeacher ? (
+                    <ButtonTeacherSchollStudentList
+                      task={task}
+                      expandedTaskId={expandedTaskId}
+                      toggleExpand={toggleExpand}
+                    />
+                  ) :
+                    (
+                      <span className="text-gray-700">
+                        {task.score === "-" ? "Sin calificar" : task.score}
+                      </span>
+                    )}
+                  {/* Columna del estudiante de las notas */}
                 </div>
               </div>
 
@@ -54,17 +56,19 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
                 <div className="bg-gray-50 p-4 border-t border-gray-300">
                   <h3 className="text-sm font-semibold text-gray-700">Calificaciones</h3>
                   <div className="mt-2 space-y-1">
-                    {task.score.length > 0 ? (
-                      task.score.map((student) => (
-                        <div key={student.studentId} className="flex justify-between p-2 bg-white rounded-lg">
-                          <span className="text-gray-700">
-                            {student.firstName} {student.lastName}
-                          </span>
-                          <span className={`font-medium ${student.score >= 3 ? "text-green-600" : "text-red-600"}`}>
-                            {student.score}
-                          </span>
-                        </div>
-                      ))
+                    {task.score && task.score.length > 0 ? (
+                      task.score
+                        .filter(student => student.score !== "-") // Filtrar estudiantes sin calificación
+                        .map((student) => (
+                          <div key={student.studentId} className="flex justify-between p-2 bg-white rounded-lg">
+                            <span className="text-gray-700">
+                              {student.firstName} {student.lastName}
+                            </span>
+                            <span className={`font-medium ${student.score >= 3 ? "text-green-600" : "text-red-600"}`}>
+                              {student.score}
+                            </span>
+                          </div>
+                        ))
                     ) : (
                       <p className="text-gray-500">Sin calificaciones aún.</p>
                     )}

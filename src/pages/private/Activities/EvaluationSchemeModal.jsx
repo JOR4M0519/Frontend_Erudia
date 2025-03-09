@@ -1,11 +1,11 @@
 import { X, Edit, Save, Loader2, BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { request } from "../../../services/config/axios_helper";
 import { configViewService } from "../Setting";
 import { subjectActivityService } from "../Subject";
 import { decodeRoles, hasAccess } from "../../../utilities";
 import { Roles } from "../../../models";
+import { activityService } from "./activityService";
 
 export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
   const [schemeEvaluation, setSchemeEvaluation] = useState([]);
@@ -67,17 +67,16 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     setError(null);
     
     try {
-
-      const response = await request(
-        "GET", 
-        "academy", 
-        `/achievements-group/periods/${selectedPeriod}/subjects/${selectedSubject.id}/groups/${actualGroupId}`
+      const result = await activityService.getEvaluationScheme(
+        selectedPeriod, 
+        selectedSubject.id, 
+        actualGroupId
       );
       
-      if (response.status === 200 && Array.isArray(response.data)) {
-        const transformedData = response.data.map(transformSchemeData);
-        setSchemeEvaluation(transformedData);
+      if (result.success) {
+        setSchemeEvaluation(result.data);
       } else {
+        setError(result.message);
         setSchemeEvaluation([]);
       }
     } catch (error) {
@@ -89,19 +88,6 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     }
   };
   
-  const transformSchemeData = (data) => ({
-    id: data.id,
-    knowledge: {
-      id: data.subjectKnowledge?.idKnowledge?.id || "N/A",
-      name: data.subjectKnowledge?.idKnowledge?.name || "Desconocido",
-      percentage: data.subjectKnowledge?.idKnowledge?.percentage || "0",
-    },
-    achievement: {
-      id: data.id,
-      description: data.achievement || "Sin descripción",
-    },
-  });
-  
   const handleEditClick = (item) => {
     setEditingId(item.id);
     setEditValue(item.achievement.description);
@@ -112,14 +98,24 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     
     setIsSaving(true);
     try {
-      const response = await request(
-        "PUT",
-        "academy",
-        `/achievements-group/${item.id}`,
-        { achievement: editValue }
-      );
+      // Creamos el objeto con todos los datos necesarios para la actualización
+      const updatedData = {
+        id: item.id,
+        achievement: editValue,
+        subjectKnowledge: {
+          id: item.subjectKnowledgeId
+        },
+        period:{
+          id: selectedPeriod
+        },
+        group: {
+          id: actualGroupId
+        }
+      };
       
-      if (response.status === 200) {
+      const result = await activityService.updateAchievement(item.id, updatedData);
+      
+      if (result.success) {
         setSchemeEvaluation(prev => 
           prev.map(scheme => 
             scheme.id === item.id 
@@ -131,6 +127,8 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
         // Mostrar mensaje de éxito
         setShowSuccessMessage(true);
         setTimeout(() => setShowSuccessMessage(false), 3000);
+      } else {
+        setError(result.message);
       }
     } catch (error) {
       console.error("Error al actualizar el logro:", error);

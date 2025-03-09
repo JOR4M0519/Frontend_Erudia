@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { teacherDataService } from "../Dashboard/StudentLayout/StudentService";
+import { activityService } from "./activityService"; // Agregar esta importación
 import { BackButton } from "../../../components";
 import { PrivateRoutes } from "../../../models";
 import SubjectHeader from "../Subject/SubjectHeader";
 import AchievementModal from "./AchievementModal";
 import EvaluationSchemeModal from "./EvaluationSchemeModal";
-import { format, isAfter, parseISO } from 'date-fns'; // Importamos funciones adicionales de date-fns
-import DatePicker from "react-datepicker"; // Importamos DatePicker
-import "react-datepicker/dist/react-datepicker.css"; // Importamos los estilos
+import { format, isAfter, parseISO } from 'date-fns';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import Swal from 'sweetalert2'; // Asegúrate de tener esta importación
+
 
 export default function ActivitiesGrading() {
   const location = useLocation();
@@ -32,18 +35,28 @@ export default function ActivitiesGrading() {
       navigate(PrivateRoutes.DASHBOARD);
       return;
     }
-    setActivity(location.state.activity);
-
-    // Convertimos las fechas a objetos Date para el DatePicker
-    const activityWithDateObjects = {
-      ...location.state.activity,
-      startDate: location.state.activity.startDate ? parseISO(location.state.activity.startDate) : null,
-      endDate: location.state.activity.endDate ? parseISO(location.state.activity.endDate) : null
+    
+    const initialActivity = location.state.activity;
+    // Asegurarse de que las fechas sean strings en formato ISO
+    const formattedActivity = {
+      ...initialActivity,
+      startDate: initialActivity.startDate || null,
+      endDate: initialActivity.endDate || null
     };
-
-    setEditedActivity(activityWithDateObjects); // Inicializar el estado de edición con fechas como objetos Date
+  
+    setActivity(formattedActivity);
+  
+    // Convertir las fechas a objetos Date para el DatePicker
+    const activityWithDateObjects = {
+      ...formattedActivity,
+      startDate: formattedActivity.startDate ? parseISO(formattedActivity.startDate) : null,
+      endDate: formattedActivity.endDate ? parseISO(formattedActivity.endDate) : null
+    };
+  
+    setEditedActivity(activityWithDateObjects);
     setSubject(location.state.subject);
-    // 🔹 Obtener lista de estudiantes y sus notas
+    
+
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
@@ -52,7 +65,7 @@ export default function ActivitiesGrading() {
           location.state.subject.group.id
         );
         setStudents(studentList || []);
-
+        
         // Inicializar el estado de las calificaciones con las notas existentes
         const initialGrades = {};
         const initialComments = {};
@@ -72,7 +85,10 @@ export default function ActivitiesGrading() {
       }
     };
     fetchStudents();
+    
+    // ... resto del código del useEffect
   }, [location.state, navigate]);
+
 
   // Función para manejar cambios en la fecha de inicio
   const handleStartDateChange = (date) => {
@@ -101,28 +117,45 @@ export default function ActivitiesGrading() {
   // 🔹 Función para guardar calificaciones
   const handleSaveGrades = async () => {
     try {
-      setIsLoading(true);
+        setIsLoading(true);
 
-      // Preparar los datos para enviar al servidor
-      const gradesData = students.map(student => ({
-        studentId: student.studentId,
-        activityId: activity.id,
-        score: grades[student.studentId] || null,
-        comment: comments[student.studentId] || ""
-      }));
+        // Preparar los datos para enviar al servidor
+        const gradesData = students.map(student => ({
+            id: student.id, // Añadimos el ID si existe
+            studentId: student.studentId,
+            activity: {
+                id: activity.activityGroupId,
+                activity: {id: activity.id},
+                group: {id: activity.groupId},
+            },
+            score: grades[student.studentId] || null,
+            comment: comments[student.studentId] || ""
+        }));
 
-      // Llamada a la API para guardar las calificaciones
-      await teacherDataService.saveActivityScores(activity.id, gradesData);
+        console.log("Datos a guardar:", gradesData); // Para debugging
 
-      alert("Calificaciones guardadas con éxito");
+        const response = await activityService.saveActivityScores(activity.activityGroupId, gradesData);
+
+        if (response.success) {
+            await Swal.fire({
+                title: '¡Éxito!',
+                text: 'Calificaciones guardadas correctamente',
+                icon: 'success'
+            });
+        } else {
+            throw new Error(response.message);
+        }
     } catch (error) {
-      console.error("Error al guardar calificaciones:", error);
-      alert("Error al guardar las calificaciones: " + error.message);
+        console.error("Error al guardar calificaciones:", error);
+        await Swal.fire({
+            title: 'Error',
+            text: `Error al guardar las calificaciones: ${error.message}`,
+            icon: 'error'
+        });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
-
+};
   // Función para alternar entre vista normal y compacta
   const toggleCompactView = () => {
     setIsCompact(!isCompact);
@@ -130,7 +163,10 @@ export default function ActivitiesGrading() {
 
   // Renderizado de cada fila de estudiante
   const renderStudentRow = (student) => (
+    
+
     <div className="py-2 px-3 flex flex-col md:flex-row md:items-center bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
+      
       {/* Información del estudiante */}
       <div className="w-full md:w-1/5 mb-1 md:mb-0">
         <span className="font-medium text-gray-800 text-sm">
@@ -181,61 +217,113 @@ export default function ActivitiesGrading() {
   // 🔹 Función para guardar el logro
   const handleSaveLogro = async (data) => {
     try {
-      setIsLoading(true);
-      // Llamada a la API para actualizar el logro
-      await teacherDataService.updateActivityAchievement(activity.id, data.achievement);
+        setIsLoading(true);
+        
+        // Verificamos que tengamos todos los datos necesarios
+        if (!data.achievementGroupId || !data.subjectKnowledgeId) {
+            throw new Error("Faltan datos requeridos para actualizar el logro");
+        }
+        
+        // Llamada a la API para actualizar el logro
+        const response = await activityService.updateActivityAchievement(
+            data.achievementGroupId,
+            data.subjectKnowledgeId,
+            data.groupId,
+            data.periodId,
+            data.achievement,
+        );
 
-      // Actualizar el estado local con el nuevo logro
-      setActivity(prev => ({
-        ...prev,
-        achievement: data.achievement
-      }));
+        if (response.success) {
+            // Actualizar el estado local con el nuevo logro
+            setActivity(prev => ({
+                ...prev,
+                achievementGroup: {
+                    ...prev.achievementGroup,
+                    subjectKnowledge: {
+                        id: data.subjectKnowledgeId
+                    }
+                }
+            }));
 
-      return true; // Indica éxito
+            return true;
+        } else {
+            throw new Error(response.message);
+        }
     } catch (error) {
-      console.error("Error al guardar el logro:", error);
-      throw error; // Propaga el error para manejarlo en el componente del modal
+        console.error("Error al guardar el logro:", error);
+        throw error;
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
 
   // Nueva función para manejar la actualización de la actividad
   const handleActivityUpdate = async () => {
     try {
-      // Validar que las fechas sean correctas
       if (dateError) {
-        alert(dateError);
+        Swal.fire({
+          title: 'Error',
+          text: dateError,
+          icon: 'error'
+        });
         return;
       }
 
       setIsLoading(true);
 
-      // Preparar los datos para enviar - convertir fechas a formato ISO string
       const activityData = {
         id: editedActivity.id,
         name: editedActivity.name,
         description: editedActivity.description,
         startDate: editedActivity.startDate ? format(editedActivity.startDate, 'yyyy-MM-dd') : null,
         endDate: editedActivity.endDate ? format(editedActivity.endDate, 'yyyy-MM-dd') : null,
-        status: editedActivity.status
+        status: editedActivity.status,
+        groupId: subject.group.id,
+        achievementGroup: {
+          id: editedActivity.achievementGroup?.id || editedActivity.achievementGroupId
+        },
+        group: subject.group
       };
 
-      //!!! Agregar Llamada a la API para actualizar la actividad
-      await teacherDataService.updateActivity(activityData);
+      const response = await activityService.updateActivity(activityData);
 
-      // Actualizar el estado local con los nuevos datos
-      setActivity({
-        ...editedActivity,
-        startDate: activityData.startDate,
-        endDate: activityData.endDate
-      });
-      setIsEditing(false);
+      if (response.success) {
+        const updatedActivity = {
+          ...response.data,
+          startDate: response.data.startDate,
+          endDate: response.data.endDate,
+          group: subject.group
+        };
 
-      alert("Información de la actividad actualizada con éxito");
+        setActivity(updatedActivity);
+        setEditedActivity({
+          ...updatedActivity,
+          startDate: updatedActivity.startDate ? parseISO(updatedActivity.startDate) : null,
+          endDate: updatedActivity.endDate ? parseISO(updatedActivity.endDate) : null
+        });
+
+        setIsEditing(false);
+
+        await Swal.fire({
+          title: '¡Éxito!',
+          text: 'Información de la actividad actualizada correctamente',
+          icon: 'success'
+        });
+
+        // Redirigir de vuelta a la lista de actividades para que se actualice
+        if (location.state?.returnPath) {
+          navigate(location.state.returnPath);
+        }
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error) {
       console.error("Error al actualizar la actividad:", error);
-      alert("Error al actualizar la información de la actividad: " + error.message);
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al actualizar la información de la actividad: ' + (error.message || 'Error desconocido'),
+        icon: 'error'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -246,30 +334,88 @@ export default function ActivitiesGrading() {
     setIsSchemeModalOpen(true);
   };
 
+  const handleDeleteActivity = async () => {
+    try {
+      // Confirmar antes de eliminar
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "No podrás revertir esta acción",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        setIsLoading(true);
+        const response = await activityService.deleteActivity(activity.id);
+        console.log(response)
+        if (response.success) {
+          Swal.fire(
+            '¡Eliminado!',
+            'La actividad ha sido eliminada.',
+            'success'
+          ).then(() => {
+            // Redirigir al listado de actividades
+            navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT);
+          });
+        } else {
+          throw new Error(response.message);
+        }
+      }
+    } catch (error) {
+      console.error("Error al eliminar la actividad:", error);
+      Swal.fire(
+        'Error',
+        'No se pudo eliminar la actividad: ' + (error.message || 'Error desconocido'),
+        'error'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
   // Componente de edición con DatePicker
   const renderActivityEditForm = () => (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-800">Información de la Actividad</h3>
-        <button
-          onClick={() => {
-            setIsEditing(!isEditing);
-            setDateError(""); // Limpiar errores al cambiar modo
-            if (isEditing) {
-              // Si estamos cancelando, restauramos los valores originales
-              const originalWithDateObjects = {
-                ...activity,
-                startDate: activity.startDate ? parseISO(activity.startDate) : null,
-                endDate: activity.endDate ? parseISO(activity.endDate) : null
-              };
-              setEditedActivity(originalWithDateObjects);
-            }
-          }}
-          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          disabled={isLoading}
-        >
-          {isEditing ? "Cancelar" : "Editar"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setIsEditing(!isEditing);
+              setDateError("");
+
+              if (isEditing) {
+                // Si estamos cancelando, restauramos los valores originales
+                const originalWithDateObjects = {
+                  ...activity,
+                  startDate: activity.startDate ? parseISO(activity.startDate) : null,
+                  endDate: activity.endDate ? parseISO(activity.endDate) : null,
+                  // Asegurarse de mantener todas las referencias necesarias
+                  achievementGroupId: activity.achievementGroup?.id,
+                  group: activity.group
+                };
+                setEditedActivity(originalWithDateObjects);
+              }
+            }}
+            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isEditing ? "Cancelar" : "Editar"}
+          </button>
+          <button
+            onClick={handleDeleteActivity}
+            className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+            disabled={isLoading}
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
 
       {isEditing ? (
@@ -337,7 +483,7 @@ export default function ActivitiesGrading() {
               disabled={isLoading}
             >
               <option value="A">Activo</option>
-              <option value="I">Inactivo</option>
+              <option value="P">Pausado</option>
             </select>
           </div>
 
@@ -358,6 +504,7 @@ export default function ActivitiesGrading() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
           <div>
             <p className="text-sm font-medium text-gray-500">Nombre:</p>
             <p className="text-gray-900">{activity.name}</p>
@@ -369,18 +516,22 @@ export default function ActivitiesGrading() {
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-500">Fecha de inicio:</p>
-            <p className="text-gray-900">
-              {activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy') : 'No definida'}
-            </p>
-          </div>
+  <p className="text-sm font-medium text-gray-500">Fecha de inicio:</p>
+  <p className="text-gray-900">
+    {activity.startDate 
+      ? format(new Date(activity.startDate + 'T00:00:00'), 'dd/MM/yyyy')
+      : 'No definida'}
+  </p>
+</div>
 
-          <div>
-            <p className="text-sm font-medium text-gray-500">Fecha de fin:</p>
-            <p className="text-gray-900">
-              {activity.endDate ? format(new Date(activity.endDate), 'dd/MM/yyyy') : 'No definida'}
-            </p>
-          </div>
+<div>
+  <p className="text-sm font-medium text-gray-500">Fecha de fin:</p>
+  <p className="text-gray-900">
+    {activity.endDate 
+      ? format(new Date(activity.endDate + 'T00:00:00'), 'dd/MM/yyyy')
+      : 'No definida'}
+  </p>
+</div>
 
           <div>
             <p className="text-sm font-medium text-gray-500">Estado:</p>
