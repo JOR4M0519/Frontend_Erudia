@@ -1,5 +1,5 @@
-import React from "react";
-import { Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { RoutesWithNotFound } from "../../../utilities";
 import { AdminAcademy,
    AdminEmployees,
@@ -21,10 +21,20 @@ import { AcademicConfiguration, AcademicReports } from "./Academy";
 const removeAdminPrefix = (path) => path.replace('/admin/', '');
 
 const Admin = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirigir a /admin/institution si estamos en /admin/home o /admin/
+  useEffect(() => {
+    if (location.pathname === '/admin' || location.pathname === '/admin/' || location.pathname === '/admin/home') {
+      navigate(AdminRoutes.INSTITUTION, { replace: true });
+    }
+  }, [location.pathname, navigate]);
   return (
     <RoutesWithNotFound>
       {/* Redirección por defecto a la sección de institución */}
       <Route path="/" element={<Navigate to={removeAdminPrefix(AdminRoutes.INSTITUTION)} replace />} />
+      <Route path="/home" element={<Navigate to={removeAdminPrefix(AdminRoutes.INSTITUTION)} replace />} />
       
       {/* Rutas principales del panel administrativo */}
       <Route path={removeAdminPrefix(AdminRoutes.INSTITUTION)} element={<AdminInstitution />} />

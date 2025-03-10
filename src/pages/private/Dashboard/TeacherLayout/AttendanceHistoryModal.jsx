@@ -42,7 +42,6 @@ export default function AttendanceHistoryModal({ isOpen, onClose, group, subject
       setIsLoading(true);
       setError(null);
       const data = await attendanceService.getAttendanceHistoryForGroup(group, subject, period);
-      console.log("attendanceData", data);
       const processedData = AttendanceProcessor.processAttendanceData(data);
       
       // Inicializar el estado de edición con los datos recién procesados
@@ -549,7 +548,7 @@ const handleDeleteDate = async (date) => {
             .filter(record => record.attendanceDate === date)
             .map(record => record.schedule.id)
         )].sort((a, b) => a - b);
-        console.log(attendanceData)
+        
         return schedulesForDate.map(scheduleId => {
           const schedule = attendanceData.schedules.find(s => s.id === scheduleId);
           return (

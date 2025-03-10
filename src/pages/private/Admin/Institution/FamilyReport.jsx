@@ -4,6 +4,7 @@ import { ChevronLeft, FileText, Search, Download, Users, UserPlus, User, Home, A
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { AdminRoutes } from "../../../../models";
+import { institutionService } from "./institutionService";
 
 
 const FamilyReport = () => {
@@ -22,30 +23,40 @@ const FamilyReport = () => {
         const fetchFamilies = async () => {
             setLoading(true);
             try {
-                // Simulamos la llamada a la API (reemplazar con tu endpoint real)
-                // const response = await axios.get("/api/families/report");
-                // const data = response.data;
-
-                // Datos de ejemplo
-                const data = {
-                    families: [
-                        { id: 1, name: "Familia García", code: "FG-001", memberCount: 4, activeChildrenCount: 2 },
-                        { id: 2, name: "Familia Rodríguez", code: "FR-002", memberCount: 5, activeChildrenCount: 3 },
-                        { id: 3, name: "Familia López", code: "FL-003", memberCount: 3, activeChildrenCount: 1 },
-                        { id: 4, name: "Familia Martínez", code: "FM-004", memberCount: 6, activeChildrenCount: 4 },
-                        { id: 5, name: "Familia Hernández", code: "FH-005", memberCount: 3, activeChildrenCount: 2 },
-                        { id: 6, name: "Familia González", code: "FG-006", memberCount: 4, activeChildrenCount: 2 },
-                        { id: 7, name: "Familia Pérez", code: "FP-007", memberCount: 5, activeChildrenCount: 3 },
-                        { id: 8, name: "Familia Sánchez", code: "FS-008", memberCount: 4, activeChildrenCount: 2 },
-                    ],
-                    totalMembers: 34,
-                    totalActiveChildren: 19,
+                // Obtener el array de familias directamente del servicio
+                const familiesFromBackend = await institutionService.fetchFaimiliesReport();
+                
+                // Adaptar los datos del backend al formato esperado por el componente
+                const adaptedFamilies = familiesFromBackend.map(family => ({
+                    id: family.code, // Usar el código como ID si no hay ID específico
+                    code: family.code,
+                    name: family.familyName, // Mapear familyName a name
+                    memberCount: family.totalMembers, // Este nombre ya coincide
+                    activeChildrenCount: family.activeStudents // Mapear activeStudents a activeChildrenCount
+                }));
+                
+                // Calcular totales
+                const calculatedTotalMembers = familiesFromBackend.reduce(
+                    (total, family) => total + family.totalMembers, 0
+                );
+                
+                const calculatedTotalActiveChildren = familiesFromBackend.reduce(
+                    (total, family) => total + family.activeStudents, 0
+                );
+                
+                // Crear objeto con la estructura esperada
+                const processedData = {
+                    families: adaptedFamilies,
+                    totalMembers: calculatedTotalMembers,
+                    totalActiveChildren: calculatedTotalActiveChildren
                 };
-
-                setFamilies(data.families);
-                setTotalFamilies(data.families.length);
-                setTotalMembers(data.totalMembers);
-                setTotalActiveChildren(data.totalActiveChildren);
+                
+                // Actualizar estados
+                setFamilies(processedData.families);
+                setTotalFamilies(processedData.families.length);
+                setTotalMembers(processedData.totalMembers);
+                setTotalActiveChildren(processedData.totalActiveChildren);
+                
             } catch (err) {
                 console.error("Error al cargar datos de familias:", err);
                 setError("No se pudieron cargar los datos. Por favor intente nuevamente.");
@@ -54,7 +65,7 @@ const FamilyReport = () => {
                 setLoading(false);
             }
         };
-
+    
         fetchFamilies();
     }, []);
 
@@ -405,4 +416,5 @@ const FamilyReport = () => {
 };
 
 export default FamilyReport;
+
 

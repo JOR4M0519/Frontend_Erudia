@@ -1,7 +1,7 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { Roles } from '../../models/index';
-import { encryptData, Config, getStorage } from "../../utilities/index";
+import { encryptData, config, getStorage } from "../../utilities/index";
 import { UserKey } from "../../redux/states/user";
 import { toast } from "react-toastify"; // Para mostrar notificaciones
 
@@ -39,7 +39,7 @@ export const encodeUserInfo = (id,token) => {
 };
 
 // Configuración global de axios
-axios.defaults.baseURL = Config.apiBaseUrl;
+axios.defaults.baseURL = config.apiBaseUrl;
 axios.defaults.headers.post["Content-Type"] = "application/json";
 
 /**

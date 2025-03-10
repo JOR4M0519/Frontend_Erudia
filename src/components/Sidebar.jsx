@@ -37,7 +37,14 @@ export default function Sidebar() {
   const [viewMode, setViewMode] = useState(() => {
     // Verificar si la ruta actual es administrativa
     const isAdminRoute = window.location.pathname.startsWith(AdminRoutes.ROOT);
-    return isAdmin && isAdminRoute ? "admin" : "default";
+    // Leer el modo guardado en localStorage o usar el valor predeterminado
+    const savedMode = localStorage.getItem('userViewMode');
+    
+    if (savedMode) {
+      return savedMode;
+    } else {
+      return isAdmin && isAdminRoute ? "admin" : "default";
+    }
   });
   const location = useLocation();
 
@@ -46,8 +53,10 @@ export default function Sidebar() {
     // Verificar si la ruta actual comienza con /admin (sin el *)
     if (location.pathname.startsWith(AdminRoutes.ROOT)) {
       setViewMode("admin");
+      localStorage.setItem('userViewMode', 'admin');
     } else if (!location.pathname.startsWith(AdminRoutes.ROOT) && viewMode === "admin") {
       setViewMode("default");
+      localStorage.setItem('userViewMode', 'default');
     }
   }, [location.pathname]);
 
@@ -157,6 +166,10 @@ export default function Sidebar() {
         const newMode = viewMode === "admin" ? "default" : "admin";
         setViewMode(newMode);
         
+        // Guardar la preferencia del usuario en localStorage para persistencia
+        localStorage.setItem('userViewMode', newMode);
+        window.userChosenViewMode = newMode;
+        
         // Navegar a la ruta correspondiente
         if (newMode === "admin") {
           navigate(AdminRoutes.INSTITUTION); // Ruta principal de admin
@@ -167,8 +180,6 @@ export default function Sidebar() {
     };
     navItems.push(switchItem);
   }
-  
-
   return (
 <aside className="flex flex-col h-full bg-white">
   {/* Título del panel con padding adecuado */}
@@ -177,7 +188,7 @@ export default function Sidebar() {
       {viewMode === "admin" ? "Panel Admin" : "Mi Portal"}
     </h2>
   </div>
-  
+
   {/* Contenedor de navegación con scrollbar de Tailwind */}
   <nav className="space-y-1 px-3 py-7 flex-1 overflow-y-auto 
   scrollbar scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
@@ -191,7 +202,6 @@ export default function Sidebar() {
     <Logout />
   </div>
 </aside>
-
   );
 }
 
@@ -218,6 +228,7 @@ function NavItem({ to, icon, label, subItems, navKey, userRoles, action, isAdmin
       setIsOpen(true);
     }
   }, [location.pathname, subItems]);
+  
   
   return (
     <div className="flex flex-col">
@@ -270,4 +281,3 @@ function NavItem({ to, icon, label, subItems, navKey, userRoles, action, isAdmin
     </div>
   );
 }
-

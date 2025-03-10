@@ -1,7 +1,7 @@
 import CryptoJS from "crypto-js";
 import { persistStorage } from "./webStorage.utility";
 import { UserInfo } from "../models";
-import config from "./config.utility";
+import {config} from "./";
 
 /**
  * Encripta la Data.
