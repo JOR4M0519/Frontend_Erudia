@@ -1,4 +1,5 @@
 import { request } from "../../../../services/config/axios_helper";
+import { RoleModel, IdTypeModel } from "./";
 
 
 /**
@@ -6,16 +7,61 @@ import { request } from "../../../../services/config/axios_helper";
  */
 export const employeeService = {
   /**
-   * Obtiene el consolidado de empleados para un año determinado
-   * @param {number} year - Año para filtrar los empleados
-   * @returns {Promise<Array>} Lista de empleados
+   * Obtiene todos los roles disponibles en el sistema
+   * @returns {Promise<Array<RoleModel>>} Lista de roles
    */
-  getEmployeeConsolidated: async (year = new Date().getFullYear()) => {
+  getRoles: async () => {
     try {
       const response = await request(
         "GET",
-        "admin",
-        `/employees/consolidated?year=${year}`,
+        "academy",
+        "/users/roles",
+        {}
+      );
+       
+      if (response.status === 200) {
+        return response.data.map(role => RoleModel.fromJson(role));
+      }
+      return [];
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
+      throw error;
+    }
+  },
+  /**
+   * Crea un nuevo usuario administrativo
+   * @param {Object} userData - Datos del usuario a crear
+   * @returns {Promise<Object>} Usuario creado
+   */
+  createAdministrativeUser: async (userData) => {
+    try {
+      const response = await request(
+        "POST",
+        "academy",
+        "/users/administrative",
+        userData
+      );
+
+      if (response.status === 201) {
+        return response.data;
+      }
+      throw new Error("Error al crear usuario administrativo");
+    } catch (error) {
+      console.error("Error al crear usuario administrativo:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene los tipos de identificación
+   * @returns {Promise<Array>} Lista de tipos de identificación
+   */
+  getIdTypes: async () => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        "/id-types",
         {}
       );
 
@@ -24,22 +70,31 @@ export const employeeService = {
       }
       return [];
     } catch (error) {
-      console.error("Error al obtener consolidado de empleados:", error);
+      console.error("Error al obtener tipos de identificación:", error);
       throw error;
     }
   },
+};
 
-  /**
-   * Obtiene detalles de un empleado por su ID
-   * @param {string|number} id - ID del empleado
-   * @returns {Promise<Object>} Datos del empleado
+// src/services/userService.js
+
+
+/**
+ * Servicio para gestionar usuarios del sistema
+ */
+export const userService = {
+  
+   /**
+   * Obtiene los detalles completos de un usuario por su ID
+   * @param {number} id - ID del usuario
+   * @returns {Promise<Object>} Detalles completos del usuario
    */
-  getEmployeeById: async (id) => {
+   getUserDetail: async (id) => {
     try {
       const response = await request(
         "GET",
-        "admin",
-        `/employees/${id}`,
+        "academy",
+        `/users/detail/${id}`,
         {}
       );
 
@@ -48,94 +103,70 @@ export const employeeService = {
       }
       return null;
     } catch (error) {
-      console.error("Error al obtener datos del empleado:", error);
+      console.error("Error al obtener detalles del usuario:", error);
       throw error;
     }
   },
 
   /**
-   * Agrega un nuevo empleado al sistema
-   * @param {Object} employeeData - Datos del nuevo empleado
-   * @returns {Promise<Object>} Datos del empleado creado
+   * Actualiza la información completa de un usuario
+   * @param {number} userId - ID del usuario
+   * @param {Object} userData - Datos actualizados del usuario y su detalle
+   * @returns {Promise<Object>} Resultado de la operación
    */
-  addEmployee: async (employeeData) => {
+  updateUserFull: async (userId, userData) => {
     try {
       const response = await request(
-        "POST",
-        "admin",
-        "/employees",
-        employeeData
-      );
-
-      if (response.status === 201 || response.status === 200) {
-        return response.data;
-      }
-      throw new Error("No se pudo crear el empleado");
-    } catch (error) {
-      console.error("Error al agregar empleado:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualiza los datos de un empleado existente
-   * @param {string|number} id - ID del empleado a actualizar
-   * @param {Object} employeeData - Nuevos datos del empleado
-   * @returns {Promise<Object>} Datos actualizados del empleado
-   */
-  updateEmployee: async (id, employeeData) => {
-    try {
-      const response = await request(
-        "PUT",
-        "admin",
-        `/employees/${id}`,
-        employeeData
+        "PATCH",
+        "academy",
+        `/users/${userId}/full`,
+        userData
       );
 
       if (response.status === 200) {
         return response.data;
       }
-      throw new Error("No se pudo actualizar el empleado");
+      throw new Error("Error al actualizar información del usuario");
     } catch (error) {
-      console.error("Error al actualizar empleado:", error);
+      console.error("Error al actualizar información del usuario:", error);
       throw error;
     }
   },
 
-  /**
-   * Elimina un empleado del sistema
-   * @param {string|number} id - ID del empleado a eliminar
-   * @returns {Promise<boolean>} Resultado de la operación
-   */
-  deleteEmployee: async (id) => {
-    try {
-      const response = await request(
-        "DELETE",
-        "admin",
-        `/employees/${id}`,
-        {}
-      );
+/**
+ * Obtiene todos los tipos de identificación disponibles
+ * @returns {Promise<Array<IdTypeModel>>} Lista de tipos de identificación
+ */
+getIdTypes: async () => {
+  try {
+    const response = await request(
+      "GET",
+      "academy",
+      "/id-types",
+      {}
+    );
 
-      if (response.status === 200 || response.status === 204) {
-        return true;
-      }
-      throw new Error("No se pudo eliminar el empleado");
-    } catch (error) {
-      console.error("Error al eliminar empleado:", error);
-      throw error;
+    if (response.status === 200) {
+      return response.data;
     }
-  },
+    return [];
+  } catch (error) {
+    console.error("Error al obtener tipos de identificación:", error);
+    throw error;
+  }
+},
+
 
   /**
-   * Obtiene la lista de cargos disponibles para los empleados
-   * @returns {Promise<Array>} Lista de cargos
+   * Obtiene todos los usuarios administrativos
+   * @returns {Promise<Array>} Lista de usuarios administrativos
    */
-  getAvailableRoles: async () => {
+  getAdministrativeUsers: async () => {
     try {
       const response = await request(
         "GET",
-        "admin",
-        "/employees/roles",
+        "academy",
+        "/users/roles/administrative",
         {}
       );
 
@@ -144,32 +175,79 @@ export const employeeService = {
       }
       return [];
     } catch (error) {
-      console.error("Error al obtener lista de cargos:", error);
-      return ["Docente", "Auxiliar administrativo", "Coordinador académico", "Rector", "Personal de apoyo"];
+      console.error("Error al obtener usuarios administrativos:", error);
+      throw error;
     }
   },
 
   /**
-   * Cambia el estado de uno o varios empleados
-   * @param {Array} employeeIds - Array con IDs de los empleados a modificar
-   * @param {string} newStatus - Nuevo estado a aplicar
-   * @returns {Promise<boolean>} Resultado de la operación
+   * Obtiene todos los estudiantes
+   * @returns {Promise<Array>} Lista de estudiantes
    */
-  changeEmployeeStatus: async (employeeIds, newStatus) => {
+  getStudents: async () => {
     try {
       const response = await request(
-        "PATCH",
-        "admin",
-        "/employees/status",
-        { ids: employeeIds, status: newStatus }
+        "GET",
+        "academy",
+        "/users/roles/students",
+        {}
       );
 
       if (response.status === 200) {
-        return true;
+        return response.data;
       }
-      throw new Error("No se pudo actualizar el estado de los empleados");
+      return [];
     } catch (error) {
-      console.error("Error al cambiar estado de empleados:", error);
+      console.error("Error al obtener estudiantes:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene detalles de un usuario por su ID
+   * @param {string|number} id - ID del usuario
+   * @returns {Promise<Object>} Datos del usuario
+   */
+  getUserById: async (id) => {
+    try {
+      const response = await request(
+        "GET",
+        "academy",
+        `/users/${id}`,
+        {}
+      );
+
+      if (response.status === 200) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error al obtener datos del usuario:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualiza el estado de un usuario
+   * @param {number} id - ID del usuario
+   * @param {string} status - Nuevo estado (A: Activo, I: Inactivo)
+   * @returns {Promise<Object>} Resultado de la operación
+   */
+  updateUserStatus: async (id, status) => {
+    try {
+      const response = await request(
+        "PATCH",
+        "academy",
+        `/users/${id}/status`,
+        { status }
+      );
+
+      if (response.status === 200) {
+        return response.data;
+      }
+      throw new Error("Error al actualizar estado del usuario");
+    } catch (error) {
+      console.error("Error al actualizar estado del usuario:", error);
       throw error;
     }
   }

@@ -176,5 +176,37 @@ export const studentAdminService = {
             console.error("Error al crear estudiante:", error);
             throw error;
         }
+    },
+
+   /**
+ * Promueve un grupo de estudiantes al grupo destino especificado
+ * @param {Object} promotionData - Datos de promoción
+ * @param {Array<number>} promotionData.studentIds - IDs de los estudiantes a promover
+ * @param {number} promotionData.targetGroupId - ID del grupo destino
+ * @param {string} promotionData.promotionStatus - Estado de promoción (A, P, R)
+ * @returns {Promise<Array>} - Lista de estudiantes promovidos
+ */
+async promoteStudents(promotionData) {
+    try {
+        const response = await request(
+            'POST',
+            'academy',
+            '/student-groups/promote',
+            promotionData
+        );
+
+        if (response.status !== 200) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("Error al promover estudiantes:", error);
+        throw error;
     }
+},
+  
+  // 
+  
+
 }

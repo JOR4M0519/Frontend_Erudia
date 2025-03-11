@@ -520,23 +520,30 @@ const ManagementTab = () => {
           </div>
 
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-md transition-colors flex items-center"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Registrar Estudiante
-                </>
-              )}
-            </button>
+          <button
+  type="submit"
+  disabled={loading}
+  className={`px-6 py-2.5 text-white rounded-md transition-all flex items-center justify-center cursor-pointer shadow-sm
+    ${loading 
+      ? "bg-gray-500 cursor-not-allowed opacity-80" 
+      : "bg-blue-600 hover:bg-blue-700 hover:shadow-md active:translate-y-0.5 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 focus:outline-none"
+    }
+  `}
+  aria-live="polite"
+>
+  {loading ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white  mr-2"></div>
+      Procesando...
+    </>
+  ) : (
+    <>
+      <Save className="h-4 w-4 mr-2" />
+      Registrar Estudiante
+    </>
+  )}
+</button>
+
           </div>
         </form>
       )}
