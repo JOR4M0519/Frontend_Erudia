@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
-import { adminStudentService } from "../..";
+import { studentAdminService } from "../studentAdminService";
 
-const RepeatingTab = ({ year }) => {
+
+const RepeatingTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [repeatingData, setRepeatingData] = useState([]);
@@ -12,7 +13,7 @@ const RepeatingTab = ({ year }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await adminStudentService.getRepeatingStudentsReport(year);
+        const data = await studentAdminService.getRepeatingStudentsReport();
         setRepeatingData(data);
       } catch (err) {
         setError("No se pudieron cargar los datos de repitentes. Intente nuevamente.");
@@ -23,7 +24,7 @@ const RepeatingTab = ({ year }) => {
     };
 
     fetchData();
-  }, [year]);
+  }, []);
 
   if (loading) {
     return (
@@ -50,32 +51,20 @@ const RepeatingTab = ({ year }) => {
     );
   }
 
-  // Datos simulados para desarrollo
-  const mockData = [
-    {
-      id: 1,
-      name: "Grado Cuarto",
-      level: "Primaria",
-      repeating: 0
-    },
-    {
-      id: 2,
-      name: "Grado Quinto",
-      level: "Primaria",
-      repeating: 3
-    },
-    {
-      id: 3,
-      name: "Grado Sexto",
-      level: "Primaria",
-      repeating: 1
+  // Agrupar por nivel educativo
+  const groupedByLevel = repeatingData.reduce((acc, item) => {
+    if (!acc[item.levelName]) {
+      acc[item.levelName] = [];
     }
-  ];
+    acc[item.levelName].push(item);
+    return acc;
+  }, {});
 
-  const data = repeatingData.length > 0 ? repeatingData : mockData;
-  
   // Calcular el total de repitentes
-  const totalRepeating = data.reduce((sum, grade) => sum + grade.repeating, 0);
+  const totalRepeating = repeatingData.reduce((sum, group) => sum + group.repeatingCount, 0);
+
+  // Encontrar el valor máximo para escalar las barras de progreso
+  const maxRepeating = Math.max(...repeatingData.map(group => group.repeatingCount), 1);
 
   return (
     <div>
@@ -87,35 +76,70 @@ const RepeatingTab = ({ year }) => {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {data.map((grade, index) => (
+      {Object.entries(groupedByLevel).length > 0 ? (
+        Object.entries(groupedByLevel).map(([levelName, groups], levelIndex) => (
           <motion.div
-            key={grade.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white border border-gray-200 rounded-lg p-4"
+            key={levelName}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: levelIndex * 0.1 }}
+            className="mb-8"
           >
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">{grade.name}</h3>
-                <p className="text-sm text-gray-500">{grade.level}</p>
-              </div>
-              <div className="flex items-center">
-                <div className={`px-4 py-2 rounded-full ${grade.repeating > 0 ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
-                  <span className="font-semibold">{grade.repeating}</span>
-                </div>
-                <div className="ml-4 w-32 bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className={`h-2.5 rounded-full ${grade.repeating > 0 ? 'bg-amber-500' : 'bg-gray-400'}`}
-                    style={{width: `${Math.min(100, (grade.repeating / 10) * 100)}%`}}
-                  ></div>
-                </div>
-              </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">{levelName}</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Grupo
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Repitentes
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Distribución
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {groups.map((group, groupIndex) => (
+                    <motion.tr 
+                      key={group.groupId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (levelIndex * 0.1) + (groupIndex * 0.05) }}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{group.groupName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
+                          group.repeatingCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {group.repeatingCount}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className={`h-2.5 rounded-full ${group.repeatingCount > 0 ? 'bg-amber-500' : 'bg-gray-400'}`}
+                            style={{width: `${Math.min(100, (group.repeatingCount / maxRepeating) * 100)}%`}}
+                          ></div>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </motion.div>
-        ))}
-      </div>
+        ))
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          No hay datos de estudiantes repitentes disponibles.
+        </div>
+      )}
     </div>
   );
 };

@@ -30,6 +30,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [studentData, setStudentData] = useState(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Elegir el servicio de datos según el rol
   const dataService = isTeacher || isAdmin ? teacherDataService : studentDataService;
@@ -37,11 +38,29 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
   // Suscripción al usuario
   useSubscribeToDataService(selectedUser, dataService, setStudentData, studentData);
 
+  // Establecer el usuario actual como seleccionado cuando se carga inicialmente
+  useEffect(() => {
+    if (userState?.id && !selectedStudentId) {
+      setSelectedStudentId(userState.id.toString());
+      
+      // Si no hay un usuario seleccionado en Redux, establecer el usuario actual
+      if (!selectedUser?.id && userState?.id) {
+        dispatch(setSelectedUser({
+          id: userState.id,
+          name: userState.name,
+          roles: userState.roles,
+          isUser: true
+        }));
+      }
+    }
+  }, [userState?.id, selectedUser, selectedStudentId, dispatch]);
+
   // Obtener lista de estudiantes asociados al usuario si es familiar
   useEffect(() => {
     if (!userState?.id) return;
 
     const fetchStudents = async () => {
+      setIsLoading(true);
       try {
         const response = await studentDataService.getFamilyStudents(userState.id);
         const studentsWithRoles = await Promise.all(response.map(async student => ({
@@ -68,11 +87,13 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
         }
       } catch (error) {
         console.error("Error obteniendo estudiantes del familiar:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchStudents();
-  }, [userState?.id]);
+  }, [userState?.id, selectedUser]);
 
   // Suscripción a los periodos
   useEffect(() => {
@@ -114,21 +135,43 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
     }
   };
 
-  if (!students.length) return (
+  // Mostrar un estado de carga mejorado
+  if (isLoading || !userState?.id) return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed top-0 left-0 w-full h-16 bg-gray-200 flex items-center justify-center"
+      className="fixed top-0 left-0 w-full h-16 bg-gray-200 flex items-center justify-between px-6"
     >
+      <motion.img
+        src={"/logo.png"}
+        alt="Logo Colegio"
+        className="h-12"
+      />
       <motion.div
         animate={{ scale: [1, 1.05, 1] }}
         transition={{ repeat: Infinity, duration: 1.5 }}
         className="text-gray-600 font-medium"
       >
-        Cargando estudiantes...
+        Cargando información del usuario...
       </motion.div>
+      <div className="w-12"></div> {/* Espaciador para mantener centrado el texto */}
     </motion.div>
   );
+
+  // Fallback para cuando hay userState pero aún no hay estudiantes
+  if (!students.length && userState?.id) {
+    // Crear un estudiante temporal con los datos del usuario actual
+    const tempStudents = [{
+      id: userState.id,
+      name: userState.name,
+      roles: userState.roles,
+      isUser: true
+    }];
+    
+    setStudents(tempStudents);
+    setSelectedStudentId(userState.id.toString());
+    return null; // Retornar null para evitar renderizado durante esta actualización
+  }
 
   const handleStudentChange = (studentId) => {
     const selected = students.find(student => student.id === parseInt(studentId));
@@ -144,11 +187,12 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
     navigate(PrivateRoutes.PROFILE, { state: { viewing: true } });
   };
 
-
   // Encontrar el nombre del estudiante seleccionado para mostrar en el selector
-  const selectedStudentName = students.find(s => s.id === parseInt(selectedStudentId))?.name ||
-    selectedUser?.name ||
-    "Seleccionar Usuario";
+  // Priorizar el usuario actual durante la carga inicial
+  const selectedStudentName = students.find(s => s.id === parseInt(selectedStudentId))?.name || 
+    userState.name || 
+    selectedUser?.name || 
+    "Cargando usuario...";
 
   return (
     <motion.div
@@ -227,7 +271,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
             </div>
           ) : (
             <div className="text-sm font-medium text-gray-900 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-300">
-              {userState.name}
+              {userState.name || "Cargando..."}
             </div>
           )}
         </div>

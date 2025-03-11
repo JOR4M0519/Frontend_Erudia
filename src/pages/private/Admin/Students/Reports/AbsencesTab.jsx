@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, AlertCircle } from "lucide-react";
+import { Calendar, AlertCircle, Clock, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
-import { adminStudentService } from "../..";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { studentAdminService } from "../studentAdminService";
 
-const AbsencesTab = ({ year }) => {
+const AbsencesTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [absenceData, setAbsenceData] = useState([]);
@@ -12,10 +14,10 @@ const AbsencesTab = ({ year }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await adminStudentService.getAbsenceReport(year);
+        const data = await studentAdminService.getAttendanceGroupReport();
         setAbsenceData(data);
       } catch (err) {
-        setError("No se pudieron cargar los datos de ausencias. Intente nuevamente.");
+        setError("No se pudieron cargar los datos de asistencia. Intente nuevamente.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -23,7 +25,7 @@ const AbsencesTab = ({ year }) => {
     };
 
     fetchData();
-  }, [year]);
+  }, []);
 
   if (loading) {
     return (
@@ -50,79 +52,109 @@ const AbsencesTab = ({ year }) => {
     );
   }
 
-  // Datos simulados para desarrollo
-  const mockData = [
-    {
-      id: 1,
-      name: "Grado Cuarto",
-      level: "Primaria",
-      stats: {
-        ultimoRegistro: "Sin registros",
-        totalActivos: 1,
-        justificados: 0,
-        noJustificados: 2
-      }
-    },
-    {
-      id: 2,
-      name: "Grado Quinto",
-      level: "Primaria",
-      stats: {
-        ultimoRegistro: "Sin registros",
-        totalActivos: 1,
-        justificados: 0,
-        noJustificados: 2
-      }
+  // Agrupar datos por nivel educativo
+  const groupedByLevel = absenceData.reduce((acc, group) => {
+    if (!acc[group.levelName]) {
+      acc[group.levelName] = [];
     }
-  ];
+    acc[group.levelName].push(group);
+    return acc;
+  }, {});
 
-  const data = absenceData.length > 0 ? absenceData : mockData;
+  const formatDate = (dateString) => {
+    if (!dateString) return "Sin registros";
+    try {
+      return format(new Date(dateString), "dd 'de' MMMM, yyyy", { locale: es });
+    } catch (e) {
+      return "Fecha inválida";
+    }
+  };
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Reporte ausencias</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Reporte de asistencia</h2>
 
-      {data.map((grade, index) => (
+      {Object.entries(groupedByLevel).map(([levelName, groups], levelIndex) => (
         <motion.div
-          key={grade.id}
+          key={levelName}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: index * 0.1 }}
+          transition={{ delay: levelIndex * 0.1 }}
           className="mb-8"
         >
-          <div className="mb-2">
-            <h3 className="text-lg font-semibold">{grade.name}</h3>
-            <p className="text-sm text-gray-500">{grade.level}</p>
-          </div>
-
-          <div className="space-y-2 bg-white border border-gray-200 rounded-lg p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                  <span>Último registro</span>
-                </div>
-                <span className="text-gray-600">{grade.stats.ultimoRegistro}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <span>Total activos</span>
-                <span className="font-semibold">{grade.stats.totalActivos}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-md">
-                <span>Justificados</span>
-                <span className="font-semibold text-green-600">{grade.stats.justificados}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-red-50 rounded-md">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-                  <span>No justificados</span>
-                </div>
-                <span className="font-semibold text-red-600">{grade.stats.noJustificados}</span>
-              </div>
-            </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{levelName}</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Grupo
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Último registro
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activos
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Presentes
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tardanzas
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ausencias
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {groups.map((group, groupIndex) => (
+                  <motion.tr 
+                    key={group.groupId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (levelIndex * 0.1) + (groupIndex * 0.05) }}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <div className="text-sm font-medium text-gray-900">{group.groupName}</div>
+                        <div className="text-sm text-gray-500">{group.sectionName}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="h-4 w-4 text-gray-400 mr-1" />
+                        {formatDate(group.lastRecord)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <UserCheck className="h-4 w-4 mr-1" />
+                        {group.totalActive}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        {group.presentCount}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {group.lateCount}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {group.absentCount}
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </motion.div>
       ))}

@@ -16,7 +16,7 @@ const AdminStudentReport = () => {
     { id: "nivel", label: "Nivel académico" },
     { id: "ausencias", label: "Ausencias" },
     { id: "repitentes", label: "Repitentes" },
-    { id: "nuevos", label: "Nuevos" }
+    // { id: "nuevos", label: "Nuevos" }
   ];
 
   return (

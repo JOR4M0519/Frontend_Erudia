@@ -18,7 +18,7 @@ const AdminStudentProcesses = () => {
   const tabs = [
     { id: "promociones", label: "Promociones" },
     { id: "estado", label: "Estado" },
-    { id: "ausencias", label: "Ausencias" },
+    // { id: "ausencias", label: "Ausencias" },
     { id: "gestion", label: "Gestión" }
   ];
 
