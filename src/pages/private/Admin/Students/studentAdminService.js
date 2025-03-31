@@ -1,3 +1,4 @@
+import apiEndpoints from "../../../../Constants/api-endpoints";
 import { request } from "../../../../services/config/axios_helper";
 
 
@@ -64,8 +65,8 @@ export const studentAdminService = {
         try {
             const response = await request(
                 'GET',
-                'academy',
-                `/student-groups/active`
+                apiEndpoints.SERVICES.ACADEMY,
+                apiEndpoints.API_ENDPOINTS.GROUPS.STUDENT_GROUPS_ALL
             );
 
             if (response.status !== 200) {
@@ -83,7 +84,7 @@ export const studentAdminService = {
         try {
             const response = await request(
                 'PATCH',
-                'academy',
+                apiEndpoints.SERVICES.ACADEMY,
                 `/users/detail/${user.id}/promotion-status?promotionStatus=${user.promotionStatus}`
             );
     
@@ -122,8 +123,8 @@ export const studentAdminService = {
         try {
             const response = await request(
                 'GET',
-                'academy',
-                '/groups/active'
+                apiEndpoints.SERVICES.ACADEMY,
+                apiEndpoints.API_ENDPOINTS.GROUPS.ACTIVE_ALL
             );
     
             if (response.status !== 200) {

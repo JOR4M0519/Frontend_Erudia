@@ -16,7 +16,7 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
   const [attendance, setAttendance] = useState({}); // 🔹 Estado de asistencia
 
 
-  // 🔹 Suscribirse a la materia seleccionada
+  // Suscribirse a la materia seleccionada
   useEffect(() => {
     const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
       if (subjectString) {
@@ -150,26 +150,54 @@ const getAttendanceContent = (status) => {
       </div>
 
       <div className={`transition-all overflow-hidden ${isExpanded ? "max-h-screen" : "max-h-0"}`}>
-        {studentList.students.map((student, index) => (
-          <div
-            key={student.id}
-            className="flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-lg mb-2 transition-colors shadow-sm"
-          >
-            <span className="text-gray-700">
-              {index + 1}. {student.name}
-            </span>
+       {studentList.students.map((student, index) => (
+  <div
+    key={student.id}
+    className="flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-lg mb-2 transition-colors shadow-sm cursor-pointer"
+    onClick={() => !showAttendance && onStudentClick(student)} // Add this line to make it clickable
+  >
+    <span className="text-gray-700">
+      {index + 1}. {student.name}
+    </span>
 
-            {showAttendance && (
-              <button
-                onClick={() => toggleAttendance(student.id)}
-                className={`flex items-center gap-2 px-4 py-1 rounded-full ${getAttendanceStyle(attendance[student.id])}`}
-              >
-                {getAttendanceContent(attendance[student.id]).icon}
-                {getAttendanceContent(attendance[student.id]).text}
-              </button>
-            )}
-          </div>
-        ))}
+    {showAttendance && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent triggering the parent div's onClick
+          toggleAttendance(student.id);
+        }}
+        className={`flex items-center gap-2 px-4 py-1 rounded-full ${getAttendanceStyle(attendance[student.id])}`}
+      >
+        {getAttendanceContent(attendance[student.id]).icon}
+        {getAttendanceContent(attendance[student.id]).text}
+      </button>
+    )}
+    
+    {/* Add buttons for viewing student info and grades when not in attendance mode */}
+    {!showAttendance && (
+      <div className="flex gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onStudentClick(student);
+          }}
+          className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+        >
+          Ver Información
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onStudentClick(student, 'grades');
+          }}
+          className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+        >
+          Ver Calificaciones
+        </button>
+      </div>
+    )}
+  </div>
+))}
       </div>
     </div>
   );

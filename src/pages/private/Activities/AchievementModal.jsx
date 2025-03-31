@@ -12,7 +12,7 @@ export default function AchievementModal({ isOpen, onClose, activity, onSave }) 
     const [knowledges, setKnowledges] = useState([]);
     const [selectedPeriod, setSelectedPeriod] = useState(null);
     
-    // 🔹 Suscripción al período seleccionado (usando useEffect
+    //  Suscripción al período seleccionado (usando useEffect
     useEffect(() => {
         const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
         return () => {

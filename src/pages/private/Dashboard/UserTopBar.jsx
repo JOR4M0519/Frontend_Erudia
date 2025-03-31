@@ -117,7 +117,8 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
   const infoHeader = () => {
     if (isAdmin) return "Administrador";
     if (isTeacher) return "Profesor";
-    return studentData?.group?.groupName;
+    if (isStudent) return "Estudiante";
+    return "Padre de familia";
   };
 
 

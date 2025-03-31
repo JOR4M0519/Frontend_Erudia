@@ -1,15 +1,15 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-
-
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
+import { decodeRoles } from "../../../../utilities";
 import { PrivateRoutes, Roles } from "../../../../models";
-import { HomeStudent, teacherDataService } from "../StudentLayout";
+import { GradesStudent, HomeStudent, teacherDataService } from "../StudentLayout";
 import { ActivitiesGrading, ActivityModal, SubjectActivities} from "../../Activities";
 import { AsistanceGrid, DirectionGroupsGrid } from ".";
 
 export default function TeacherLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
+  const storedRoles = decodeRoles(userState?.roles) || [];
 
   useEffect(() => {
     if (!userState?.id) return; // No ejecuta si no hay usuario
@@ -25,16 +25,32 @@ export default function TeacherLayout() {
   // Si solo hay un segmento, lo mantiene (evita que se rompa en `/dashboard`).
   const baseRoute = pathSegments.length > 1 ? pathSegments.slice(0, -1).join("/") : pathSegments[0] || "";
 
+  // Verificar los roles del usuario seleccionado
+  const hasTeacherRole = storedRoles.includes(Roles.TEACHER);
+  const hasStudentRole = storedRoles.includes(Roles.STUDENT);
   return (
     <div className="space-y-6 p-6">
       <Routes>
         {/* Redirige a `home` por defecto */}
         <Route path="/" element={<Navigate to={`/${baseRoute}${PrivateRoutes.HOME}`} />} />
         <Route path={PrivateRoutes.HOME} element={<HomeStudent />} />
+        
+        {/* Rutas comunes o que pueden ser accedidas por estudiantes */}
         <Route path={PrivateRoutes.ACTIVITIES_SUBJECT} element={<SubjectActivities />} />
         <Route path={PrivateRoutes.ASISTANCE} element={<AsistanceGrid />} />
-        <Route path={PrivateRoutes.ACTIVITIES_GRADING} element={<ActivitiesGrading />} />
-        <Route path={PrivateRoutes.DIRECTOR_GROUP_SUBJECTS} element={<DirectionGroupsGrid />} />
+        
+        {/* Rutas que requieren rol de profesor */}
+        {hasTeacherRole && (
+          <>
+            <Route path={PrivateRoutes.ACTIVITIES_GRADING} element={<ActivitiesGrading />} />
+            <Route path={PrivateRoutes.DIRECTOR_GROUP_SUBJECTS} element={<DirectionGroupsGrid />} />
+          </>
+        )}
+        
+        {/* Rutas que requieren rol de estudiante */}
+        {hasStudentRole && (
+          <Route path={PrivateRoutes.GRADES} element={<GradesStudent />} />
+        )}
       </Routes>
       <ActivityModal /> 
     </div>

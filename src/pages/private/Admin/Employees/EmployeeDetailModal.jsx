@@ -1,7 +1,7 @@
 // src/components/admin/teachers/EmployeeDetailModal.jsx
 
 import React from "react";
-import { X, Save, Edit, User, Mail, Calendar, Phone, MapPin, Briefcase, Shield } from "lucide-react";
+import { X, Save, Edit, User, Mail, Calendar, Phone, MapPin, Briefcase, Shield, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 const EmployeeDetailModal = ({
@@ -14,7 +14,9 @@ const EmployeeDetailModal = ({
   editedUserData,
   handleInputChange,
   handleSaveChanges,
+  handleRoleChange,
   idTypes,
+  roles,
   detailLoading
 }) => {
   if (!isOpen) return null;
@@ -22,7 +24,7 @@ const EmployeeDetailModal = ({
   // Evitar renderizar contenido si no hay datos
   if (detailLoading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 z-50 flex items-center justify-center">
         <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
           <div className="flex justify-center items-center p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
@@ -144,6 +146,50 @@ const EmployeeDetailModal = ({
                       }`}>
                         {selectedUser.status === 'A' ? 'Activo' : 'Inactivo'}
                       </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Nueva sección para mostrar roles */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Roles
+                  </label>
+                  <div className="flex items-center">
+                    <UserCheck className="h-4 w-4 text-gray-400 mr-2" />
+                    {isEditing && roles && roles.length > 0 ? (
+                      <div className="space-y-2">
+                        {roles.map(role => (
+                          <div key={role.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`role-${role.id}`}
+                              value={role.id}
+                              checked={editedUserData.user.roles.includes(role.id)}
+                              onChange={handleRoleChange}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor={`role-${role.id}`} className="ml-2 block text-sm text-gray-900">
+                              {role.roleName}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {selectedUser.roles && selectedUser.roles.length > 0 ? (
+                          selectedUser.roles.map(role => (
+                            <span 
+                              key={role.id} 
+                              className="inline-flex items-center mr-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {role.role.roleName}
+                            </span>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 italic">Sin roles asignados</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

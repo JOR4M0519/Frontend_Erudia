@@ -3,10 +3,11 @@ import { useSelector } from "react-redux";
 import { Pencil, Save, X, Phone, MapPin, Calendar, Building, Briefcase, Mail, Users, FileDigit, IdCard, Contact, UserX, User } from "lucide-react";
 import { BackButton } from "../../../components";
 import { studentDataService } from "../Dashboard/StudentLayout";
-import { Roles, State } from "../../../models";
+import { PrivateRoutes, Roles, State } from "../../../models";
 import { useLocation, useNavigate } from "react-router-dom";
 import PersonalInfoModal from "./PersonalInfoModal";
 import { decodeRoles, hasAccess } from "../../../utilities";
+import Swal from "sweetalert2";
 
 function Profile() {
   const location = useLocation();
@@ -206,15 +207,35 @@ function Profile() {
         }
       }));
       
+      // Mostrar mensaje de éxito con SweetAlert2
+      Swal.fire({
+        title: '¡Éxito!',
+        text: 'Los cambios han sido guardados correctamente',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#3085d6',
+        timer: 3000
+      });
+      
       setIsEditing(false);
     } catch (error) {
       console.error("Error al guardar los cambios:", error);
+      
+      // Mostrar mensaje de error con SweetAlert2
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#d33'
+      });
+      
       setErrorMessage("No se pudieron guardar los cambios. Inténtalo de nuevo.");
     } finally {
       setIsSaving(false);
     }
   };
-
+  
   const handleCancelEdit = () => {
     // Restaurar los valores originales
     const identityParts = userInfo.personalInfo.identity?.split('-') || [];
@@ -273,7 +294,7 @@ function Profile() {
             </div>
           </div>
         </div>
-        <BackButton onClick={() => navigate("/dashboard")} className="px-4 py-2 bg-gray-700 text-white rounded-lg shadow-md hover:bg-gray-800 transition flex items-center gap-2" />
+        <BackButton onClick={() => navigate(PrivateRoutes.DASHBOARD)} className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-400 transition flex items-center gap-2" />
       </div>
 
       {/* Información Personal */}
@@ -290,14 +311,14 @@ function Profile() {
                   <button 
                     onClick={handleSaveChanges}
                     disabled={isSaving}
-                    className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                    className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer"
                   >
                     <Save size={16} />
                     {isSaving ? "Guardando..." : "Guardar"}
                   </button>
                   <button 
                     onClick={handleCancelEdit}
-                    className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
+                    className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
                   >
                     <X size={16} />
                     Cancelar
@@ -306,7 +327,7 @@ function Profile() {
               ) : (
                 <button 
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-md  cursor-pointer hover:bg-yellow-400 transition"
                 >
                   <Pencil size={16} />
                   Editar

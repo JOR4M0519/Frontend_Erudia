@@ -15,6 +15,7 @@ import { createUser, resetUser, UserKey } from '../../redux/states/user';
 import { clearStorage, decodeRoles } from '../../utilities';
 
 import { encodeUserInfo, request } from "../../services/config/axios_helper"
+import apiEndpoints from '../../Constants/api-endpoints';
 
 const Login = () => {
     const dispatch = useDispatch();
@@ -68,7 +69,11 @@ const Login = () => {
             }
         });
         try {
-            const response = await request("POST", "gtw", "/public/login", { username, password });
+            const response = await request(
+                "POST", 
+                apiEndpoints.SERVICES.GATEAWAY,
+                apiEndpoints.API_ENDPOINTS.AUTH.LOGIN,
+                { username, password });
                
             if (response.status === 200) {
                 const responseData = response.data;

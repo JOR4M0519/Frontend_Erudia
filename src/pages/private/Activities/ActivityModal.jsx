@@ -5,15 +5,28 @@ import { subjectActivityService } from "../Subject";
 export default function ActivityModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [taskData, setTaskData] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
 
   useEffect(() => {
-    const subscription = subjectActivityService.getTaskModal().subscribe(({ isOpen, activityData }) => {
+    // Create subscriptions
+    const taskModalSubscription = subjectActivityService.getTaskModal().subscribe(({ isOpen, activityData }) => {
       setIsOpen(isOpen);
-      setTaskData(activityData ?? {}); // 🔹 Usa un objeto vacío si activityData es undefined
+      setTaskData(activityData ?? {}); //  Usa un objeto vacío si activityData es undefined
     });
 
-    return () => subscription.unsubscribe();
+    const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
+      if (subjectString) {
+        setSelectedSubject(JSON.parse(subjectString));
+      }
+    });
+
+    // Cleanup function to unsubscribe from both subscriptions
+    return () => {
+      taskModalSubscription.unsubscribe();
+      subjectSubscription.unsubscribe();
+    };
   }, []);
+
 
   if (!isOpen || !taskData) return null;
 
@@ -57,7 +70,12 @@ export default function ActivityModal() {
       year: 'numeric'
     });
   };
-
+  
+  // Get subject name safely
+  const getSubjectName = () => {
+    if (!selectedSubject) return "Sin materia";
+    return selectedSubject.subjectName || selectedSubject.name || "Sin materia";
+  };
   return (
     <div className="fixed inset-0 backdrop-blur-md backdrop-brightness-75 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
@@ -66,7 +84,7 @@ export default function ActivityModal() {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 flex justify-between items-center border-b">
           <div>
             <h2 className="text-xl font-bold text-gray-800">{taskData.name || "Sin título"}</h2>
-            <p className="text-sm text-gray-600">{taskData.subject || "Sin materia"}</p>
+            <p className="text-sm text-gray-600">{getSubjectName()}</p>
           </div>
           <button
             onClick={() => subjectActivityService.closeTaskModal()}

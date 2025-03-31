@@ -4,6 +4,7 @@ import { State, StudentGroupModel, StudentTrackingModel } from "../../../../mode
 import { TeacherGroupModel } from "../../../../models/TeacherGroupModel";
 import { StudentTracking } from "../../StudentTracking";
 import { studentTrackingService } from "../../StudentTracking/studentTrackingService";
+import apiEndpoints from "../../../../Constants/api-endpoints";
 
 
   /**
@@ -58,7 +59,7 @@ const getActivityDetails = async(activityId,studentId) =>{
     //Posteriormente obtiene la calificación si la tiene
     if (response.status === 200) {
       const data = response.data;
-      const grade = await getActivityScore(activityId, studentId);
+      const grade = await getActivityScore(data.id, studentId);
       return {
         id:          activityId,
         name:        data.activity.activityName,
@@ -98,19 +99,20 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
     );
 
     if (response.status !== 200) return [];
-
+    console.log(response);
     const activities = await Promise.all(
       response.data.map(async (data) => {
         let grades;
 
         if (!!isTeacher) {
           
-          // 🔹 Si es profesor, obtiene las notas de todos los estudiantes del grupo
+          // Si es profesor, obtiene las notas de todos los estudiantes del grupo
           grades = await getActivitiesScoresForGroup(data.activity.id, groupId);
         } else {
-          // 🔹 Si es estudiante, obtiene solo su nota personal
-          grades = await getActivityScore(data.activity.id, userId);
+          // Si es estudiante, obtiene solo su nota personal
+          grades = await getActivityScore(data.id, userId);
         }
+        console.log(grades);
 
         return {
           id:          data.activity.id,
@@ -322,7 +324,7 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
       if (response.status === 200) {
         const activities = await Promise.all(
           response.data.map(async (data) => {
-            const grade = await getActivityScore(data.activity.id, studentId); // Esperamos la promesa
+            const grade = await getActivityScore(data.id, studentId); // Esperamos la promesa
             console.log()
             return {
               id:          data.activity.id,
@@ -560,14 +562,14 @@ export const teacherDataService = {
 
   setSubjects: (data) => {
     teacherData$.next({
-      ...(teacherData$.value || {}), // 🔹 Mantiene los valores actuales del estado
-      subjects: data || [], // 🔹 Solo actualiza `subjects`, evitando que sea `undefined`
+      ...(teacherData$.value || {}), //  Mantiene los valores actuales del estado
+      subjects: data || [], //  Solo actualiza `subjects`, evitando que sea `undefined`
     });
   },
 
   clearSubjects: () => {
     teacherData$.next({
-      ...(teacherData$.value || {}), // 🔹 Mantiene `studentGroupList`, solo borra `subjects`
+      ...(teacherData$.value || {}), //  Mantiene `studentGroupList`, solo borra `subjects`
       subjects: [], 
     });
   },
@@ -577,21 +579,21 @@ export const teacherDataService = {
 
   setStudentGroupListData: (data) => {
     teacherData$.next({
-      ...(teacherData$.value || {}), // 🔹 Mantiene `subjects`, solo actualiza `studentGroupList`
+      ...(teacherData$.value || {}), //  Mantiene `subjects`, solo actualiza `studentGroupList`
       studentGroupList: data || null, 
     });
   },
 
   clearStudentGroupListData: () => {
     teacherData$.next({
-      ...(teacherData$.value || {}), // 🔹 Mantiene `subjects`, solo borra `studentGroupList`
+      ...(teacherData$.value || {}), //  Mantiene `subjects`, solo borra `studentGroupList`
       studentGroupList: null,
     });
   },
 
   getDirectionGroupsListValue: () => teacherData$.value?.directionGroupList || null,
    /**
-   * 🔹 Borra `directionGroupList`, manteniendo `subjects`
+   *  Borra `directionGroupList`, manteniendo `subjects`
    */
    clearDirectionGroups: () => {
     teacherData$.next({
@@ -601,7 +603,7 @@ export const teacherDataService = {
   },
 
   /**
-   * 🔹 Guarda `directionGroupList`, manteniendo `subjects`
+   *  Guarda `directionGroupList`, manteniendo `subjects`
    */
   setDirectionGroups: (data) => {
     teacherData$.next({
@@ -621,12 +623,12 @@ export const teacherDataService = {
 
 
   /**
-   * 🔹 Obtiene los grupos de materias que dicta el profesor en un año específico.
-   * 🔹 Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
+   *  Obtiene los grupos de materias que dicta el profesor en un año específico.
+   *  Guarda solo el array de `subjects` para que `SubjectGrid` lo use correctamente.
    */
   fetchGroupsData: async (teacherId, year) => {
     try {
-      teacherDataService.clearSubjects(); // 🔹 Limpia las materias anteriores
+      teacherDataService.clearSubjects(); //  Limpia las materias anteriores
 
       const responseGroupsTeacher = await request(
         "GET",
@@ -638,7 +640,7 @@ export const teacherDataService = {
       if (responseGroupsTeacher.status === 200 && Array.isArray(responseGroupsTeacher.data)) {
         const teacherData = new TeacherGroupModel(responseGroupsTeacher.data).toJSON();
         
-        teacherDataService.setSubjects(teacherData.subjects || []); // 🔹 Guarda solo subjects
+        teacherDataService.setSubjects(teacherData.subjects || []); //  Guarda solo subjects
         
       }
     } catch (error) {
@@ -650,8 +652,8 @@ export const teacherDataService = {
     try {
       const response = await request(
         "GET", 
-        "academy", 
-        "/student-groups/active"
+        apiEndpoints.SERVICES.ACADEMY, 
+        apiEndpoints.API_ENDPOINTS.GROUPS.STUDENT_GROUPS_ALL
       );
       
       // La función request ya maneja la conversión de la respuesta a JSON
@@ -699,24 +701,24 @@ export const teacherDataService = {
 
 
   /**
-   * 🔹 Obtiene la lista de estudiantes en un grupo específico.
-   * 🔹 Mantiene `subjects` y solo actualiza `studentGroupList`.
+   *  Obtiene la lista de estudiantes en un grupo específico.
+   *  Mantiene `subjects` y solo actualiza `studentGroupList`.
    */
   fetchListUsersGroupData: async (groupId) => {
     try {
-      // 🔹 NO se limpia `subjects`, solo obtenemos estudiantes
+      //  NO se limpia `subjects`, solo obtenemos estudiantes
       const responseGroupsTeacher = await request(
         "GET",
-        "academy",
-        `/student-groups/groups/${groupId}/users`,
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.GROUPS.STUDENT_GROUPS_BY_GROUPID(groupId),
         {}
       );
 
       if (responseGroupsTeacher.status === 200 && responseGroupsTeacher.data.length > 0) {
-        const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); // 🔹 Instancia base
-        studentGroupList.addStudents(responseGroupsTeacher.data); // 🔹 Agrega estudiantes
+        const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); //  Instancia base
+        studentGroupList.addStudents(responseGroupsTeacher.data); //  Agrega estudiantes
 
-        teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); // 🔹 Guarda en el estado
+        teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); //  Guarda en el estado
       }
     } catch (error) {
       console.error("Error cargando lista de estudiantes:", error);

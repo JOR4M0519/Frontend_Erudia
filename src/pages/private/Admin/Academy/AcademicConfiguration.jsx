@@ -1,4 +1,3 @@
-// AdminConfiguration.jsx
 import React, { useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +8,10 @@ import {
   SchemesTab,
   ObservationsTab,
   LevelsAcademyTab,
-  UserStatesTab
+  UserStatesTab,
+  KnowledgesTab,
+  MainKnowledgesTab,
+  StudentsGroupsTab
 } from "./Configuration";
 
 import { AdminRoutes } from "../../../../models";
@@ -22,9 +24,11 @@ const AcademicConfiguration = () => {
     { id: "areas", label: "Áreas" },
     { id: "periodo", label: "Periodo" },
     { id: "esquemas", label: "Esquemas" },
-    { id: "observaciones", label: "Observaciones" },
+    // { id: "observaciones", label: "Observaciones" },
     { id: "niveles", label: "Niveles académicos" },
-    { id: "estados", label: "Estados de usuario" }
+    // { id: "estados", label: "Estados de usuario" },
+    { id: "knowledges", label: "Saberes" },
+    { id: "groups", label: "Grupos & Materias" },
   ];
 
   return (
@@ -78,6 +82,8 @@ const AcademicConfiguration = () => {
               {activeTab === "observaciones" && <ObservationsTab />}
               {activeTab === "niveles" && <LevelsAcademyTab />}
               {activeTab === "estados" && <UserStatesTab />}
+              {activeTab === "knowledges" && <MainKnowledgesTab />}
+              {activeTab === "groups" && <StudentsGroupsTab />}
             </motion.div>
           </div>
         </div>

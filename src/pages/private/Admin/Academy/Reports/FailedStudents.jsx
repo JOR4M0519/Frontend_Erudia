@@ -1,34 +1,80 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronDown } from "lucide-react";
-
-// Datos de muestra para la tabla de reprobados
-const sampleData = [
-  { course: "Maternos", students: 2, p1: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
-  { course: "Párvulos", students: 7, p1: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
-  { course: "Pre jardín", students: 13, p1: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
-  { course: "Jardín", students: 15, p1: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
-  { course: "Transición", students: 22, p1: 0, p3: 0, p4: 0, p5: 0, p6: 0 }
-];
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronDown, Check, X } from "lucide-react";
+import Swal from "sweetalert2";
+import { reportService } from "./";
 
 const FailedStudents = ({ subject, onBack }) => {
   const [filters, setFilters] = useState({
-    year: "2025",
-    period: "4 periodo",
-    category: "Primaria",
-    type: "Simple",
-    area: "Dimensión cognitiva"
+    year: new Date().getFullYear().toString(),
+    levelId: "",
+    subjectId: subject?.id || 1
   });
+  
+  const [loading, setLoading] = useState(false);
+  const [recoveryData, setRecoveryData] = useState([]);
+  const [educationalLevels, setEducationalLevels] = useState([]);
 
-  // Calcular el total
-  const totalStudents = sampleData.reduce((sum, row) => sum + row.students, 0);
-  const totalRow = {
-    course: "Total",
-    students: totalStudents,
-    p1: 0,
-    p3: 0,
-    p4: 0,
-    p5: 0,
-    p6: 0
+  // Cargar niveles educativos al montar el componente
+  useEffect(() => {
+    fetchEducationalLevels();
+  }, []);
+
+  // Cargar datos de recuperación cuando cambian los filtros
+  useEffect(() => {
+    if (filters.levelId) {
+      fetchRecoveryData();
+    }
+  }, [filters.year, filters.levelId, filters.subjectId]);
+
+  const fetchEducationalLevels = async () => {
+    try {
+      const data = await reportService.getEducationalLevels();
+      setEducationalLevels(data);
+      if (data.length > 0) {
+        setFilters(prev => ({ ...prev, levelId: data[0].id }));
+      }
+    } catch (error) {
+      console.error("Error al obtener niveles educativos:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los niveles educativos'
+      });
+    }
+  };
+
+  const fetchRecoveryData = async () => {
+    try {
+      setLoading(true);
+      const data = await reportService.getRecoveryReport(
+        filters.subjectId,
+        filters.levelId,
+        filters.year
+      );
+      setRecoveryData(data);
+    } catch (error) {
+      console.error("Error al obtener datos de recuperación:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los datos de recuperación'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleYearChange = (year) => {
+    setFilters(prev => ({ ...prev, year }));
+  };
+
+  const handleLevelChange = (levelId) => {
+    setFilters(prev => ({ ...prev, levelId }));
+  };
+
+  // Formatear número con 2 decimales
+  const formatNumber = (num) => {
+    return Number(num).toFixed(2);
   };
 
   return (
@@ -41,7 +87,7 @@ const FailedStudents = ({ subject, onBack }) => {
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="bg-gray-700 text-white px-6 py-2 rounded-full">
-          Reprobados
+          Recuperaciones
         </div>
       </div>
 
@@ -51,57 +97,45 @@ const FailedStudents = ({ subject, onBack }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Año escolar</label>
               <div className="mt-1 relative">
-                <button type="button" className="flex justify-between w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
-                  <span>{filters.year}</span>
+                <select
+                  value={filters.year}
+                  onChange={(e) => handleYearChange(e.target.value)}
+                  className="appearance-none w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <option key={i} value={new Date().getFullYear() - 2 + i}>
+                      {new Date().getFullYear() - 2 + i}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Periodo</label>
-              <div className="mt-1 relative">
-                <button type="button" className="flex justify-between w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
-                  <span>{filters.period}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+                </div>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Categoría</label>
               <div className="mt-1 relative">
-                <button type="button" className="flex justify-between w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
-                  <span>{filters.category}</span>
+                <select
+                  value={filters.levelId}
+                  onChange={(e) => handleLevelChange(e.target.value)}
+                  className="appearance-none w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {educationalLevels.map((level) => (
+                    <option key={level.id} value={level.id}>
+                      {level.levelName}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />
-                </button>
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Tipo</label>
-              <div className="mt-1 relative">
-                <button type="button" className="flex justify-between w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
-                  <span>{filters.type}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Área</label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  className="px-3 py-2 border border-gray-300 rounded-md w-full bg-gray-100"
-                  value={filters.area}
-                  readOnly
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">{subject?.name || "Matemáticas"}</label>
+              <label className="block text-sm font-medium text-gray-700">Materia</label>
               <div className="mt-1">
                 <input
                   type="text"
@@ -117,7 +151,7 @@ const FailedStudents = ({ subject, onBack }) => {
         <div className="lg:col-span-2">
           <div className="bg-white p-6 rounded-md shadow-sm">
             <h2 className="text-2xl font-bold mb-6 text-center uppercase">
-              REPROBADOS
+              REPORTE DE RECUPERACIONES
             </h2>
             
             <div className="overflow-x-auto">
@@ -125,122 +159,77 @@ const FailedStudents = ({ subject, onBack }) => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Curso
+                      Estudiante
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estudiantes
+                      Grupo
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Período (%)
                     </th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      P1
+                      Nota Anterior
                     </th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      %
+                      Nota Final
                     </th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      P3
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      %
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      P4
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      %
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      P5
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      %
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      P6
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      %
+                      Recuperó
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sampleData.map((row, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {row.course}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.students}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.p1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        0
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.p3}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        0
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.p4}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        0
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.p5}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        0
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        {row.p6}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        0
+                  {loading ? (
+                    <tr>
+                      <td colSpan="6" className="text-center py-6">
+                        <div className="flex justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                        <p className="mt-2 text-gray-500">Cargando datos...</p>
                       </td>
                     </tr>
-                  ))}
-                  <tr className="bg-gray-100 font-medium">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      {totalRow.course}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.students}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.p1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      0
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.p3}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      0
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.p4}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      0
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.p5}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      0
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      {totalRow.p6}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
-                      0
-                    </td>
-                  </tr>
+                  ) : recoveryData.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center py-6">
+                        <p className="text-gray-500">No hay datos de recuperación disponibles.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    recoveryData.map((item, index) => (
+                      <tr key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {`${item.subjectGrade.student.firstName} ${item.subjectGrade.student.lastName}`}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.groupsDomain.groupName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {`${item.subjectGrade.period.name} (${item.subjectGrade.period.percentage}%)`}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            {formatNumber(item.previousScore)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {formatNumber(item.subjectGrade.totalScore)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          {item.subjectGrade.recovered === "Y" ? (
+                            <span className="px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              <Check size={16} className="mr-1" /> Sí
+                            </span>
+                          ) : (
+                            <span className="px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                              <X size={16} className="mr-1" /> No
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

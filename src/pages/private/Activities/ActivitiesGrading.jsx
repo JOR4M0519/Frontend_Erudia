@@ -114,7 +114,7 @@ export default function ActivitiesGrading() {
     setEditedActivity({ ...editedActivity, endDate: date });
   };
 
-  // 🔹 Función para guardar calificaciones
+  //  Función para guardar calificaciones
   const handleSaveGrades = async () => {
     try {
         setIsLoading(true);
@@ -142,6 +142,7 @@ export default function ActivitiesGrading() {
                 text: 'Calificaciones guardadas correctamente',
                 icon: 'success'
             });
+            navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT)
         } else {
             throw new Error(response.message);
         }
@@ -175,7 +176,7 @@ export default function ActivitiesGrading() {
       </div>
 
       <div className="w-full md:w-4/5 flex flex-col sm:flex-row gap-2">
-        {/* 🔹 Área de Comentario - PRIMERO el comentario (sin etiqueta) */}
+        {/*  Área de Comentario - PRIMERO el comentario (sin etiqueta) */}
         <div className="flex-grow">
           <textarea
             id={`comment-${student.studentId}`}
@@ -189,7 +190,7 @@ export default function ActivitiesGrading() {
           />
         </div>
 
-        {/* 🔹 Input de Nota - DESPUÉS la nota (sin etiqueta) */}
+        {/*  Input de Nota - DESPUÉS la nota (sin etiqueta) */}
         <div className="flex-none w-16">
           <input
             id={`grade-${student.studentId}`}
@@ -209,12 +210,12 @@ export default function ActivitiesGrading() {
     </div>
   );
 
-  // 🔹 Botón de Logro
+  //  Botón de Logro
   const handleOpenLogro = () => {
     setIsAchieveModalOpen(true);
   };
 
-  // 🔹 Función para guardar el logro
+  //  Función para guardar el logro
   const handleSaveLogro = async (data) => {
     try {
         setIsLoading(true);
@@ -329,7 +330,7 @@ export default function ActivitiesGrading() {
     }
   };
 
-  // 🔹 Botón de Esquema (si lo necesitas)
+  //  Botón de Esquema (si lo necesitas)
   const handleOpenScheme = () => {
     setIsSchemeModalOpen(true);
   };
@@ -564,7 +565,7 @@ export default function ActivitiesGrading() {
       {renderActivityEditForm()}
 
       <div className="max-w-6xl mx-auto">
-        {/* 🔹 Lista de Estudiantes */}
+        {/*  Lista de Estudiantes */}
         <div className="bg-white p-4 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-bold text-gray-800">Lista de estudiantes</h3>
@@ -612,7 +613,7 @@ export default function ActivitiesGrading() {
       </div>
 
 
-      {/* 🔹 Botón para guardar calificaciones */}
+      {/*  Botón para guardar calificaciones */}
       <div className="flex justify-end">
         <button
           onClick={handleSaveGrades}
@@ -622,7 +623,7 @@ export default function ActivitiesGrading() {
         </button>
       </div>
 
-      {/* 🔹 Botón de regreso */}
+      {/*  Botón de regreso */}
       <BackButton
         confirmExit={true}
         onClick={() =>
@@ -630,7 +631,7 @@ export default function ActivitiesGrading() {
         }
       />
 
-      {/* 🔹 Modal de Logro */}
+      {/*  Modal de Logro */}
       <AchievementModal
         isOpen={isAchieveModalOpen}
         onClose={() => setIsAchieveModalOpen(false)}

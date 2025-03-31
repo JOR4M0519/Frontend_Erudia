@@ -46,7 +46,7 @@ export default function ActivityGradingView() {
 
   return (
     <div className="space-y-6">
-      {/* 🔹 Header con nombre de la materia */}
+      {/*  Header con nombre de la materia */}
       <div className="flex items-center justify-between gap-10">
         <div className="flex items-center gap-10 flex-1 bg-gray-200 rounded-full p-4">
           <span className="font-medium text-gray-800 px-4">
@@ -89,7 +89,7 @@ export default function ActivityGradingView() {
         </div>
       </div>
 
-      {/* 🔹 Lista de Estudiantes */}
+      {/*  Lista de Estudiantes */}
       <div>
         <h3 className="text-xl font-bold text-gray-700">Lista de estudiantes</h3>
         <StudentList onStudentClick={(student) => console.log("Ver detalles de:", student)} />

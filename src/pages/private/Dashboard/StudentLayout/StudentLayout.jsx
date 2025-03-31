@@ -1,14 +1,15 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { HomeStudent, studentDataService, teacherDataService } from "./index";
+import { GradesStudent, HomeStudent, studentDataService, teacherDataService } from "./index";
 import { ActivityModal, SubjectActivities} from "../../Activities";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
-
+import { decodeRoles } from "../../../../utilities";
 import { AsistanceGrid, DirectionGroupsGrid } from "../TeacherLayout";
-import { PrivateRoutes } from "../../../../models";
+import { PrivateRoutes, Roles } from "../../../../models";
 
 export default function StudentLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
+  const storedRoles = decodeRoles(userState?.roles) || [];
 
   useEffect(() => {
     if (!userState?.id) return; // No ejecuta si no hay usuario
@@ -24,6 +25,8 @@ export default function StudentLayout() {
   // Si solo hay un segmento, lo mantiene (evita que se rompa en `/dashboard`).
   const baseRoute = pathSegments.length > 1 ? pathSegments.slice(0, -1).join("/") : pathSegments[0] || "";
 
+  // Verificar si el usuario tiene rol de estudiante para mostrar las rutas correspondientes
+  const hasStudentRole = storedRoles.includes(Roles.STUDENT);
 
   return (
     <div className="space-y-6 p-6">
@@ -31,7 +34,16 @@ export default function StudentLayout() {
         {/* Redirige a `home` por defecto */}
         <Route path="/" element={<Navigate to={`/${baseRoute}${PrivateRoutes.HOME}`} />} />
         <Route path={PrivateRoutes.HOME} element={<HomeStudent />} />
-        <Route path={PrivateRoutes.ACTIVITIES_SUBJECT} element={<SubjectActivities />} />
+        
+        {/* Rutas que requieren rol de estudiante */}
+        {hasStudentRole && (
+          <>
+            <Route path={PrivateRoutes.ACTIVITIES_SUBJECT} element={<SubjectActivities />} />
+            <Route path={PrivateRoutes.GRADES} element={<GradesStudent />} />
+          </>
+        )}
+        
+        {/* Rutas comunes o que requieren otros roles */}
         <Route path={PrivateRoutes.ASISTANCE} element={<AsistanceGrid />} />
       </Routes>
       <ActivityModal /> 

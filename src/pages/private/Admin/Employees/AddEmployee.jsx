@@ -505,7 +505,7 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
       <div className="mt-6 flex justify-end space-x-3">
         <button
           type="button"
-          onClick={isStandalone ? () => navigate(AdminRoutes.EMPLOYEES_CONSOLIDATED) : onClose}
+          onClick={isStandalone ? () => navigate(AdminRoutes.EMPLOYEES) : onClose}
           className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Cancelar
@@ -538,7 +538,7 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
           <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
             <div className="flex items-center">
               <button
-                onClick={() => navigate(AdminRoutes.EMPLOYEES_CONSOLIDATED)}
+                onClick={() => navigate(AdminRoutes.EMPLOYEES)}
                 className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -562,7 +562,7 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
 
   // If used as a modal
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 z-50 flex items-center justify-center">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
