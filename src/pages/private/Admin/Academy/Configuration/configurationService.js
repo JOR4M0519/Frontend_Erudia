@@ -149,6 +149,25 @@ export const configurationService = {
   
   //Relacioón SubjectDimension
 
+  createSubjectDimension: async (dimensionId, subjectId) => {
+    
+    const subjectDimensionDomain = {
+        dimension: {id: dimensionId},
+        subject: {id: subjectId},
+    }
+
+    try {
+      const response = await request("POST",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.DIMENSIONS.RELATION_SUBJECTS.CREATE,
+    subjectDimensionDomain);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating subject:", error);
+      throw error;
+    }
+  },
+
   updateSubjectDimension: async (relationId, dimensionId, subjectId) => {
     
     const subjectDimensionDomain = {

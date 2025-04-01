@@ -125,9 +125,10 @@ const API_ENDPOINTS = {
         UPDATE_BY_ID: (id) => `/dimensions/${id}`,
         CREATE_DIMENSION: `/dimensions`,
         DELETE_BY_ID: (id) => `/dimensions/${id}`,
-
+        
         RELATION_SUBJECTS: {
             GET_GROUP_BY_DIMENSIONS: "/subjects-dimensions",
+            CREATE: "/subjects-dimensions",
             UPDATE_BY_ID: (id) => `/subjects-dimensions/${id}`,
         },
     },
