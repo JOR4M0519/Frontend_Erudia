@@ -366,6 +366,7 @@ const handleDeleteDimension = async (dimensionId) => {
           });
           
           await configurationService.updateSubjectDimension(
+            subjectToMove.relationId,
             destinationDimensionId,
             subjectToMove.id
           );
