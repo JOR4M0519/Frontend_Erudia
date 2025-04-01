@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronUp, Edit, X, Search, Filter, Plus, ArrowLeft, Save, Check } from "lucide-react";
 import Swal from "sweetalert2";
 import { configurationService } from "../../";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 const AchievementsTab = ({ 
   periods, 
@@ -116,6 +118,35 @@ const AchievementsTab = ({
     }
   };
 
+// Definir las variantes de animación
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { 
+      duration: 0.3,
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  },
+  exit: { 
+    opacity: 0,
+    transition: { duration: 0.2 }
+  }
+};
+
+// Animaciones para elementos individuales
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 }
+  },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.2 } }
+};
+
+
   // Agrupar saberes por materia
   const groupKnowledgesBySubject = () => {
     const grouped = {};
@@ -222,25 +253,25 @@ const AchievementsTab = ({
     setAchievementText(achievement.text);
   };
 
-  // Guardar cambios en un logro
   const handleSaveAchievement = async () => {
     if (!editingAchievement || !achievementText.trim()) {
       return;
     }
-
+  
     try {
       setLoading(true);
       
-      // Construir objeto para actualizar
+      // Construir objeto con la estructura correcta
       const achievementData = {
+        id: editingAchievement.id,
         achievement: achievementText.trim()
       };
-
+  
       await configurationService.updateAchievementGroupsKnowledge(
         editingAchievement.id,
         achievementData
       );
-
+  
       // Actualizar datos locales
       const updatedKnowledges = knowledges.map(item => {
         if (item.id === editingAchievement.id) {
@@ -251,7 +282,7 @@ const AchievementsTab = ({
         }
         return item;
       });
-
+  
       setKnowledges(updatedKnowledges);
       
       // Mostrar mensaje de éxito
@@ -264,7 +295,7 @@ const AchievementsTab = ({
         showConfirmButton: false,
         timer: 3000
       });
-
+  
       // Limpiar estado de edición
       setEditingAchievement(null);
       setAchievementText("");
@@ -280,6 +311,7 @@ const AchievementsTab = ({
       setLoading(false);
     }
   };
+  
 
   // Cancelar edición
   const handleCancelEdit = () => {
@@ -304,31 +336,45 @@ const AchievementsTab = ({
     }
   };
 
-  // Iniciar modo de creación de logros
-  const startCreationMode = async () => {
-    try {
-      setLoading(true);
-      // Cargar todos los períodos disponibles
+// Modificar la función startCreationMode para usar los valores ya seleccionados
+const startCreationMode = async () => {
+  try {
+    setLoading(true);
+    
+    // Usar el período y grupo ya seleccionados
+    if (selectedPeriod && selectedGroup) {
+      setNewPeriodId(selectedPeriod);
+      setNewGroupId(selectedGroup);
+      
+      // Cargar directamente las materias disponibles
+      const subjectsData = await configurationService.getAllSubjectGroupsByPeriodAndGroup(
+        selectedPeriod,
+        selectedGroup
+      );
+      setAvailableSubjects(subjectsData);
+      
+      // Avanzar directamente al paso de selección de materia
+      setCreationMode(true);
+      setCreationStep(3);
+    } else {
+      // Si no hay selección previa, seguir el flujo normal
       const periodsData = await configurationService.getPeriods();
       setAvailablePeriods(periodsData);
-      
-      // Inicializar el modo de creación
       setCreationMode(true);
       setCreationStep(1);
-      setNewPeriodId("");
-      setNewGroupId("");
-      setNewSubjectId("");
-    } catch (error) {
-      console.error("Error al iniciar modo de creación:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo iniciar el modo de creación'
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Error al iniciar modo de creación:", error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo iniciar el modo de creación'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Manejar cambio de período en modo creación
   const handleNewPeriodChange = async (e) => {
@@ -459,13 +505,13 @@ const AchievementsTab = ({
         return;
       }
       
-      // Crear logros para cada saber faltante
+      // Crear logros para cada saber faltante con texto simplificado
       const creationPromises = missingKnowledges.map(sk => {
         const newAchievement = {
           subjectKnowledge: {
             id: sk.id
           },
-          achievement: `Logro para ${sk.idKnowledge.name} en ${sk.idSubject.subjectName}`,
+          achievement: "Logro", // Texto simplificado
           group: {
             id: parseInt(newGroupId)
           },
@@ -733,50 +779,71 @@ const AchievementsTab = ({
                           <div className="mt-4 space-y-3">
                             <h5 className="font-medium text-gray-700 text-sm">Logros:</h5>
                             {knowledge.achievements.map((achievement) => (
-                              <div key={achievement.id} className="bg-gray-50 rounded-md p-3">
-                                {editingAchievement && editingAchievement.id === achievement.id ? (
-                                  <div className="space-y-2">
-                                    <textarea
-                                      value={achievementText}
-                                      onChange={(e) => setAchievementText(e.target.value)}
-                                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      rows={3}
-                                    />
-                                    <div className="flex justify-end gap-2">
-                                      <button
-                                        onClick={handleCancelEdit}
-                                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm"
-                                      >
-                                        Cancelar
-                                      </button>
-                                      <button
-                                        onClick={handleSaveAchievement}
-                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm flex items-center gap-1"
-                                      >
-                                        <Save size={14} />
-                                        Guardar
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="text-gray-800">{achievement.text}</p>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {achievement.groupName} - {achievement.periodName}
-                                      </p>
-                                    </div>
-                                    <button
-                                      onClick={() => handleEditAchievement(achievement)}
-                                      className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                      title="Editar logro"
-                                    >
-                                      <Edit size={16} />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+  <div key={achievement.id} className="bg-gray-50 rounded-md p-3">
+    <AnimatePresence mode="wait">
+      {editingAchievement && editingAchievement.id === achievement.id ? (
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+        >
+          <textarea
+            value={achievementText}
+            onChange={(e) => setAchievementText(e.target.value)}
+            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+          />
+          <div className="flex justify-end gap-2">
+            <motion.button
+              onClick={handleCancelEdit}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Cancelar
+            </motion.button>
+            <motion.button
+              onClick={handleSaveAchievement}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm flex items-center gap-1"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Save size={14} />
+              Guardar
+            </motion.button>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div 
+          className="flex justify-between items-start"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div>
+            <p className="text-gray-800">{achievement.text}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {achievement.groupName} - {achievement.periodName}
+            </p>
+          </div>
+          <motion.button
+            onClick={() => handleEditAchievement(achievement)}
+            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            title="Editar logro"
+            whileHover={{ scale: 1.2, rotate: 15 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Edit size={16} />
+          </motion.button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+))}
+
                           </div>
                         </div>
                       ))}
@@ -795,46 +862,68 @@ const AchievementsTab = ({
     );
   };
 
-  // Renderizar el modo de creación de logros
   const renderCreationMode = () => {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <motion.div 
+        className="bg-white rounded-lg shadow p-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-medium text-gray-800">
-            {creationStep === 1 && "Seleccionar período"}
-            {creationStep === 2 && "Seleccionar grupo"}
+          <motion.h2 
+            className="text-xl font-medium text-gray-800"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
             {creationStep === 3 && "Seleccionar materia"}
             {creationStep === 4 && "Generar logros"}
-          </h2>
-          <button
+          </motion.h2>
+          <motion.button
             onClick={exitCreationMode}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <ArrowLeft size={18} />
             Volver
-          </button>
+          </motion.button>
         </div>
-
+  
         {/* Pasos de navegación */}
         <div className="mb-6">
           <div className="flex items-center">
             {[1, 2, 3, 4].map((step) => (
               <React.Fragment key={step}>
-                <div
+                <motion.div
                   className={`flex items-center justify-center w-8 h-8 rounded-full ${
                     step <= creationStep
                       ? "bg-blue-600 text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ 
+                    delay: step * 0.1,
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20
+                  }}
                 >
                   {step < creationStep ? <Check size={16} /> : step}
-                </div>
+                </motion.div>
                 {step < 4 && (
-                  <div
+                  <motion.div
                     className={`flex-1 h-1 mx-2 ${
                       step < creationStep ? "bg-blue-600" : "bg-gray-200"
                     }`}
-                  ></div>
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: step * 0.1, duration: 0.3 }}
+                  ></motion.div>
                 )}
               </React.Fragment>
             ))}
@@ -846,168 +935,163 @@ const AchievementsTab = ({
             <span>Generar</span>
           </div>
         </div>
-
-        {/* Paso 1: Selección de período */}
-        {creationStep === 1 && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seleccione un período
-              </label>
-              <select
-                value={newPeriodId}
-                onChange={handleNewPeriodChange}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  
+        {/* Contenido de los pasos con animaciones */}
+        <AnimatePresence mode="wait">
+          {/* Paso 3: Selección de materia */}
+          {creationStep === 3 && (
+            <motion.div 
+              className="space-y-6"
+              key="step3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
               >
-                <option value="">Seleccione un período</option>
-                {availablePeriods.map(period => (
-                  <option key={period.id} value={period.id}>
-                    {period.name} ({period.status === 'A' ? 'Activo' : 'Inactivo'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seleccione una materia
+                </label>
+                <select
+                  value={newSubjectId}
+                  onChange={handleNewSubjectChange}
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleccione una materia</option>
+                  {availableSubjects.map(subject => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.subjectProfessor.subject.subjectName} - Prof. {subject.subjectProfessor.professor.firstName} {subject.subjectProfessor.professor.lastName}
+                    </option>
+                  ))}
+                </select>
+              </motion.div>
 
-        {/* Paso 2: Selección de grupo */}
-        {creationStep === 2 && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seleccione un grupo
-              </label>
-              <select
-                value={newGroupId}
-                onChange={handleNewGroupChange}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            </motion.div>
+          )}
+  
+          {/* Paso 4: Confirmación y generación */}
+          {creationStep === 4 && (
+            <motion.div 
+              className="space-y-6"
+              key="step4"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <motion.div 
+                className="bg-blue-50 border border-blue-200 rounded-md p-4"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
               >
-                <option value="">Seleccione un grupo</option>
-                {availableGroups.map(group => (
-                  <option key={group.id} value={group.id}>
-                    {group.groupName} - {group.level.levelName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex justify-between">
-              <button
-                onClick={() => setCreationStep(1)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                <h3 className="font-medium text-blue-800 mb-2">Resumen</h3>
+                <ul className="space-y-2 text-sm text-blue-700">
+                  <li><span className="font-medium">Período:</span> {availablePeriods.find(p => p.id.toString() === newPeriodId)?.name}</li>
+                  <li><span className="font-medium">Grupo:</span> {availableGroups.find(g => g.id.toString() === newGroupId)?.groupName}</li>
+                  <li><span className="font-medium">Materia:</span> {selectedSubjectName}</li>
+                  <li><span className="font-medium">Profesor:</span> {selectedProfessorName}</li>
+                </ul>
+              </motion.div>
+  
+              <motion.div 
+                className="bg-gray-50 border border-gray-200 rounded-md p-4"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
               >
-                Anterior
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Paso 3: Selección de materia */}
-        {creationStep === 3 && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seleccione una materia
-              </label>
-              <select
-                value={newSubjectId}
-                onChange={handleNewSubjectChange}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Seleccione una materia</option>
-                {availableSubjects.map(subject => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.subjectProfessor.subject.subjectName} - Prof. {subject.subjectProfessor.professor.firstName} {subject.subjectProfessor.professor.lastName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex justify-between">
-              <button
-                onClick={() => setCreationStep(2)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Anterior
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Paso 4: Confirmación y generación */}
-        {creationStep === 4 && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h3 className="font-medium text-blue-800 mb-2">Resumen</h3>
-              <ul className="space-y-2 text-sm text-blue-700">
-                <li><span className="font-medium">Período:</span> {availablePeriods.find(p => p.id.toString() === newPeriodId)?.name}</li>
-                <li><span className="font-medium">Grupo:</span> {availableGroups.find(g => g.id.toString() === newGroupId)?.groupName}</li>
-                <li><span className="font-medium">Materia:</span> {selectedSubjectName}</li>
-                <li><span className="font-medium">Profesor:</span> {selectedProfessorName}</li>
-              </ul>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-gray-800">Saberes disponibles</h3>
-                <span className="text-sm text-gray-500">
-                  {subjectKnowledges.length} saberes encontrados
-                </span>
-              </div>
-
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {subjectKnowledges.map(knowledge => (
-                  <div 
-                    key={knowledge.id} 
-                    className={`p-3 rounded-md flex justify-between items-center ${
-                      isKnowledgeWithAchievement(knowledge.idKnowledge.id)
-                        ? "bg-green-50 border border-green-200"
-                        : "bg-white border border-gray-200"
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium">{knowledge.idKnowledge.name}</div>
-                      <div className="text-sm text-gray-500">Porcentaje: {knowledge.idKnowledge.percentage}%</div>
-                    </div>
-                    {isKnowledgeWithAchievement(knowledge.idKnowledge.id) ? (
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                        Logro existente
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                        Pendiente
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {subjectKnowledges.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
-                  No se encontraron saberes asociados a esta materia
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-medium text-gray-800">Saberes disponibles</h3>
+                  <span className="text-sm text-gray-500">
+                    {subjectKnowledges.length} saberes encontrados
+                  </span>
                 </div>
-              )}
-            </div>
-
-            <div className="flex justify-between">
-              <button
-                onClick={() => setCreationStep(3)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={generateMissingAchievements}
-                disabled={subjectKnowledges.every(sk => isKnowledgeWithAchievement(sk.idKnowledge.id))}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Generar logros faltantes
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+  
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {subjectKnowledges.map((knowledge, index) => (
+                    <motion.div 
+                      key={knowledge.id} 
+                      className={`p-3 rounded-md flex justify-between items-center ${
+                        isKnowledgeWithAchievement(knowledge.idKnowledge.id)
+                          ? "bg-green-50 border border-green-200"
+                          : "bg-white border border-gray-200"
+                      }`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                      whileHover={{ scale: 1.01 }}
+                    >
+                      <div>
+                        <div className="font-medium">{knowledge.idKnowledge.name}</div>
+                        <div className="text-sm text-gray-500">Porcentaje: {knowledge.idKnowledge.percentage}%</div>
+                      </div>
+                      {isKnowledgeWithAchievement(knowledge.idKnowledge.id) ? (
+                        <motion.span 
+                          className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
+                          initial={{ scale: 0.8 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
+                        >
+                          Logro existente
+                        </motion.span>
+                      ) : (
+                        <motion.span 
+                          className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full"
+                          initial={{ scale: 0.8 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
+                        >
+                          Pendiente
+                        </motion.span>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+  
+                {subjectKnowledges.length === 0 && (
+                  <motion.div 
+                    className="text-center py-4 text-gray-500"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    No se encontraron saberes asociados a esta materia
+                  </motion.div>
+                )}
+              </motion.div>
+  
+              <div className="flex justify-between">
+                <motion.button
+                  onClick={() => setCreationStep(3)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  Anterior
+                </motion.button>
+                <motion.button
+                  onClick={generateMissingAchievements}
+                  disabled={subjectKnowledges.every(sk => isKnowledgeWithAchievement(sk.idKnowledge.id))}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  whileHover={!subjectKnowledges.every(sk => isKnowledgeWithAchievement(sk.idKnowledge.id)) ? { scale: 1.05 } : {}}
+                  whileTap={!subjectKnowledges.every(sk => isKnowledgeWithAchievement(sk.idKnowledge.id)) ? { scale: 0.95 } : {}}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  Generar logros faltantes
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     );
   };
-
+  
   // Overlay de carga
   const loadingOverlay = loading && (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
