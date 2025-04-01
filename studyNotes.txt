@@ -24,6 +24,7 @@ npm run dev
     npm install sweetalert2
     npm install tailwind-scrollbar
     react-hook-form
+    react-beautiful-dnd
 
 
 

@@ -141,13 +141,18 @@ export const studentAdminService = {
     // Crear estudiante y asignarlo a un grupo
     async createStudentFetchingGroup(userData) {
         try {
+            // const response = await request(
+            //     'POST',
+            //     'academy',
+            //     '/users/detail/students/register',
+            //     userData
+            // );
             const response = await request(
                 'POST',
-                'academy',
-                '/users/detail/students/register',
+                apiEndpoints.SERVICES.GATEAWAY,
+                apiEndpoints.API_ENDPOINTS.USER.CREATE_STUDENT_GTW,
                 userData
             );
-    
             if (response.status !== 200) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }

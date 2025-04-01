@@ -1,21 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import Swal from "sweetalert2";
 
-const CreateDimensionModal = ({ onClose, onSave }) => {
+const EditDimensionModal = ({ dimension, onClose, onSave }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (dimension) {
+      setName(dimension.name || "");
+      setDescription(dimension.description || "");
+    }
+  }, [dimension]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name) {
-      alert("El nombre de la dimensión es obligatorio");
+      Swal.fire({
+        title: "Campo requerido",
+        text: "El nombre de la dimensión es obligatorio",
+        icon: "warning",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#3085d6",
+        customClass: {
+          container: "font-sans"
+        }
+      });
       return;
     }
 
     setIsSubmitting(true);
     
     const dimensionData = {
+      id: dimension.id,
       name,
       description
     };
@@ -27,7 +45,7 @@ const CreateDimensionModal = ({ onClose, onSave }) => {
     <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border border-gray-200">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Crear nueva dimensión</h2>
+          <h2 className="text-xl font-semibold">Editar dimensión</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-5 w-5" />
           </button>
@@ -82,4 +100,4 @@ const CreateDimensionModal = ({ onClose, onSave }) => {
   );
 };
 
-export default CreateDimensionModal;
+export default EditDimensionModal;

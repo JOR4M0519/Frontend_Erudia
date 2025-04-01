@@ -8,7 +8,7 @@ export const reportService = {
         try {
           const response = await request("GET",
             apiEndpoints.SERVICES.ACADEMY, 
-            apiEndpoints.API_ENDPOINTS.SUBJECTS.GET_GROUP_BY_DIMENSIONS);
+            apiEndpoints.API_ENDPOINTS.DIMENSIONS.RELATION_SUBJECTS.GET_GROUP_BY_DIMENSIONS);
           return response.data;
         } catch (error) {
           console.error("Error fetching dimensions:", error);

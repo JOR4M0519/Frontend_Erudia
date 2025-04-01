@@ -16,6 +16,7 @@ import { clearStorage, decodeRoles } from '../../utilities';
 
 import { encodeUserInfo, request } from "../../services/config/axios_helper"
 import apiEndpoints from '../../Constants/api-endpoints';
+import { setupTokenRefreshSystem } from '../../services/config/token_helper';
 
 const Login = () => {
     const dispatch = useDispatch();
@@ -78,11 +79,19 @@ const Login = () => {
             if (response.status === 200) {
                 const responseData = response.data;
                 
-                if (responseData.token) {
+                if (responseData.accessToken) {
                     // Store user information in Redux
-                    const userInfo = encodeUserInfo(responseData.user.id, responseData.token);
+                    console.log("Auth response:", responseData);
+                    const userInfo = encodeUserInfo(
+                        responseData.user.id,
+                        responseData.accessToken,
+                        responseData.refreshToken);
                     dispatch(createUser({...userInfo}));
                     
+                    console.log(userInfo)
+                    // Initialize token refresh system
+                    setupTokenRefreshSystem();
+
                     // Check if user is admin to redirect to admin panel
                     const storedRole = decodeRoles(userInfo.roles) || [];
                     const isAdmin = storedRole.includes(Roles.ADMIN);

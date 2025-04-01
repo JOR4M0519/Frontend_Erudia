@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Edit, X, Plus } from "lucide-react";
-import { configurationService, CreateSubjectModal, CreateDimensionModal } from "../";
+import { configurationService, CreateSubjectModal, CreateDimensionModal, EditDimensionModal, EditSubjectModal } from "../";
 import Swal from "sweetalert2";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const AreasTab = () => {
   // Estados para datos
@@ -23,8 +24,11 @@ const AreasTab = () => {
   
   // Estados para modales
   const [isCreateDimensionModalOpen, setIsCreateDimensionModalOpen] = useState(false);
-  const [isCreateSubjectModalOpen, setIsCreateSubjectModalOpen] = useState(false);
+  const [isEditDimensionModalOpen, setIsEditDimensionModalOpen] = useState(false);
+  const [isEditSubjectModalOpen, setIsEditSubjectModalOpen] = useState(false);
   const [selectedDimension, setSelectedDimension] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedRelationId, setSelectedRelationId] = useState(null);
   
   // Estado de carga
   const [loading, setLoading] = useState(true);
@@ -146,7 +150,11 @@ const AreasTab = () => {
             subjects: []
           };
         }
-        acc[dimensionId].subjects.push(item.subject);
+        // Añadir el ID de la relación junto con la materia
+        acc[dimensionId].subjects.push({
+          ...item.subject,
+          relationId: item.id
+        });
         return acc;
       }, {});
       
@@ -192,10 +200,32 @@ const AreasTab = () => {
     }
   };
 
+  // Abrir modal para editar dimensión
+  const handleOpenEditDimensionModal = (dimension) => {
+    setSelectedDimension(dimension);
+    setIsEditDimensionModalOpen(true);
+  };
+
   // Editar dimensión
-  const handleEditDimension = (dimension) => {
-    // Implementación pendiente
-    console.log("Editar dimensión:", dimension);
+  const handleEditDimension = async (dimensionData) => {
+    try {
+      await configurationService.updateDimension(selectedDimension.id, dimensionData);
+      fetchDimensionsWithSubjects();
+      setIsEditDimensionModalOpen(false);
+      setSelectedDimension(null);
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: 'Dimensión actualizada correctamente'
+      });
+    } catch (error) {
+      console.error("Error al actualizar dimensión:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo actualizar la dimensión'
+      });
+    }
   };
 
   // Eliminar dimensión
@@ -231,36 +261,38 @@ const AreasTab = () => {
     }
   };
 
-  // Crear nueva materia
-  const handleCreateSubject = async (subjectData) => {
+  // Abrir modal para editar materia
+  const handleOpenEditSubjectModal = (subject, relationId) => {
+    setSelectedSubject(subject);
+    setSelectedRelationId(relationId);
+    setIsEditSubjectModalOpen(true);
+  };
+
+  // Editar materia
+  const handleEditSubject = async (subjectData) => {
     try {
-      await configurationService.createSubject(selectedDimension.id, subjectData);
+      await configurationService.updateSubject(selectedSubject.id, subjectData);
       fetchDimensionsWithSubjects();
-      setIsCreateSubjectModalOpen(false);
-      setSelectedDimension(null);
+      setIsEditSubjectModalOpen(false);
+      setSelectedSubject(null);
+      setSelectedRelationId(null);
       Swal.fire({
         icon: 'success',
         title: 'Éxito',
-        text: 'Materia creada correctamente'
+        text: 'Materia actualizada correctamente'
       });
     } catch (error) {
-      console.error("Error al crear materia:", error);
+      console.error("Error al actualizar materia:", error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo crear la materia'
+        text: 'No se pudo actualizar la materia'
       });
     }
   };
 
-  // Abrir modal para crear materia
-  const handleOpenCreateSubjectModal = (dimension) => {
-    setSelectedDimension(dimension);
-    setIsCreateSubjectModalOpen(true);
-  };
-
   // Eliminar materia
-  const handleDeleteSubject = async (dimensionId, subjectId) => {
+  const handleDeleteSubject = async (subjectId) => {
     try {
       Swal.fire({
         title: '¿Estás seguro?',
@@ -273,7 +305,7 @@ const AreasTab = () => {
         cancelButtonText: 'Cancelar'
       }).then(async (result) => {
         if (result.isConfirmed) {
-          await configurationService.deleteSubject(dimensionId, subjectId);
+          await configurationService.deleteSubject(subjectId);
           fetchDimensionsWithSubjects();
           Swal.fire(
             '¡Eliminado!',
@@ -290,6 +322,56 @@ const AreasTab = () => {
         text: 'No se pudo eliminar la materia'
       });
     }
+  };
+
+  // Manejar el arrastre y soltar para cambiar materia de dimensión
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const sourceDroppableId = result.source.droppableId;
+    const destinationDroppableId = result.destination.droppableId;
+    
+    if (sourceDroppableId === destinationDroppableId) return;
+    
+    const sourceDimensionId = parseInt(sourceDroppableId.split('-')[1]);
+    const destinationDimensionId = parseInt(destinationDroppableId.split('-')[1]);
+    
+    const draggedItemIndex = result.source.index;
+    const subject = groupedDimensions[sourceDimensionId].subjects[draggedItemIndex];
+    
+    Swal.fire({
+      title: '¿Cambiar dimensión?',
+      text: `¿Deseas mover "${subject.subjectName}" a la dimensión "${groupedDimensions[destinationDimensionId].dimension.name}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, cambiar',
+      cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await configurationService.updateSubjectDimension(
+            subject.relationId,
+            destinationDimensionId,
+            subject.id
+          );
+          fetchDimensionsWithSubjects();
+          Swal.fire(
+            '¡Cambiado!',
+            'La materia ha sido movida a la nueva dimensión.',
+            'success'
+          );
+        } catch (error) {
+          console.error("Error al cambiar la dimensión de la materia:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo cambiar la dimensión de la materia'
+          });
+        }
+      }
+    });
   };
 
   return (
@@ -377,119 +459,180 @@ const AreasTab = () => {
           <span className="ml-3 text-lg text-gray-600">Cargando...</span>
         </div>
       ) : (
-        <div className="space-y-4">
-          {Object.values(groupedDimensions).length > 0 ? (
-            Object.values(groupedDimensions).map((item) => (
-              <div
-                key={item.dimension.id}
-                className="bg-gray-100 rounded-lg overflow-hidden shadow-sm border border-gray-200"
-              >
-                {/* Cabecera de dimensión */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="space-y-4">
+            {Object.values(groupedDimensions).length > 0 ? (
+              Object.values(groupedDimensions).map((item) => (
                 <div
-                  className={`p-4 flex justify-between items-center cursor-pointer ${
-                    expandedDimensions[item.dimension.id] ? "bg-yellow-400 text-black" : "bg-gray-200"
-                  }`}
-                  onClick={() => toggleDimension(item.dimension.id)}
+                  key={item.dimension.id}
+                  className="bg-gray-100 rounded-lg overflow-hidden shadow-sm border border-gray-200"
                 >
-                  <div className="flex items-center">
-                    {expandedDimensions[item.dimension.id] ? (
-                      <ChevronUp className="h-5 w-5 mr-2" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 mr-2" />
-                    )}
-                    <h3 className="font-semibold">{item.dimension.name}</h3>
-                    <span className="text-sm text-gray-600 ml-2">
-                      {item.dimension.description}
-                    </span>
+                  {/* Cabecera de dimensión */}
+                  <div
+                    className={`p-4 flex justify-between items-center cursor-pointer ${
+                      expandedDimensions[item.dimension.id] ? "bg-yellow-400 text-black" : "bg-gray-200"
+                    }`}
+                    onClick={() => toggleDimension(item.dimension.id)}
+                  >
+                    <div className="flex items-center">
+                      {expandedDimensions[item.dimension.id] ? (
+                        <ChevronUp className="h-5 w-5 mr-2" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 mr-2" />
+                      )}
+                      <h3 className="font-semibold">{item.dimension.name}</h3>
+                      <span className="text-sm text-gray-600 ml-2">
+                        {item.dimension.description}
+                      </span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditDimensionModal(item.dimension);
+                        }}
+                        className="p-1 hover:bg-gray-300 rounded"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDimension(item.dimension.id);
+                        }}
+                        className="p-1 hover:bg-gray-300 rounded"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditDimension(item.dimension);
-                      }}
-                      className="p-1 hover:bg-gray-300 rounded"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteDimension(item.dimension.id);
-                      }}
-                      className="p-1 hover:bg-gray-300 rounded"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
 
-                {/* Lista de materias */}
-                {expandedDimensions[item.dimension.id] && (
-                  <div className="p-4">
-                    <ul className="space-y-2">
-                      {item.subjects.map((subject) => (
-                        <li
-                          key={subject.id}
-                          className="flex justify-between items-center p-2 bg-white rounded-md shadow-sm"
+                  {/* Lista de materias */}
+                  {expandedDimensions[item.dimension.id] && (
+                    <Droppable droppableId={`dimension-${item.dimension.id}`}>
+                      {(provided) => (
+                        <div 
+                          className="p-4"
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
                         >
-                          <span>{subject.subjectName}</span>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditSubject(item.dimension.id, subject)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSubject(item.dimension.id, subject.id)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    {/* Botón para agregar materia */}
-                    <button
-                      onClick={() => handleOpenCreateSubjectModal(item.dimension)}
-                      className="mt-4 flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Crear materia
-                    </button>
-                  </div>
-                )}
+                          <ul className="space-y-2">
+                            {item.subjects.map((subject, index) => (
+                              <Draggable 
+                                key={`${subject.id}-${subject.relationId}`} 
+                                draggableId={`subject-${subject.id}-${subject.relationId}`} 
+                                index={index}
+                              >
+                                {(provided) => (
+                                  <li
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className="flex justify-between items-center p-2 bg-white rounded-md shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                                  >
+                                    <div className="flex items-center">
+                                      <span className="mr-2">
+                                        {subject.status === 'A' ? (
+                                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                                        ) : (
+                                          <span className="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+                                        )}
+                                      </span>
+                                      <span>{subject.subjectName}</span>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => handleOpenEditSubjectModal(subject, subject.relationId)}
+                                        className="text-blue-600 hover:text-blue-800"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSubject(subject.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  </li>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </ul>
+                        </div>
+                      )}
+                    </Droppable>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">No hay dimensiones disponibles con los filtros seleccionados.</p>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">No hay dimensiones disponibles con los filtros seleccionados.</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </DragDropContext>
       )}
 
       {/* Modales */}
       {isCreateDimensionModalOpen && (
         <CreateDimensionModal
-          isOpen={isCreateDimensionModalOpen}
           onClose={() => setIsCreateDimensionModalOpen(false)}
           onSave={handleCreateDimension}
         />
       )}
 
-      {isCreateSubjectModalOpen && selectedDimension && (
-        <CreateSubjectModal
-          isOpen={isCreateSubjectModalOpen}
+      {isEditDimensionModalOpen && selectedDimension && (
+        <EditDimensionModal
+          dimension={selectedDimension}
           onClose={() => {
-            setIsCreateSubjectModalOpen(false);
+            setIsEditDimensionModalOpen(false);
             setSelectedDimension(null);
           }}
-          onSave={handleCreateSubject}
-          dimension={selectedDimension}
+          onSave={handleEditDimension}
+        />
+      )}
+
+      {isEditSubjectModalOpen && selectedSubject && (
+        <EditSubjectModal
+          subject={selectedSubject}
+          relationId={selectedRelationId}
+          dimensions={Object.values(groupedDimensions).map(item => item.dimension)}
+          currentDimensionId={Object.keys(groupedDimensions).find(
+            key => groupedDimensions[key].subjects.some(s => s.id === selectedSubject.id)
+          )}
+          onClose={() => {
+            setIsEditSubjectModalOpen(false);
+            setSelectedSubject(null);
+            setSelectedRelationId(null);
+          }}
+          onSave={handleEditSubject}
+          onChangeDimension={async (newDimensionId) => {
+            try {
+              await configurationService.updateSubjectDimension(
+                selectedRelationId,
+                newDimensionId,
+                selectedSubject.id
+              );
+              fetchDimensionsWithSubjects();
+              setIsEditSubjectModalOpen(false);
+              setSelectedSubject(null);
+              setSelectedRelationId(null);
+              Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: 'Dimensión de la materia actualizada correctamente'
+              });
+            } catch (error) {
+              console.error("Error al cambiar la dimensión de la materia:", error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo cambiar la dimensión de la materia'
+              });
+            }
+          }}
         />
       )}
     </div>

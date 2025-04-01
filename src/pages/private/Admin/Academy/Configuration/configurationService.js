@@ -6,8 +6,8 @@ export const configurationService = {
   getDimensions: async () => {
     try {
       const response = await request("GET",
-apiEndpoints.SERVICES.ACADEMY,
- "/dimensions");
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.DIMENSIONS.GET_ALL);
       return response.data;
     } catch (error) {
       console.error("Error fetching dimensions:", error);
@@ -19,7 +19,7 @@ apiEndpoints.SERVICES.ACADEMY,
     try {
       const response = await request("GET",
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.SUBJECTS.GET_GROUP_BY_DIMENSIONS);
+        apiEndpoints.API_ENDPOINTS.DIMENSIONS.RELATION_SUBJECTS.GET_GROUP_BY_DIMENSIONS);
       return response.data;
     } catch (error) {
       console.error("Error fetching dimensions:", error);
@@ -30,8 +30,9 @@ apiEndpoints.SERVICES.ACADEMY,
   createDimension: async (dimension) => {
     try {
       const response = await request("POST",
-apiEndpoints.SERVICES.ACADEMY,
- "/dimensions", dimension);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.DIMENSIONS.CREATE_DIMENSION,
+      dimension);
       return response.data;
     } catch (error) {
       console.error("Error creating dimension:", error);
@@ -42,8 +43,9 @@ apiEndpoints.SERVICES.ACADEMY,
   updateDimension: async (id, dimension) => {
     try {
       const response = await request("PUT",
-apiEndpoints.SERVICES.ACADEMY,
- `/dimensions/${id}`, dimension);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.DIMENSIONS.UPDATE_BY_ID(id),
+      dimension);
       return response.data;
     } catch (error) {
       console.error("Error updating dimension:", error);
@@ -54,33 +56,63 @@ apiEndpoints.SERVICES.ACADEMY,
   deleteDimension: async (id) => {
     try {
       await request("DELETE",
-apiEndpoints.SERVICES.ACADEMY,
- `/dimensions/${id}`);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.DIMENSIONS.DELETE_BY_ID(id));
       return true;
     } catch (error) {
       console.error("Error deleting dimension:", error);
       throw error;
     }
   },
-  
-  // Materias
-  createSubject: async (dimensionId, subject) => {
+
+  //SubjectKnowledges
+
+  createSubjectKnowledge: async (subjectKnowledge) => {
     try {
       const response = await request("POST",
-apiEndpoints.SERVICES.ACADEMY,
- `/dimensions/${dimensionId}/subjects`, subject);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.CREATE,
+      subjectKnowledge);
       return response.data;
     } catch (error) {
-      console.error("Error creating subject:", error);
+      console.error("Error creating Relación subject-knowledge:", error);
       throw error;
     }
   },
   
-  updateSubject: async (dimensionId, subjectId, subject) => {
+  updateSubjectKnowledge: async (id, subjectKnowledge) => {
     try {
       const response = await request("PUT",
-apiEndpoints.SERVICES.ACADEMY,
- `/dimensions/${dimensionId}/subjects/${subjectId}`, subject);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.UPDATE_BY_ID(id),
+      subjectKnowledge);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating Relación subject-knowledge:", error);
+      throw error;
+    }
+  },
+  
+  deleteSubjectKnowledge: async (id) => {
+    try {
+      await request("DELETE",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.DELETE_BY_ID(id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting Relación subject-knowledge:", error);
+      throw error;
+    }
+  },
+  
+  // Materias
+  
+  updateSubject: async (subjectId, subject) => {
+    try {
+      const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.SUBJECTS.UPDATE_BY_ID(subjectId),
+    subject);
       return response.data;
     } catch (error) {
       console.error("Error updating subject:", error);
@@ -88,21 +120,29 @@ apiEndpoints.SERVICES.ACADEMY,
     }
   },
   
-  deleteSubject: async (dimensionId, subjectId) => {
+  //Relacioón SubjectDimension
+
+  updateSubjectDimension: async (relationId, dimensionId, subjectId) => {
+    
+    const subjectDimensionDomain = {
+        dimension: {id: dimensionId},
+        subject: {id: subjectId},
+    }
+
     try {
-      await request("DELETE",
-apiEndpoints.SERVICES.ACADEMY,
- `/dimensions/${dimensionId}/subjects/${subjectId}`);
-      return true;
+      const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.DIMENSIONS.RELATION_SUBJECTS.UPDATE_BY_ID(relationId),
+    subjectDimensionDomain);
+      return response.data;
     } catch (error) {
-      console.error("Error deleting subject:", error);
+      console.error("Error updating subject:", error);
       throw error;
     }
   },
 
 
   // Periodos
-
   getPeriods: async (year) => {
     try {
        const response = await request(
@@ -148,8 +188,9 @@ apiEndpoints.SERVICES.ACADEMY,
   createPeriod: async (periodData) => {
     try {
       const response = await request("POST",
-apiEndpoints.SERVICES.ACADEMY,
- "/periods", periodData);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.PERIODS.CREATE,
+      periodData);
       return response.data;
     } catch (error) {
       console.error("Error al crear período:", error);
@@ -160,8 +201,8 @@ apiEndpoints.SERVICES.ACADEMY,
   updatePeriod: async (periodId, periodData) => {
     try {
       const response = await request("PUT",
-apiEndpoints.SERVICES.ACADEMY,
- `/periods/${periodId}`, periodData);
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.PERIODS.UPDATE_BY_ID(periodId), periodData);
       return response.data;
     } catch (error) {
       console.error("Error al actualizar período:", error);
@@ -172,8 +213,8 @@ apiEndpoints.SERVICES.ACADEMY,
   deletePeriod: async (periodId) => {
     try {
       await request("DELETE",
-apiEndpoints.SERVICES.ACADEMY,
- `/periods/${periodId}`);
+      apiEndpoints.SERVICES.ACADEMY,
+      `/periods/${periodId}`);
       return true;
     } catch (error) {
       console.error("Error al eliminar período:", error);
@@ -197,11 +238,12 @@ apiEndpoints.SERVICES.ACADEMY,
 
 
 
-createSchema: async (schemaData) => {
+createGradeSettings: async (schemaData) => {
   try {
     const response = await request("POST",
-apiEndpoints.SERVICES.ACADEMY,
- "/grade-settings", schemaData);
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.GRADE_SETTINGS.CREATE,
+    schemaData);
     return response.data;
   } catch (error) {
     console.error("Error al crear esquema de calificación:", error);
@@ -209,11 +251,12 @@ apiEndpoints.SERVICES.ACADEMY,
   }
 },
 
-updateSchema: async (schemaId, schemaData) => {
+updateGradeSettings: async (schemaId, schemaData) => {
   try {
     const response = await request("PUT",
-apiEndpoints.SERVICES.ACADEMY,
- `/grade-settings/${schemaId}`, schemaData);
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.GRADE_SETTINGS.UPDATE_BY_ID(schemaId), 
+    schemaData);
     return response.data;
   } catch (error) {
     console.error("Error al actualizar esquema de calificación:", error);
@@ -221,11 +264,11 @@ apiEndpoints.SERVICES.ACADEMY,
   }
 },
 
-deleteSchema: async (schemaId) => {
+deleteGradeSettings: async (schemaId) => {
   try {
     await request("DELETE",
-apiEndpoints.SERVICES.ACADEMY,
- `/grade-settings/${schemaId}`);
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.GRADE_SETTINGS.DELETE_BY_ID(schemaId));
     return true;
   } catch (error) {
     console.error("Error al eliminar esquema de calificación:", error);
@@ -275,6 +318,43 @@ getSubjectsByGroupAndLevel: async (periodId, levelId) => {
   }
 },
 
+createEducationalLevel: async (levelData) => {
+  try {
+    const response = await request("POST",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EDUCATIONAL_LEVELS.CREATE,
+    levelData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el nivel educativo:", error);
+    throw error;
+  }
+},
+
+updateEducationalLevel: async (levelId, levelData) => {
+  try {
+    const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EDUCATIONAL_LEVELS.UPDATE_BY_ID(levelId), 
+    levelData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar el nivel educativo:", error);
+    throw error;
+  }
+},
+
+deleteEducationalLevel: async (levelId) => {
+  try {
+    await request("DELETE",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EDUCATIONAL_LEVELS.DELETE_BY_ID(levelId));
+    return true;
+  } catch (error) {
+    console.error("Error al eliminar el nivel educativo:", error);
+    throw error;
+  }
+},
 
 
 // Knowledges
@@ -307,6 +387,21 @@ getSubjectKnowledge: async () => {
   }
 },
 
+getSubjectKnowledgeBySubject: async (subjectId) => {
+  try {
+    const response = await request(
+      "GET",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.
+      KNOWLEDGES.SUBJECTS.GET_ALL_BY_SUBJECT(subjectId)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener materias por grupo y nivel:", error);
+    throw error;
+  }
+},
+
 getAchievementGroupsKnowledge: async (periodId, groupId) => {
   try {
     const response = await request(
@@ -317,6 +412,71 @@ getAchievementGroupsKnowledge: async (periodId, groupId) => {
     return response.data;
   } catch (error) {
     console.error("Error al obtener materias por grupo y nivel:", error);
+    throw error;
+  }
+},
+
+updateAchievementGroupsKnowledge: async (achievementGroupDataId,achievementGroupData) => {
+  try {
+    const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.
+    SUBJECTS.UPDATE_ACHIEVEMENT_GROUP_BY_ID(achievementGroupDataId), 
+    achievementGroupData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el saber:", error);
+    throw error;
+  }
+},
+
+createAchievementGroupsKnowledge: async (achievementGroupData) => {
+  try {
+    const response = await request("POST",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.CREATE_ACHIEVEMENT_GROUP,
+    achievementGroupData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el saber:", error);
+    throw error;
+  }
+},
+
+createKnowledges: async (knowledgeData) => {
+  try {
+    const response = await request("POST",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.CREATE,
+    knowledgeData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el saber:", error);
+    throw error;
+  }
+},
+
+updateKnowledges: async (knowledgeId, knowledgeData) => {
+  try {
+    const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.UPDATE_BY_ID(knowledgeId), 
+    knowledgeData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar el saber", error);
+    throw error;
+  }
+},
+
+deleteKnowledges: async (knowledgeId) => {
+  try {
+    await request("DELETE",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.DELETE_BY_ID(knowledgeId));
+    return true;
+  } catch (error) {
+    console.error("Error al eliminar el saber:", error);
     throw error;
   }
 },
@@ -335,6 +495,46 @@ getAllGroups: async () => {
     throw error;
   }
 },
+
+ getAllSubjectGroupsByPeriodAndGroup: async(periodId,groupId) => {
+        try {
+            const response = await request(
+                'GET',
+                apiEndpoints.SERVICES.ACADEMY,
+                apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.
+                SUBJECTS.GROUP.GET_ALL_BY_PERIOD_AND_GROUP(periodId,groupId)
+            );
+    
+            if (response.status !== 200) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+    
+            return response.data;
+        } catch (error) {
+            console.error("Error al obtener grupos activos:", error);
+            throw error;
+        }
+    },
+  
+    getAllSubjectGroupsByPeriodAndSubjectAndGroup: async(periodId,subjectId,groupId) => {
+      try {
+          const response = await request(
+              'GET',
+              apiEndpoints.SERVICES.ACADEMY,
+              apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.
+              SUBJECTS.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId,subjectId,groupId)
+          );
+  
+          if (response.status !== 200) {
+              throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+  
+          return response.data;
+      } catch (error) {
+          console.error("Error al obtener grupos activos:", error);
+          throw error;
+      }
+  },
 
 };
 

@@ -16,12 +16,17 @@ export { default as AchievementsTab } from './tabs/sections/AchievementsTab';
 export { default as AssociationsTab } from './tabs/sections/AssociationsTab';
 export { default as KnowledgesTab } from './tabs/sections/KnowledgesTab';
 
+export { default as KnowledgeModal } from './modals/KnowledgeModal';
+
 
 export { default as CreateDimensionModal } from './modals/CreateDimensionModal';
+export { default as EditDimensionModal } from './modals/EditDimensionModal';
 export { default as CreateSubjectModal } from './modals/CreateSubjectModal';
+export { default as EditSubjectModal } from './modals/EditSubjectModal';
+
 export { default as SchemaForm } from './modals/SchemaForm';
 export { default as PeriodForm } from './modals/PeriodForm';
-export { default as LevelForm } from './modals/LevelForm';
+export { default as LevelModal } from './modals/LevelModal';
 export { default as UserStateForm } from './modals/UserStateForm';
 
 

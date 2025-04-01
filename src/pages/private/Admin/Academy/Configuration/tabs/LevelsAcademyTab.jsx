@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { configurationService, LevelForm } from "../";
+import { configurationService, LevelModal } from "../";
 import Swal from "sweetalert2";
 import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 
@@ -7,7 +7,7 @@ const LevelsAcademyTap = () => {
   const [levels, setLevels] = useState([]);
   const [filteredLevels, setFilteredLevels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false); // Cambiado de showForm a showModal
   const [currentLevel, setCurrentLevel] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -67,19 +67,19 @@ const LevelsAcademyTap = () => {
 
   const handleAddClick = () => {
     setCurrentLevel(null);
-    setShowForm(true);
+    setShowModal(true);
   };
 
   const handleEditClick = (level) => {
     setCurrentLevel(level);
-    setShowForm(true);
+    setShowModal(true);
   };
 
-  const handleDeleteClick = async (id) => {
+  const handleDeleteClick = async (id, levelName) => {
     try {
       const result = await Swal.fire({
         title: '¿Estás seguro?',
-        text: "Esta acción no se puede revertir",
+        text: `¿Deseas eliminar el nivel "${levelName}"?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -99,11 +99,37 @@ const LevelsAcademyTap = () => {
       }
     } catch (error) {
       console.error("Error al eliminar nivel académico:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo eliminar el nivel académico'
-      });
+      
+      if (error.response) {
+        switch (error.response.status) {
+          case 409: // Conflict (IM_USED)
+            Swal.fire({
+              icon: 'warning',
+              title: 'No se puede eliminar',
+              text: error.response.data || 'Este nivel educativo está siendo utilizado por grupos o esquemas de calificación.'
+            });
+            break;
+          case 404: // Not Found
+            Swal.fire({
+              icon: 'info',
+              title: 'No encontrado',
+              text: 'El nivel educativo no existe o ya ha sido eliminado.'
+            });
+            break;
+          default:
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No se pudo eliminar el nivel académico'
+            });
+        }
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el nivel académico'
+        });
+      }
     }
   };
 
@@ -112,21 +138,23 @@ const LevelsAcademyTap = () => {
       if (currentLevel) {
         // Actualizar nivel existente
         await configurationService.updateEducationalLevel(currentLevel.id, levelData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Nivel académico actualizado correctamente'
+        });
       } else {
         // Crear nuevo nivel
         await configurationService.createEducationalLevel(levelData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Nivel académico creado correctamente'
+        });
       }
       
       await fetchLevels();
-      setShowForm(false);
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Éxito',
-        text: currentLevel 
-          ? 'Nivel académico actualizado correctamente' 
-          : 'Nivel académico creado correctamente'
-      });
+      setShowModal(false);
     } catch (error) {
       console.error("Error al guardar nivel académico:", error);
       Swal.fire({
@@ -137,62 +165,66 @@ const LevelsAcademyTap = () => {
     }
   };
 
-  const handleCancelForm = () => {
-    setShowForm(false);
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const getStatusLabel = (status) => {
+    return status === 'A' ? 'Activo' : 'Inactivo';
+  };
+
+  const getStatusClass = (status) => {
+    return status === 'A' 
+      ? 'bg-green-100 text-green-800 border-green-200' 
+      : 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   return (
     <div className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-        <div>
-          <h2 className="text-xl font-bold">Niveles académicos</h2>
-          <p className="text-sm text-gray-600 mt-2">
-            Total: {loading ? "..." : filteredLevels.length} de {levels.length} niveles
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Niveles Académicos</h2>
+        <button
+          onClick={handleAddClick}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+        >
+          <Plus size={18} className="mr-1" /> Nuevo Nivel
+        </button>
+      </div>
+
+      {/* Filtros */}
+      <div className="mb-4 bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="font-medium">Filtros</h3>
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
+            className="text-blue-600 hover:text-blue-800"
           >
-            <Search size={18} />
-            {showFilters ? "Ocultar filtros" : "Buscar y filtrar"}
+            {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
           </button>
-          
-          {!showForm && (
-            <button
-              onClick={handleAddClick}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2 px-4 rounded inline-flex items-center transition-colors"
-            >
-              <Plus size={18} className="mr-1" />
-              Agregar nivel académico
-            </button>
-          )}
         </div>
-      </div>
-      
-      {/* Sección de filtros */}
-      {showFilters && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex flex-col flex-grow md:flex-grow-0">
-              <label className="text-sm text-gray-600 mb-1">Buscar por nombre</label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar nivel..."
-                className="bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+        
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Buscar por nombre</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar nivel..."
+                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
+              </div>
             </div>
             
-            <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Estado</label>
+            <div>
+              <label className="block text-sm font-medium mb-1">Estado</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Todos</option>
                 <option value="A">Activo</option>
@@ -200,33 +232,39 @@ const LevelsAcademyTap = () => {
               </select>
             </div>
             
-            <button 
-              onClick={resetFilters}
-              className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded transition-colors"
-            >
-              <X size={16} />
-              Limpiar filtros
-            </button>
+            <div className="flex items-end">
+              <button
+                onClick={resetFilters}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center"
+              >
+                <X size={18} className="mr-1" /> Limpiar filtros
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      
+        )}
+      </div>
+
+      {/* Tabla de niveles */}
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Cargando niveles académicos...</p>
         </div>
-      ) : (
+      ) : filteredLevels.length > 0 ? (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-2/3">
-                  Niveles académicos
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -235,64 +273,49 @@ const LevelsAcademyTap = () => {
               {filteredLevels.map((level) => (
                 <tr key={level.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {level.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {level.levelName}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {level.status === 'A' ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Activo
-                      </span>
-                    ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Inactivo
-                      </span>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusClass(level.status)}`}>
+                      {getStatusLabel(level.status)}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEditClick(level)}
-                      className="text-gray-600 hover:text-blue-700 bg-gray-200 hover:bg-gray-300 rounded px-2 py-1 mr-2 transition-colors"
+                      className="text-blue-600 hover:text-blue-900 mr-3"
                     >
-                      <span className="flex items-center">
-                        <Edit size={14} className="mr-1" />
-                        Editar
-                      </span>
+                      <Edit size={18} />
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(level.id)}
-                      className="text-gray-600 hover:text-red-700 bg-gray-200 hover:bg-gray-300 rounded px-2 py-1 transition-colors"
+                      onClick={() => handleDeleteClick(level.id, level.levelName)}
+                      className="text-red-600 hover:text-red-900"
                     >
-                      <span className="flex items-center">
-                        <Trash2 size={14} className="mr-1" />
-                        Eliminar
-                      </span>
+                      <Trash2 size={18} />
                     </button>
                   </td>
                 </tr>
               ))}
-              {filteredLevels.length === 0 && (
-                <tr>
-                  <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
-                    {levels.length === 0 ? 
-                      "No hay niveles académicos registrados" : 
-                      "No se encontraron niveles que coincidan con los filtros aplicados"}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+      ) : (
+        <div className="bg-white p-8 rounded-lg shadow text-center">
+          <p className="text-gray-600">No se encontraron niveles académicos.</p>
+        </div>
       )}
 
-      <div className="mt-4">
-        {showForm && (
-          <LevelForm
-            level={currentLevel}
-            onSave={handleSaveLevel}
-            onCancel={handleCancelForm}
-          />
-        )}
-      </div>
+      {/* Modal para crear/editar nivel */}
+      {showModal && (
+        <LevelModal
+          level={currentLevel}
+          onSave={handleSaveLevel}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

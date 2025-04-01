@@ -94,7 +94,7 @@ const SchemasTab = () => {
   const handleSaveSchema = async (schemaData) => {
     try {
       if (selectedSchema) {
-        await configurationService.updateGradeSetting(selectedSchema.id, schemaData);
+        await configurationService.updateGradeSettings(selectedSchema.id, schemaData);
         Swal.fire({
           icon: 'success',
           title: 'Éxito',
@@ -102,7 +102,7 @@ const SchemasTab = () => {
           timer: 1500
         });
       } else {
-        await configurationService.createGradeSetting(schemaData);
+        await configurationService.createGradeSettings(schemaData);
         Swal.fire({
           icon: 'success',
           title: 'Éxito',
@@ -135,7 +135,7 @@ const SchemasTab = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await configurationService.deleteGradeSetting(schemaId);
+          const response = await configurationService.deleteGradeSettings(schemaId);
           fetchSchemas();
           Swal.fire(
             '¡Eliminado!',
@@ -144,16 +144,26 @@ const SchemasTab = () => {
           );
         } catch (error) {
           console.error("Error al eliminar esquema:", error);
-          Swal.fire(
-            'Error',
-            'No se pudo eliminar el esquema',
-            'error'
-          );
+          
+          // Verificar si es un error de conflicto (esquema en uso)
+          if (error.response && error.response.status === 409) {
+            Swal.fire(
+              'No se puede eliminar',
+              error.response.data || 'Este esquema está siendo utilizado por uno o más periodos académicos.',
+              'warning'
+            );
+          } else {
+            Swal.fire(
+              'Error',
+              'No se pudo eliminar el esquema.',
+              'error'
+            );
+          }
         }
       }
     });
   };
-
+  
   // Obtener lista única de niveles educativos para el filtro
   const uniqueLevels = Object.values(educationalLevels);
 
@@ -239,7 +249,7 @@ const SchemasTab = () => {
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nivel Educativo</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado Nivel. Edu.</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rango</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nota de aprobación</th>
               <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>

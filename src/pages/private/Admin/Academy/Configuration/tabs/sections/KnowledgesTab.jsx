@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Edit, X } from "lucide-react";
+import { Edit, Trash2, X, Plus, Search } from "lucide-react";
+import {configurationService,KnowledgeModal} from "../../";
+import Swal from "sweetalert2";
 
 
 const KnowledgesTab = ({ 
   allKnowledges,
-  showFilters
+  showFilters,
+  onKnowledgeUpdated
 }) => {
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,6 +15,10 @@ const KnowledgesTab = ({
   
   // Estado para saberes filtrados
   const [filteredKnowledges, setFilteredKnowledges] = useState([]);
+  
+  // Estados para el modal
+  const [showModal, setShowModal] = useState(false);
+  const [currentKnowledge, setCurrentKnowledge] = useState(null);
 
   // Filtrar saberes cuando cambian los filtros
   useEffect(() => {
@@ -37,10 +44,118 @@ const KnowledgesTab = ({
     setStatusFilter("");
   };
 
+  // Abrir modal para crear nuevo saber
+  const handleAddKnowledge = () => {
+    setCurrentKnowledge(null);
+    setShowModal(true);
+  };
+
   // Editar saber
   const handleEditKnowledge = (knowledge) => {
-    // Aquí iría la lógica para editar el saber
-    alert(`Editar saber: ${knowledge.name}`);
+    setCurrentKnowledge(knowledge);
+    setShowModal(true);
+  };
+
+  // Eliminar saber
+  const handleDeleteKnowledge = async (id, name) => {
+    try {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Deseas eliminar el saber "${name}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        await configurationService.deleteKnowledges(id);
+        
+        // Notificar al componente padre para actualizar la lista
+        if (onKnowledgeUpdated) {
+          onKnowledgeUpdated();
+        }
+        
+        Swal.fire(
+          'Eliminado',
+          'El saber ha sido eliminado correctamente',
+          'success'
+        );
+      }
+    } catch (error) {
+      console.error("Error al eliminar saber:", error);
+      
+      if (error.response) {
+        switch (error.response.status) {
+          case 409: // Conflict
+            Swal.fire({
+              icon: 'warning',
+              title: 'No se puede eliminar',
+              text: error.response.data || 'Este saber está siendo utilizado en logros o evaluaciones'
+            });
+            break;
+          case 404: // Not Found
+            Swal.fire({
+              icon: 'info',
+              title: 'No encontrado',
+              text: 'El saber no existe o ya ha sido eliminado'
+            });
+            break;
+          default:
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No se pudo eliminar el saber'
+            });
+        }
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el saber'
+        });
+      }
+    }
+  };
+
+  // Guardar saber (crear o actualizar)
+  const handleSaveKnowledge = async (knowledgeData) => {
+    try {
+      if (currentKnowledge) {
+        // Actualizar saber existente
+        await configurationService.updateKnowledges(currentKnowledge.id, knowledgeData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Saber actualizado correctamente'
+        });
+      } else {
+        // Crear nuevo saber
+        await configurationService.createKnowledges(knowledgeData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Saber creado correctamente'
+        });
+      }
+      
+      // Cerrar modal
+      setShowModal(false);
+      
+      // Notificar al componente padre para actualizar la lista
+      if (onKnowledgeUpdated) {
+        onKnowledgeUpdated();
+      }
+    } catch (error) {
+      console.error("Error al guardar saber:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo guardar el saber'
+      });
+    }
   };
 
   // Obtener badge de estado
@@ -61,32 +176,41 @@ const KnowledgesTab = ({
   };
 
   return (
-    <>
-      {/* Filtros para saberes */}
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Saberes</h2>
+        <button
+          onClick={handleAddKnowledge}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+        >
+          <Plus size={18} className="mr-1" /> Nuevo Saber
+        </button>
+      </div>
+
+      {/* Filtros */}
       {showFilters && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="mb-4 bg-white p-4 rounded-lg shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Buscar por nombre
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar saber..."
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-sm font-medium mb-1">Buscar por nombre</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar saber..."
+                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
+              </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estado
-              </label>
+              <label className="block text-sm font-medium mb-1">Estado</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Todos</option>
                 <option value="A">Activo</option>
@@ -95,27 +219,20 @@ const KnowledgesTab = ({
             </div>
             
             <div className="flex items-end">
-              <button 
+              <button
                 onClick={resetFilters}
-                // KnowledgesTab.jsx (continuación)
-                className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded transition-colors"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center"
               >
-                <X size={18} />
-                Limpiar filtros
+                <X size={18} className="mr-1" /> Limpiar filtros
               </button>
             </div>
           </div>
         </div>
       )}
-      
+
       {/* Tabla de saberes */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-medium text-lg">Lista de saberes</h3>
-          <p className="text-sm text-gray-500">{filteredKnowledges.length} saberes encontrados</p>
-        </div>
-        
-        <div className="overflow-x-auto">
+      {filteredKnowledges.length > 0 ? (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -131,51 +248,61 @@ const KnowledgesTab = ({
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredKnowledges.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No se encontraron saberes con los filtros seleccionados.
+              {filteredKnowledges.map((knowledge) => (
+                <tr key={knowledge.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {knowledge.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {knowledge.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {knowledge.percentage}%
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(knowledge.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEditKnowledge(knowledge)}
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteKnowledge(knowledge.id, knowledge.name)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                filteredKnowledges.map((knowledge) => (
-                  <tr key={knowledge.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {knowledge.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {knowledge.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {knowledge.percentage}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {getStatusBadge(knowledge.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <button
-                        onClick={() => handleEditKnowledge(knowledge)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </>
+      ) : (
+        <div className="bg-white p-8 rounded-lg shadow text-center">
+          <p className="text-gray-600">No se encontraron saberes.</p>
+        </div>
+      )}
+
+      {/* Modal para crear/editar saber */}
+      {showModal && (
+        <KnowledgeModal
+          knowledge={currentKnowledge}
+          onSave={handleSaveKnowledge}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </div>
   );
 };
 
 export default KnowledgesTab;
-

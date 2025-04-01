@@ -1,6 +1,7 @@
 const API_ENDPOINTS = {
     AUTH: {
        LOGIN: "/public/login",
+       REFRESH_TOKEN: '/public/refresh-token',
     },
     USER: {
         GET_ALL: "/users",
@@ -10,7 +11,10 @@ const API_ENDPOINTS = {
         UPDATE_STATUS: (id) => `/users/${id}/status`,
         GET_ADMINISTRATIVE: "/roles/users/administrative",
         GET_STUDENTS: "/roles/users/students",
-        CREATE_ADMINISTRATIVE: "/users/administrative"
+        CREATE_ADMINISTRATIVE: "/users/administrative",
+
+        CREATE_STUDENT_GTW: '/private/users/students/register',
+
     },
 
     GROUPS: {
@@ -22,8 +26,8 @@ const API_ENDPOINTS = {
     },
 
     SUBJECTS:{
+        UPDATE_BY_ID: (id) => `/subjects/${id}`,
         SUBJECTS_BY_GROUPS_LEVEL: (periodId,levelId) => `/subjects-groups/periods/${periodId}/edu-level/${levelId}`,
-        GET_GROUP_BY_DIMENSIONS: "/subjects-dimensions",
     },
     
 
@@ -42,16 +46,43 @@ const API_ENDPOINTS = {
         },
 
         GRADE_SETTINGS:{
-            GET_ALL: '/grade-settings'
+            GET_ALL: '/grade-settings',
+            CREATE: `/grade-settings`,
+            UPDATE_BY_ID:  (id) => `/grade-settings/${id}`,
+            DELETE_BY_ID:  (id) => `/grade-settings/${id}`,
 
         },
 
         KNOWLEDGES:{
             GET_ALL: `/knowledge`,
+            CREATE: `/knowledge`,
+            UPDATE_BY_ID:  (id) => `/knowledge/${id}`,
+            DELETE_BY_ID:  (id) => `/knowledge/${id}`,
+            
             SUBJECTS:{
                 GET_ALL: `/subject_knowledge`,
+                CREATE: `/subject_knowledge`,
+                UPDATE_BY_ID:  (id) => `/subject_knowledge/${id}`,
+                DELETE_BY_ID:  (id) => `/subject_knowledge/${id}`,
+
+                GET_ALL_BY_SUBJECT: (subjectId) => `/subject_knowledge/subjects/${subjectId}`,
+                
+                CREATE_ACHIEVEMENT_GROUP: `/achievements-group`,
+
+                UPDATE_ACHIEVEMENT_GROUP_BY_ID: (id) =>  `/achievements-group/${id}`,
+
                 GET_ALL_BY_PERIOD_AND_GROUP: (periodId,groupId) =>
-                    `/achievements-group/periods/${periodId}/groups/${groupId}`
+                    `/achievements-group/periods/${periodId}/groups/${groupId}`,
+                
+                GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP: 
+                (periodId,subjectId,groupId) =>
+                `/achievements-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
+
+                GROUP:{
+                    GET_ALL_BY_PERIOD_AND_GROUP: (periodId,groupId) =>
+                        `/subjects-groups/groups/${groupId}/periods/${periodId}`,
+                },
+
             },
             
         },
@@ -63,12 +94,29 @@ const API_ENDPOINTS = {
         GET_ALL_BY_YEAR: (year) => `/periods/years/${year}`,
         GET_ALL_BY_YEAR_ACTIVE: (year) => `/periods/active/${year}`,
         GET_ALL_BY_SETTING_AND_YEAR: (settingId,year) => 
-            `/periods/settings/${settingId}/active/${year}`
+            `/periods/settings/${settingId}/active/${year}`,
+        CREATE: `/periods`,
+        UPDATE_BY_ID:  (id) => `/periods/${id}`,
     },
     
     EDUCATIONAL_LEVELS:{
         GET_ALL: `/educational-levels`,
         GET_BY_ID: (levelId) => `/educational-levels/${levelId}`,
+        CREATE: `/educational-levels`,
+        UPDATE_BY_ID:  (id) => `/educational-levels/${id}`,
+        DELETE_BY_ID:  (id) => `/educational-levels/${id}`,
+    },
+
+    DIMENSIONS:{
+        GET_ALL: `/dimensions`,
+        UPDATE_BY_ID: (id) => `/dimensions/${id}`,
+        CREATE_DIMENSION: `/dimensions`,
+        DELETE_BY_ID: (id) => `/dimensions/${id}`,
+
+        RELATION_SUBJECTS: {
+            GET_GROUP_BY_DIMENSIONS: "/subjects-dimensions",
+            UPDATE_BY_ID: (id) => `/subjects-dimensions/${id}`,
+        },
     },
 
     ID_TYPE: {
