@@ -399,7 +399,53 @@ const StudentsGroupsTab = () => {
           <div className="text-center py-12 text-gray-500">
             <Users size={48} className="mx-auto mb-4 text-gray-400" />
             <p className="text-lg font-medium">No se encontraron grupos</p>
-            <p className="mt-1">Intente con otros filtros o cree nuevos grupos</p>
+            <p className="mt-1">Intente con otros filtros o cree un nuevo grupo</p>
+            
+            {/* Sección para crear grupos cuando no hay ninguno */}
+            <div className="mt-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">Crear un nuevo grupo</h3>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-full max-w-md p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seleccione un nivel educativo:
+                  </label>
+                  <select
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
+                    onChange={(e) => {
+                      const levelId = parseInt(e.target.value);
+                      if (levelId) {
+                        const selectedLevel = levels.find(level => level.id === levelId);
+                        handleCreateGroup(selectedLevel);
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Seleccione un nivel</option>
+                    {levels.map((level) => (
+                      <option key={level.id} value={level.id}>
+                        {level.levelName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    if (levels.length > 0) {
+                      handleCreateGroup(levels[0]);
+                    } else {
+                      showNotification("No hay niveles educativos disponibles", "error");
+                    }
+                  }}
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md"
+                >
+                  <Plus size={20} />
+                  Crear Grupo
+                </motion.button>
+              </div>
+            </div>
           </div>
         ) : (
           <div>
