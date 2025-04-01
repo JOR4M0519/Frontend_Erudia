@@ -1,3 +1,4 @@
+import apiEndpoints from "../../../../Constants/api-endpoints";
 import { request } from "../../../../services/config/axios_helper";
 import { RoleModel, IdTypeModel } from "./";
 
@@ -14,8 +15,8 @@ export const employeeService = {
     try {
       const response = await request(
         "GET",
-        "academy",
-        "/users/roles",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.ROLE.GET_ALL,
         {}
       );
        
@@ -37,8 +38,8 @@ export const employeeService = {
     try {
       const response = await request(
         "POST",
-        "academy",
-        "/users/administrative",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.CREATE_ADMINISTRATIVE,
         userData
       );
 
@@ -60,8 +61,8 @@ export const employeeService = {
     try {
       const response = await request(
         "GET",
-        "academy",
-        "/id-types",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.ID_TYPE.GET_ALL,
         {}
       );
 
@@ -75,9 +76,6 @@ export const employeeService = {
     }
   },
 };
-
-// src/services/userService.js
-
 
 /**
  * Servicio para gestionar usuarios del sistema
@@ -93,8 +91,8 @@ export const userService = {
     try {
       const response = await request(
         "GET",
-        "academy",
-        `/users/detail/${id}`,
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_DETAIL(id),
         {}
       );
 
@@ -118,8 +116,8 @@ export const userService = {
     try {
       const response = await request(
         "PATCH",
-        "academy",
-        `/users/${userId}/full`,
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.UPDATE_FULL(userId),
         userData
       );
 
@@ -133,29 +131,28 @@ export const userService = {
     }
   },
 
-/**
- * Obtiene todos los tipos de identificación disponibles
- * @returns {Promise<Array<IdTypeModel>>} Lista de tipos de identificación
- */
-getIdTypes: async () => {
-  try {
-    const response = await request(
-      "GET",
-      "academy",
-      "/id-types",
-      {}
-    );
+  /**
+   * Obtiene todos los tipos de identificación disponibles
+   * @returns {Promise<Array<IdTypeModel>>} Lista de tipos de identificación
+   */
+  getIdTypes: async () => {
+    try {
+      const response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.ID_TYPE.GET_ALL,
+        {}
+      );
 
-    if (response.status === 200) {
-      return response.data;
+      if (response.status === 200) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error("Error al obtener tipos de identificación:", error);
+      throw error;
     }
-    return [];
-  } catch (error) {
-    console.error("Error al obtener tipos de identificación:", error);
-    throw error;
-  }
-},
-
+  },
 
   /**
    * Obtiene todos los usuarios administrativos
@@ -165,8 +162,8 @@ getIdTypes: async () => {
     try {
       const response = await request(
         "GET",
-        "academy",
-        "/users/roles/administrative",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_ADMINISTRATIVE,
         {}
       );
 
@@ -188,8 +185,8 @@ getIdTypes: async () => {
     try {
       const response = await request(
         "GET",
-        "academy",
-        "/users/roles/students",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_STUDENTS,
         {}
       );
 
@@ -212,8 +209,8 @@ getIdTypes: async () => {
     try {
       const response = await request(
         "GET",
-        "academy",
-        `/users/${id}`,
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_BY_ID(id),
         {}
       );
 
@@ -237,8 +234,8 @@ getIdTypes: async () => {
     try {
       const response = await request(
         "PATCH",
-        "academy",
-        `/users/${id}/status`,
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.UPDATE_STATUS(id),
         { status }
       );
 

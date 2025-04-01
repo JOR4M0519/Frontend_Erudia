@@ -131,6 +131,8 @@ export default function Activities() {
     let pendingActivities = 0;
     let overdueActivities = 0;
     
+    console.log("Activities:", activities);
+
     Object.values(activities).forEach(subject => {
       subject.activities.forEach(activity => {
         totalActivities++;

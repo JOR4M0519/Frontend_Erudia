@@ -20,11 +20,13 @@ import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
 
+
 // const Login = lazy(() => import('./pages/login/Login'));
 // const Private = lazy(() => import('./pages/Private/Private'));
 
 
 function App() {
+
   return (
     <div className="App">
       <Suspense fallback={<div>Loading...</div>}>
@@ -39,6 +41,7 @@ function App() {
 
               {/* 🔹 Rutas Privadas (con Layout dentro del `AuthGuard`) */}
               <Route element={<AuthGuard privateValidation={true} />}>
+
                 <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
 
                 <Route element={<MultiRoleGuard navKey="ADMIN" />}>

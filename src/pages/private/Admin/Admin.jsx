@@ -14,7 +14,7 @@ import { AdminRoutes } from "../../../models/routes";
 import { AdminInstitutionConfig, FamilyReport } from "./Institution";
 import { AdminStudentProcesses, AdminStudentReport } from "./Students";
 import { AddEmployee, EmployeeConsolidated } from "./Employees";
-import { AcademicConfiguration, AcademicReports } from "./Academy";
+import { AcademicConfiguration, AcademicProcesses, AcademicReports } from "./Academy";
 
 
 // Función helper para remover el prefijo '/admin' de las rutas
@@ -58,7 +58,7 @@ const Admin = () => {
       {/* Subpáginas de Academia */}
       <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_REPORTS)} element={<AcademicReports section="reports" />} />
       <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_CONFIG)} element={<AcademicConfiguration section="config" />} />
-      <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_PROCESSES)} element={<AdminAcademy section="processes" />} />
+      <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_PROCESSES)} element={<AcademicProcesses section="processes" />} />
       <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_SCHEDULE)} element={<AdminAcademy section="schedule" />} />
       
       {/* Subpáginas de Sistema */}

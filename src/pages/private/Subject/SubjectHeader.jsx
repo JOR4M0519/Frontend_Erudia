@@ -13,6 +13,7 @@ export default function SubjectHeader({
 }) {
 
   // Cálculo de promedio (solo para profesores)
+  console.log(activities)
   const calculateAverage = () => {
     if (!activities || !activities.length) return "N/A";
 
@@ -100,7 +101,7 @@ export default function SubjectHeader({
                 {onOpenScheme && (
                   <button
                     onClick={onOpenScheme}
-                    className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-600 font-medium rounded-lg px-4 py-2 hover:bg-blue-100 transition"
+                    className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-600 font-medium rounded-lg px-4 py-2 hover:bg-blue-100 transition cursor-pointer"
                   >
                     <BarChart2 className="w-4 h-4" />
                     <span>Esquema Evaluación</span>

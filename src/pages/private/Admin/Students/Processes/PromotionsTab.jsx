@@ -20,19 +20,19 @@ const PromotionsTab = () => {
         
         // Obtener estudiantes agrupados por grupo
         const studentGroupsData = await studentAdminService.getStudentsByGroups();
-        console.log("Datos de estudiantes:", studentGroupsData);
+        
         
         // Obtener grupos activos para las opciones de destino
         const activeGroups = await studentAdminService.getActiveGroups();
-        console.log("Grupos activos:", activeGroups);
+       
         
         // Organizar estudiantes por grupo
         const groupedData = groupStudentsByGroup(studentGroupsData);
-        console.log("Datos agrupados:", groupedData);
+        
         
         // Procesar datos
         const processedGroups = processGroupData(groupedData, activeGroups);
-        console.log("Grupos procesados:", processedGroups);
+        
         
         setGroups(processedGroups);
         

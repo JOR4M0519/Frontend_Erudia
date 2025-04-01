@@ -153,7 +153,7 @@ const DirectionGroupsGrid = () => {
           onViewGrades={handleViewGrades}
         />
       )}
-
+      
       {showGradesModal && (
         <GradesStudentModal
           student={selectedStudent}

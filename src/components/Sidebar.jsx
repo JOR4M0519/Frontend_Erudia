@@ -74,7 +74,7 @@ export default function Sidebar() {
   const teacherNavItems = [
     { navKey: "DASHBOARD", to: PrivateRoutes.DASHBOARD, icon: <Home className="h-5 w-5" />, label: "Inicio" },
     { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Mis Materias" },
-    { navKey: "ACTIVITIES_GRADING", to: PrivateRoutes.ACTIVITIES_GRADING, icon: <NotebookText className="h-5 w-5" />, label: "Calificar" },
+    // { navKey: "ACTIVITIES_GRADING", to: PrivateRoutes.ACTIVITIES_GRADING, icon: <NotebookText className="h-5 w-5" />, label: "Calificar" },
     { navKey: "STUDENTTRACKING", to: PrivateRoutes.STUDENTTRACKING, icon: <BookUser className="h-5 w-5" />, label: "Observador" },
     { navKey: "PROFILE", to: PrivateRoutes.PROFILE, icon: <User className="h-5 w-5" />, label: "Perfil" },
     { navKey: "SETTINGS", to: PrivateRoutes.SETTINGS, icon: <Settings className="h-5 w-5" />, label: "Configuraciones" },
@@ -123,7 +123,7 @@ export default function Sidebar() {
         { to: AdminRoutes.ACADEMY_REPORTS, label: "Reportes", navKey: "ADMIN", isAdminRoute: true },
         { to: AdminRoutes.ACADEMY_CONFIG, label: "Configuración", navKey: "ADMIN", isAdminRoute: true },
         { to: AdminRoutes.ACADEMY_PROCESSES, label: "Procesos", navKey: "ADMIN", isAdminRoute: true },
-        { to: AdminRoutes.ACADEMY_SCHEDULE, label: "Horario", navKey: "ADMIN", isAdminRoute: true }
+        // { to: AdminRoutes.ACADEMY_SCHEDULE, label: "Horario", navKey: "ADMIN", isAdminRoute: true }
       ]
     },
     { 

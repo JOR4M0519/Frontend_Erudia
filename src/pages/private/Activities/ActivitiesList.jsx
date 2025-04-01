@@ -22,7 +22,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
         {tasks.length > 0 ? (
           tasks.map((task) => (
             <div key={task.id} className="bg-white">
-              {/* 🔹 Fila Principal */}
+              {/*  Fila Principal */}
               <div
                 onClick={() => handleTaskClick(task)}
                 className="grid grid-cols-12 gap-4 p-3 hover:bg-gray-200 transition-colors items-center cursor-pointer"
@@ -51,7 +51,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
                 </div>
               </div>
 
-              {/* 🔹 Sección de estudiantes (Solo si el profesor expande) */}
+              {/*  Sección de estudiantes (Solo si el profesor expande) */}
               {isTeacher && expandedTaskId === task.id && (
                 <div className="bg-gray-50 p-4 border-t border-gray-300">
                   <h3 className="text-sm font-semibold text-gray-700">Calificaciones</h3>

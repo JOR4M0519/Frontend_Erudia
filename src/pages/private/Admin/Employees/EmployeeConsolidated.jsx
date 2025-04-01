@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminRoutes } from "../../../../models";
 import Swal from "sweetalert2";
-import { AddEmployee, userService } from "./";
+import { AddEmployee, userService, employeeService } from "./";
 import EmployeeDetailModal from "./EmployeeDetailModal";
 
 const EmployeeConsolidated = () => {
@@ -26,6 +26,7 @@ const EmployeeConsolidated = () => {
   const [userDetail, setUserDetail] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [idTypes, setIdTypes] = useState([]);
+  const [roles, setRoles] = useState([]); // Añadimos estado para roles
   const [editedUserData, setEditedUserData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -54,8 +55,18 @@ const EmployeeConsolidated = () => {
       }
     };
 
+    const fetchRoles = async () => {
+      try {
+        const rolesData = await employeeService.getRoles();
+        setRoles(rolesData);
+      } catch (err) {
+        console.error("Error al cargar roles:", err);
+      }
+    };
+
     fetchUsers();
     fetchIdTypes();
+    fetchRoles(); // Cargamos los roles
   }, []);
 
   useEffect(() => {
@@ -141,10 +152,14 @@ const EmployeeConsolidated = () => {
     try {
       setDetailLoading(true);
       setIsModalOpen(true);
-
+  
       const detail = await userService.getUserDetail(userId);
       setSelectedUser(detail.user);
       setUserDetail(detail);
+  
+      // Extraer los IDs de roles del usuario para la edición
+      // Verificamos si roles existe antes de hacer map
+      const userRoleIds = detail.user.roles ? detail.user.roles.map(role => role.id) : [];  
 
       // Inicializar datos para edición
       setEditedUserData({
@@ -154,7 +169,8 @@ const EmployeeConsolidated = () => {
           lastName: detail.user.lastName,
           email: detail.user.email,
           username: detail.user.username,
-          status: detail.user.status
+          status: detail.user.status,
+          roles: userRoleIds // Ahora será un array vacío si roles es null
         },
         userDetail: {
           id: detail.id,
@@ -172,7 +188,7 @@ const EmployeeConsolidated = () => {
           positionJob: detail.positionJob
         }
       });
-
+  
       setIsEditing(false);
       setDetailLoading(false);
     } catch (err) {
@@ -203,6 +219,22 @@ const EmployeeConsolidated = () => {
       [section]: {
         ...prev[section],
         [name]: value
+      }
+    }));
+  };
+
+  // Manejador para cambios en los roles
+  const handleRoleChange = (e) => {
+    const roleId = parseInt(e.target.value);
+    const isChecked = e.target.checked;
+    
+    setEditedUserData(prev => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        roles: isChecked 
+          ? [...prev.user.roles, roleId]
+          : prev.user.roles.filter(id => id !== roleId)
       }
     }));
   };
@@ -453,10 +485,10 @@ const EmployeeConsolidated = () => {
         )}
       </div>
       <AddEmployee
-  isOpen={isCreateModalOpen}
-  onClose={() => setIsCreateModalOpen(false)}
-  onSuccess={handleUserCreated}
-/>
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleUserCreated}
+      />
 
       {/* Modal de detalles del empleado */}
       <EmployeeDetailModal
@@ -468,8 +500,10 @@ const EmployeeConsolidated = () => {
         setIsEditing={setIsEditing}
         editedUserData={editedUserData}
         handleInputChange={handleInputChange}
+        handleRoleChange={handleRoleChange} // Añadimos el manejador de roles
         handleSaveChanges={handleSaveChanges}
         idTypes={idTypes}
+        roles={roles} // Pasamos los roles al modal
         detailLoading={detailLoading}
       />
     </main>
@@ -477,5 +511,3 @@ const EmployeeConsolidated = () => {
 };
 
 export default EmployeeConsolidated;
-
-

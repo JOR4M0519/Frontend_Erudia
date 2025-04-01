@@ -8,6 +8,8 @@ import { configViewService } from "../Setting";
 import { TeacherLayout } from "./TeacherLayout";
 import { Admin } from "../Admin";
 import { Navigate, useLocation } from "react-router-dom";
+import TokenRefreshAlert from "../../../services/config/token_helper";
+
 
 // Create a simple flag to track if the user has explicitly chosen to view as user
 // This could be enhanced with localStorage or Redux for persistence
@@ -63,19 +65,42 @@ export default function Dashboard() {
     
     // Si ya estamos en una ruta de administración, mostrar el componente Admin
     if (isAdminRoute) {
-      return <Admin />;
+      return (
+      <>
+        <TokenRefreshAlert />
+        <Admin />
+      </>
+      )
+     
     }
   }
   
   // Renderizar el layout correspondiente según el rol del usuario
   if (storedRole.includes(Roles.STUDENT)) {
-    return <StudentLayout />;
+    return (
+    <>
+      <TokenRefreshAlert />
+      <StudentLayout />
+    </>
+    )
   }
   
   if (storedRole.includes(Roles.TEACHER)) {
-    return <TeacherLayout />;
+    return (
+      <>
+      <TokenRefreshAlert />
+      <TeacherLayout />
+    </> 
+    )
+    
   }
 
   // Si no hay un rol específico, mostrar el layout de estudiante por defecto
-  return <StudentLayout />;
+  return (
+  <>
+    <TokenRefreshAlert />
+    <StudentLayout />
+  </>
+  )
+  
 }

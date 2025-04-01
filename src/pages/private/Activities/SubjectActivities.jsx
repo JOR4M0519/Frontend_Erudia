@@ -167,7 +167,7 @@ export default function SubjectActivities() {
 
   return (
     <div className="space-y-6">
-      {/* 🔹 Encabezado con la materia y nota */}
+      {/*  Encabezado con la materia y nota */}
       <SubjectHeader
         isTeacher={isTeacher}
         groupInfo={selectedSubject?.group}
@@ -177,10 +177,10 @@ export default function SubjectActivities() {
         onOpenScheme={() => setIsSchemeModalOpen(true)}
       />
 
-      {/* 🔹 Sección de Tareas (Misma para profesores y estudiantes) */}
+      {/*  Sección de Tareas (Misma para profesores y estudiantes) */}
       <ActivitiesList tasks={tasks} handleTaskClick={handleTaskClick} isTeacher={isTeacher} />
 
-      {/* 🔹 Funcionalidades extra solo para profesores */}
+      {/*  Funcionalidades extra solo para profesores */}
       {isTeacher && (
         <TeacherActions
           handleItemClick={handleItemClick}
@@ -189,16 +189,16 @@ export default function SubjectActivities() {
         />
       )}
 
-      {/* 🔹 Botón de regresar */}
+      {/*  Botón de regresar */}
       <BackButton onClick={() => navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.HOME)} />
-      {/* 🔹 Modal de Esquema de Evaluación */}
+      {/*  Modal de Esquema de Evaluación */}
       <EvaluationSchemeModal
         isOpen={isSchemeModalOpen}
         onClose={() => setIsSchemeModalOpen(false)}
         groupId={selectedSubject?.group?.id || studentDataService.getStudentDataValue()?.group?.id}
       />
 
-      {/* 🔹 Modal de Creación de Actividad */}
+      {/*  Modal de Creación de Actividad */}
       <CreateActivityModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
