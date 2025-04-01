@@ -23,7 +23,7 @@ const GradeDistribution = ({ subject, onBack }) => {
     const fetchInitialData = async () => {
       try {
         // Cargar periodos
-        const periodsData = await reportService.getPeriods(filters.year);
+        const periodsData = await reportService.getPeriods(filters.year) || [];
         setPeriods(periodsData);
         
         if (periodsData.length > 0) {
@@ -34,7 +34,7 @@ const GradeDistribution = ({ subject, onBack }) => {
         }
         
         // Cargar niveles educativos
-        const levelsData = await reportService.getEducationalLevels();
+        const levelsData = await reportService.getEducationalLevels() || [];
         setEducationalLevels(levelsData);
         
         if (levelsData.length > 0) {
@@ -46,43 +46,66 @@ const GradeDistribution = ({ subject, onBack }) => {
       } catch (err) {
         setError("Error al cargar datos iniciales");
         console.error(err);
+        setPeriods([]);
+        setEducationalLevels([]);
       }
     };
+    
 
     fetchInitialData();
   }, []);
 
-  // Cargar datos cuando cambien los filtros
-  useEffect(() => {
-    if (filters.year && filters.period && filters.level && filters.subjectId) {
-      const fetchGradeDistribution = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const data = await reportService.getGradeDistribution(
-            filters.year,
-            filters.period,
-            filters.level,
-            filters.subjectId
-          );
-          setGradeData(data);
-        } catch (err) {
-          setError("Error al cargar los datos de distribución de notas");
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      };
 
-      fetchGradeDistribution();
-    }
-  }, [filters]);
+  
+// Cargar datos cuando cambien los filtros
+useEffect(() => {
+  // Verificar que todos los filtros necesarios estén disponibles
+  if (filters.year && filters.period && filters.level && filters.subjectId) {
+    const fetchGradeDistribution = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await reportService.getGradeDistribution(
+          filters.year,
+          filters.period,
+          filters.level,
+          filters.subjectId
+        );
+        
+        // Verificar si data es undefined o null
+        setGradeData(data || []);
+      } catch (err) {
+        setError("Error al cargar los datos de distribución de notas");
+        console.error(err);
+        setGradeData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGradeDistribution();
+  } else {
+    // Si faltan filtros, limpiar los datos
+    setGradeData([]);
+  }
+}, [filters]);
+
 
   // Recargar periodos cuando cambie el año
   useEffect(() => {
     const fetchPeriods = async () => {
       try {
         const periodsData = await reportService.getPeriods(filters.year);
+        // Verificar si periodsData es undefined o null
+        if (!periodsData) {
+          setPeriods([]);
+          setFilters(prev => ({
+            ...prev,
+            period: ""
+          }));
+          return;
+        }
+        
         setPeriods(periodsData);
         
         if (periodsData.length > 0) {
@@ -98,8 +121,14 @@ const GradeDistribution = ({ subject, onBack }) => {
         }
       } catch (err) {
         console.error("Error al cargar periodos:", err);
+        setPeriods([]);
+        setFilters(prev => ({
+          ...prev,
+          period: ""
+        }));
       }
     };
+    
 
     fetchPeriods();
   }, [filters.year]);
@@ -427,16 +456,34 @@ const GradeDistribution = ({ subject, onBack }) => {
             className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 bg-white"
             disabled={periods.length === 0}
           >
-            {periods.length === 0 ? (
-              <option value="">No hay periodos disponibles</option>
-            ) : (
-              periods.map(period => (
-                <option key={period.id} value={period.id.toString()}>
-                  {period.name}
-                </option>
-              ))
-            )}
+{!periods || periods.length === 0 ? (
+  <option value="">No hay periodos disponibles para el año {filters.year}</option>
+) : (
+  periods.map(period => (
+    <option key={period.id} value={period.id.toString()}>
+      {period.name}
+    </option>
+  ))
+)}
+
           </select>
+
+          {/* Mensaje de alerta cuando no hay periodos */}
+<AnimatePresence>
+  {(!periods || periods.length === 0) && (
+    <motion.div 
+      className="mt-2 text-amber-600 text-sm flex items-center"
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <AlertCircle className="w-4 h-4 mr-1" />
+      <span>No existen periodos para el año {filters.year}</span>
+    </motion.div>
+  )}
+</AnimatePresence>
+
         </motion.div>
         <motion.div variants={itemVariant}>
           <label className="block text-sm font-medium mb-2 text-gray-700">Nivel Educativo</label>

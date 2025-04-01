@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 
-const NewRecoveryModal = ({ isOpen, onClose, subject, periods, students, selectedPeriod, onSave }) => {
+const NewRecoveryModal = ({ isOpen, onClose, subject, periods, students, selectedPeriod, onSave, failedStudents }) => {
   const [form, setForm] = useState({
     idStudent: "",
     idSubject: "",
     idPeriod: "",
     newScore: ""
   });
+  
+  // Lista filtrada de estudiantes (sin los que ya tienen recuperación)
+  const [availableStudents, setAvailableStudents] = useState([]);
 
   useEffect(() => {
     if (subject && selectedPeriod) {
@@ -17,6 +20,30 @@ const NewRecoveryModal = ({ isOpen, onClose, subject, periods, students, selecte
       }));
     }
   }, [subject, selectedPeriod]);
+  
+  // Filtrar estudiantes que ya tienen recuperación
+  useEffect(() => {
+    if (students && failedStudents) {
+      // Extraer IDs de estudiantes que ya tienen recuperación
+      const studentsWithRecovery = failedStudents.map(item => {
+        if (item.student) {
+          return item.student.id;
+        } else if (item.subjectGrade && item.subjectGrade.student) {
+          return item.subjectGrade.student.id;
+        }
+        return null;
+      }).filter(id => id); // Filtrar valores undefined o null
+      
+      // Filtrar la lista de estudiantes para mostrar solo los que no tienen recuperación
+      const filtered = students.filter(student => 
+        !studentsWithRecovery.includes(student.id)
+      );
+      
+      setAvailableStudents(filtered);
+    } else {
+      setAvailableStudents(students || []);
+    }
+  }, [students, failedStudents]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,12 +78,21 @@ const NewRecoveryModal = ({ isOpen, onClose, subject, periods, students, selecte
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
           >
             <option value="">Seleccione un estudiante</option>
-            {students.map(student => (
-              <option key={student.id} value={student.id}>
-                {student.firstName} {student.lastName}
-              </option>
-            ))}
+            {availableStudents.length === 0 ? (
+              <option value="" disabled>No hay estudiantes disponibles para recuperación</option>
+            ) : (
+              availableStudents.map(student => (
+                <option key={student.id} value={student.id}>
+                  {student.firstName} {student.lastName}
+                </option>
+              ))
+            )}
           </select>
+          {availableStudents.length === 0 && (
+            <p className="text-amber-600 text-sm mt-1">
+              Todos los estudiantes ya tienen recuperaciones registradas
+            </p>
+          )}
         </div>
         
         <div className="mb-4">
@@ -114,6 +150,7 @@ const NewRecoveryModal = ({ isOpen, onClose, subject, periods, students, selecte
           <button
             onClick={handleSubmit}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={availableStudents.length === 0}
           >
             Guardar
           </button>
