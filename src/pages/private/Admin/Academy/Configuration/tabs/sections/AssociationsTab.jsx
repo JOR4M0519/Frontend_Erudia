@@ -17,6 +17,9 @@ const AssociationsTab = ({
   const [knowledgeFilter, setKnowledgeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  // Estado para todas las materias (incluso sin asociaciones)
+  const [allSubjects, setAllSubjects] = useState([]);
+
   // Estado para asociaciones agrupadas por materia
   const [groupedAssociations, setGroupedAssociations] = useState({});
 
@@ -35,6 +38,22 @@ const AssociationsTab = ({
   // Estado para búsqueda en panel de saberes
   const [knowledgeSearchTerm, setKnowledgeSearchTerm] = useState("");
 
+
+  // Cargar todas las materias al iniciar
+useEffect(() => {
+  const loadAllSubjects = async () => {
+    try {
+      const subjects = await configurationService.getSubjects();
+      setAllSubjects(subjects);
+    } catch (error) {
+      console.error("Error al cargar todas las materias:", error);
+    }
+  };
+  
+  loadAllSubjects();
+}, []);
+
+
   // Actualizar showKnowledgePanel cuando cambia editMode
   useEffect(() => {
     setShowKnowledgePanel(editMode);
@@ -43,7 +62,7 @@ const AssociationsTab = ({
   // Agrupar asociaciones por materia cuando cambian los datos o filtros
   useEffect(() => {
     groupAssociationsBySubject();
-  }, [subjectKnowledges, subjectSearchTerm, knowledgeFilter, statusFilter]);
+  }, [subjectKnowledges, subjectSearchTerm, knowledgeFilter, statusFilter, allSubjects]);
 
   // Filtrar saberes disponibles para el panel lateral
   useEffect(() => {
@@ -54,32 +73,44 @@ const AssociationsTab = ({
   }, [allKnowledges, knowledgeSearchTerm]);
 
   // Agrupar asociaciones por materia
-  const groupAssociationsBySubject = () => {
-    const filteredAssociations = getFilteredSubjectKnowledges();
-    const grouped = {};
-
-    filteredAssociations.forEach(item => {
-      const subjectId = item.idSubject.id;
-
-      if (!grouped[subjectId]) {
-        grouped[subjectId] = {
-          subject: item.idSubject,
-          knowledges: []
-        };
-      }
-
-      // Agregar el saber con su ID de asociación para poder eliminarlo después
-      grouped[subjectId].knowledges.push({
-        id: item.idKnowledge.id,
-        associationId: item.id, // ID de la relación para eliminar/actualizar
-        name: item.idKnowledge.name,
-        percentage: item.idKnowledge.percentage,
-        status: item.idKnowledge.status
-      });
+// Agrupar asociaciones por materia
+const groupAssociationsBySubject = () => {
+  const filteredAssociations = getFilteredSubjectKnowledges();
+  const grouped = {};
+  
+  // Primero, agregar todas las materias disponibles (incluso sin asociaciones)
+  allSubjects.forEach(subject => {
+    if (!grouped[subject.id]) {
+      grouped[subject.id] = {
+        subject: subject,
+        knowledges: []
+      };
+    }
+  });
+  
+  // Luego, agregar los saberes asociados a cada materia
+  filteredAssociations.forEach(item => {
+    const subjectId = item.idSubject.id;
+    
+    if (!grouped[subjectId]) {
+      grouped[subjectId] = {
+        subject: item.idSubject,
+        knowledges: []
+      };
+    }
+    
+    // Agregar el saber con su ID de asociación
+    grouped[subjectId].knowledges.push({
+      id: item.idKnowledge.id,
+      associationId: item.id,
+      name: item.idKnowledge.name,
+      percentage: item.idKnowledge.percentage,
+      status: item.idKnowledge.status
     });
-
-    setGroupedAssociations(grouped);
-  };
+  });
+  
+  setGroupedAssociations(grouped);
+};
 
   // Filtrar asociaciones de saberes con materias
   const getFilteredSubjectKnowledges = () => {
@@ -440,6 +471,24 @@ const AssociationsTab = ({
     }
   };
 
+// Filtrar materias por nombre
+const filterSubjectsByName = () => {
+  // Si no hay término de búsqueda, devolver todas las materias
+  if (!subjectSearchTerm.trim()) {
+    return Object.values(groupedAssociations);
+  }
+  
+  // Convertir el término de búsqueda a minúsculas para una comparación insensible a mayúsculas/minúsculas
+  const searchTermLower = subjectSearchTerm.toLowerCase();
+  
+  // Filtrar las materias que coinciden con el término de búsqueda
+  return Object.values(groupedAssociations).filter(group => 
+    group.subject.subjectName.toLowerCase().includes(searchTermLower)
+  );
+};
+
+
+
   // Renderizado condicional basado en el modo de edición
   const renderContent = () => {
     if (editMode) {
@@ -613,7 +662,7 @@ const AssociationsTab = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {Object.values(groupedAssociations).map((group) => (
+                  {filterSubjectsByName().map((group) => (
                     <div key={group.subject.id} className="bg-white rounded-lg shadow overflow-hidden">
                       {/* Cabecera del acordeón */}
                       <div
@@ -824,7 +873,7 @@ const AssociationsTab = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {Object.values(groupedAssociations).map((group) => (
+              {filterSubjectsByName().map((group) => (
                 <div key={group.subject.id} className="bg-white rounded-lg shadow overflow-hidden">
                   {/* Cabecera del acordeón */}
                   <div
