@@ -9,7 +9,7 @@ export { default as UserStatesTab } from './tabs/UserStatesTab';
 
 export { default as StudentsGroupsTab } from './tabs/StudentsGroupsTab';
 export { default as LevelAccordion } from './tabs/sections/LevelAccordion';
-export { default as SubjectModal } from './modals/SubjectModal';
+export { default as SubjectsModal } from './modals/SubjectsModal';
 
 export { default as MainKnowledgesTab } from './tabs/MainKnowledgesTab';
 export { default as AchievementsTab } from './tabs/sections/AchievementsTab';
@@ -17,6 +17,10 @@ export { default as AssociationsTab } from './tabs/sections/AssociationsTab';
 export { default as KnowledgesTab } from './tabs/sections/KnowledgesTab';
 
 export { default as KnowledgeModal } from './modals/KnowledgeModal';
+
+export { default as CreateGroupModal } from './modals/CreateGroupModal';
+export { default as AssignSubjectModal } from './modals/AssignSubjectModal';
+export { default as AssignProfessorModal } from './modals/AssignProfessorModal';
 
 
 export { default as CreateDimensionModal } from './modals/CreateDimensionModal';

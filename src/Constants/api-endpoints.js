@@ -14,20 +14,30 @@ const API_ENDPOINTS = {
         CREATE_ADMINISTRATIVE: "/users/administrative",
 
         CREATE_STUDENT_GTW: '/private/users/students/register',
-
     },
 
     GROUPS: {
         GET_ALL: '/groups',
+        CREATE: '/groups',
         ACTIVE_ALL: '/groups/active',
         STUDENT_GROUPS_ALL: '/student-groups/active',
         STUDENT_GROUPS_BY_GROUPID: (groupId) => `/student-groups/groups/${groupId}/users`,
 
     },
-
+    
     SUBJECTS:{
+        GET_ALL: '/subjects',
+        CREATE: '/subjects',
         UPDATE_BY_ID: (id) => `/subjects/${id}`,
         SUBJECTS_BY_GROUPS_LEVEL: (periodId,levelId) => `/subjects-groups/periods/${periodId}/edu-level/${levelId}`,
+    
+        PROFESSORS:{
+            GET_ALL:  `/subjects/professors`,
+            CREATE: `/subjects/professors`,
+            UPDATE_BY_ID:  (id) => `/subjects/professors/${id}`,
+        },
+
+
     },
     
 
@@ -81,6 +91,9 @@ const API_ENDPOINTS = {
                 GROUP:{
                     GET_ALL_BY_PERIOD_AND_GROUP: (periodId,groupId) =>
                         `/subjects-groups/groups/${groupId}/periods/${periodId}`,
+                    CREATE: `/subjects-groups`,
+                    UPDATE_BY_ID: (subjectGroupId) =>
+                        `/subjects-groups/${subjectGroupId}`,
                 },
 
             },

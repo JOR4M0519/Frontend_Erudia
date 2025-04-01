@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, Search, Filter, Users, Book, User, Calendar, 
-  School, BookOpen, Check, X, Info, FileText, RefreshCw
+  School, BookOpen, Check, X, Info, FileText, RefreshCw, Plus, UserPlus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { configurationService, LevelAccordion} from "../";
-import SubjectsModal from "../modals/SubjectModal";
-
+import { configurationService,
+  LevelAccordion,
+  CreateGroupModal,
+  AssignSubjectModal,
+  CreateSubjectModal,
+  AssignProfessorModal,
+  SubjectsModal} from "../";
 
 
 
@@ -22,11 +26,22 @@ const StudentsGroupsTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Estado para el modal
+  // Estado para el modal de materias
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupSubjects, setGroupSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  // Estados para los nuevos modales
+  const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const [selectedLevelForGroup, setSelectedLevelForGroup] = useState(null);
+  const [assignSubjectModalOpen, setAssignSubjectModalOpen] = useState(false);
+  const [selectedGroupForSubject, setSelectedGroupForSubject] = useState(null);
+  const [createSubjectModalOpen, setCreateSubjectModalOpen] = useState(false);
+  const [assignProfessorModalOpen, setAssignProfessorModalOpen] = useState(false);
+  
+  // Estado para notificaciones
+  const [notification, setNotification] = useState(null);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -108,10 +123,16 @@ const StudentsGroupsTab = () => {
     applyFilters();
   }, [groups, selectedLevel, searchTerm]);
 
+  // Mostrar notificación
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
   // Manejar clic en un grupo para mostrar sus materias
   const handleGroupClick = async (group) => {
     if (!selectedPeriod) {
-      // Mostrar mensaje de que se debe seleccionar un período
+      showNotification("Debe seleccionar un período académico para ver las materias", "error");
       return;
     }
     
@@ -136,7 +157,67 @@ const StudentsGroupsTab = () => {
     } catch (err) {
       console.error("Error al cargar materias del grupo:", err);
       setLoadingSubjects(false);
-      // Mostrar mensaje de error
+      showNotification("Error al cargar las materias del grupo", "error");
+    }
+  };
+
+  // Manejar la creación de un nuevo grupo
+  const handleCreateGroup = (level) => {
+    setSelectedLevelForGroup(level);
+    setCreateGroupModalOpen(true);
+  };
+
+  // Guardar un nuevo grupo
+  const saveNewGroup = async (groupData) => {
+    try {
+      const newGroup = await configurationService.createGroups(groupData);
+      
+      // Actualizar la lista de grupos
+      setGroups(prevGroups => [...prevGroups, newGroup]);
+      
+      showNotification(`Grupo ${newGroup.groupName} creado exitosamente`);
+    } catch (error) {
+      console.error("Error al crear el grupo:", error);
+      throw error;
+    }
+  };
+
+  // Manejar la asignación de materia a un grupo
+  const handleAssignSubject = (group) => {
+    setSelectedGroupForSubject(group);
+    setAssignSubjectModalOpen(true);
+  };
+
+  // Guardar la asignación de materia a grupo
+  const saveSubjectAssignment = async (subjectGroupData) => {
+    try {
+      await configurationService.createSubjectGroups(subjectGroupData);
+      showNotification("Materia asignada exitosamente al grupo");
+    } catch (error) {
+      console.error("Error al asignar materia:", error);
+      throw error;
+    }
+  };
+
+  // Guardar nueva materia
+  const saveNewSubject = async (subjectData) => {
+    try {
+      const newSubject = await configurationService.createSubject(subjectData);
+      showNotification(`Materia ${newSubject.subjectName} creada exitosamente`);
+    } catch (error) {
+      console.error("Error al crear materia:", error);
+      throw error;
+    }
+  };
+
+  // Guardar asignación de profesor a materia
+  const saveProfessorAssignment = async (subjectProfessorData) => {
+    try {
+      await configurationService.createSubjectProfessors(subjectProfessorData);
+      showNotification("Profesor asignado exitosamente a la materia");
+    } catch (error) {
+      console.error("Error al asignar profesor:", error);
+      throw error;
     }
   };
 
@@ -168,6 +249,31 @@ const StudentsGroupsTab = () => {
         <p className="mt-1 text-sm text-gray-600">
           Administra los grupos y visualiza las materias asociadas a cada uno.
         </p>
+      </div>
+
+      {/* Botones de acción principales */}
+      <div className="p-4 border-b bg-gray-50">
+        <div className="flex flex-wrap gap-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setCreateSubjectModalOpen(true)}
+            className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md"
+          >
+            <BookOpen size={18} />
+            Crear Materia
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setAssignProfessorModalOpen(true)}
+            className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md"
+          >
+            <UserPlus size={18} />
+            Asignar Profesor a Materia
+          </motion.button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -247,6 +353,31 @@ const StudentsGroupsTab = () => {
         </div>
       </div>
 
+      {/* Notificación */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`mx-6 mt-4 p-4 rounded-md ${
+              notification.type === "error" 
+                ? "bg-red-50 text-red-700 border border-red-200" 
+                : "bg-green-50 text-green-700 border border-green-200"
+            }`}
+          >
+            <div className="flex items-center">
+              {notification.type === "error" ? (
+                <X size={18} className="mr-2" />
+              ) : (
+                <Check size={18} className="mr-2" />
+              )}
+              {notification.message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Contenido principal */}
       <div className="p-6">
         {loading ? (
@@ -286,6 +417,8 @@ const StudentsGroupsTab = () => {
                 groups={groups}
                 selectedPeriod={selectedPeriod}
                 onGroupClick={handleGroupClick}
+                onCreateGroup={handleCreateGroup}
+                onAssignSubject={handleAssignSubject}
               />
             ))}
           </div>
@@ -304,9 +437,55 @@ const StudentsGroupsTab = () => {
         )}
       </AnimatePresence>
 
+      {/* Modal para crear grupo */}
+      <AnimatePresence>
+        {createGroupModalOpen && selectedLevelForGroup && (
+          <CreateGroupModal
+            isOpen={createGroupModalOpen}
+            onClose={() => setCreateGroupModalOpen(false)}
+            level={selectedLevelForGroup}
+            onSave={saveNewGroup}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Modal para asignar materia a grupo */}
+      <AnimatePresence>
+        {assignSubjectModalOpen && selectedGroupForSubject && (
+          <AssignSubjectModal
+            isOpen={assignSubjectModalOpen}
+            onClose={() => setAssignSubjectModalOpen(false)}
+            group={selectedGroupForSubject}
+            onSave={saveSubjectAssignment}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Modal para crear materia */}
+      <AnimatePresence>
+        {createSubjectModalOpen && (
+          <CreateSubjectModal
+            isOpen={createSubjectModalOpen}
+            onClose={() => setCreateSubjectModalOpen(false)}
+            onSave={saveNewSubject}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Modal para asignar profesor a materia */}
+      <AnimatePresence>
+        {assignProfessorModalOpen && (
+          <AssignProfessorModal
+            isOpen={assignProfessorModalOpen}
+            onClose={() => setAssignProfessorModalOpen(false)}
+            onSave={saveProfessorAssignment}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Modal de carga de materias */}
       {loadingSubjects && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl">
             <div className="flex items-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500 mr-4"></div>

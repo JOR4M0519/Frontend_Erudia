@@ -105,8 +105,35 @@ export const configurationService = {
     }
   },
   
-  // Materias
+  // Subject
   
+  getSubjects: async () => {
+    try {
+       const response = await request(
+                "GET",
+                apiEndpoints.SERVICES.ACADEMY,
+                apiEndpoints.API_ENDPOINTS.SUBJECTS.GET_ALL,
+                {});
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener períodos:", error);
+      throw error;
+    }
+  },
+
+  createSubject: async (subjectKnowledge) => {
+    try {
+      const response = await request("POST",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.SUBJECTS.CREATE,
+      subjectKnowledge);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating Relación subject-knowledge:", error);
+      throw error;
+    }
+  },
+
   updateSubject: async (subjectId, subject) => {
     try {
       const response = await request("PUT",
@@ -496,6 +523,45 @@ getAllGroups: async () => {
   }
 },
 
+  createGroups: async (groupData) => {
+    try {
+      const response = await request("POST",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.GROUPS.CREATE,
+      groupData);
+      return response.data;
+    } catch (error) {
+      console.error("Error al crear el grupo:", error);
+      throw error;
+    }
+  },
+
+  createSubjectGroups: async (subjectGroupsData) => {
+    try {
+      const response = await request("POST",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GROUP.CREATE,
+      subjectGroupsData);
+      return response.data;
+    } catch (error) {
+      console.error("Error al crear el saber:", error);
+      throw error;
+    }
+  },
+  
+  updateSubjectGroups: async (subjectGroupsId, subjectGroupsData) => {
+    try {
+      const response = await request("PUT",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GROUP.UPDATE_BY_ID(subjectGroupsId), 
+      subjectGroupsData);
+      return response.data;
+    } catch (error) {
+      console.error("Error al actualizar el saber", error);
+      throw error;
+    }
+  },
+
  getAllSubjectGroupsByPeriodAndGroup: async(periodId,groupId) => {
         try {
             const response = await request(
@@ -536,6 +602,87 @@ getAllGroups: async () => {
       }
   },
 
+//Users
+
+    /**
+     * Obtiene todos los usuarios administrativos
+     * @returns {Promise<Array>} Lista de usuarios administrativos
+     */
+    getAdministrativeUsers: async () => {
+      try {
+        const response = await request(
+          "GET",
+          apiEndpoints.SERVICES.ACADEMY,
+          apiEndpoints.API_ENDPOINTS.USER.GET_ADMINISTRATIVE,
+          {}
+        );
+  
+        if (response.status === 200) {
+          return response.data;
+        }
+        return [];
+      } catch (error) {
+        console.error("Error al obtener usuarios administrativos:", error);
+        throw error;
+      }
+    },
+
+        /**
+     * Obtiene todos los usuarios administrativos
+     * @returns {Promise<Array>} Lista de usuarios administrativos
+     */
+        getSubjectProfessors: async () => {
+          try {
+            const response = await request(
+              "GET",
+              apiEndpoints.SERVICES.ACADEMY,
+              apiEndpoints.API_ENDPOINTS.SUBJECTS.PROFESSORS.GET_ALL,
+              {}
+            );
+      
+            if (response.status === 200) {
+              return response.data;
+            }
+            return [];
+          } catch (error) {
+            console.error("Error al obtener usuarios administrativos:", error);
+            throw error;
+          }
+        },
+
+        
+createSubjectProfessors: async (subjectProfessorsData) => {
+  try {
+    const response = await request("POST",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.SUBJECTS.PROFESSORS.CREATE,
+    subjectProfessorsData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el saber:", error);
+    throw error;
+  }
+},
+
+updateSubjectProfessors: async (subjectProfessorsId, subjectProfessorsData) => {
+  try {
+    const response = await request("PUT",
+    apiEndpoints.SERVICES.ACADEMY,
+    apiEndpoints.API_ENDPOINTS.SUBJECTS.PROFESSORS.UPDATE_BY_ID(subjectProfessorsId), 
+    subjectProfessorsData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar el saber", error);
+    throw error;
+  }
+},
+  
+
 };
+
+
+
+
+
 
 export default configurationService;
