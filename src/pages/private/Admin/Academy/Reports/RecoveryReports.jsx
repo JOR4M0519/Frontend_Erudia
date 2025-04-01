@@ -28,21 +28,40 @@ const RecoveryReports = () => {
   }, []);
 
   // Cargar materias por grupo cuando cambian los filtros
-  useEffect(() => {
-    if (filters.periodId && filters.levelId) {
-      fetchSubjectsByGroup();
-    }
-  }, [filters.periodId, filters.levelId]);
+// Cargar materias por grupo cuando cambian los filtros
+useEffect(() => {
+  if (filters.periodId && filters.levelId && filters.periodId !== "" && filters.levelId !== "") {
+    fetchSubjectsByGroup();
+  } else {
+    // Limpiar datos si no hay filtros válidos
+    setSubjectGroups([]);
+    setGroupedSubjects({});
+  }
+}, [filters.periodId, filters.levelId]);
+
 
   const fetchEducationalLevels = async () => {
     try {
       const data = await reportService.getEducationalLevels();
+      
+      // Verificar si data es undefined o null
+      if (!data) {
+        setEducationalLevels([]);
+        setFilters(prev => ({ ...prev, levelId: "" }));
+        return;
+      }
+      
       setEducationalLevels(data);
+      
       if (data.length > 0) {
         setFilters(prev => ({ ...prev, levelId: data[0].id }));
+      } else {
+        setFilters(prev => ({ ...prev, levelId: "" }));
       }
     } catch (error) {
       console.error("Error al obtener niveles educativos:", error);
+      setEducationalLevels([]);
+      setFilters(prev => ({ ...prev, levelId: "" }));
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -50,16 +69,40 @@ const RecoveryReports = () => {
       });
     }
   };
+  
 
   const fetchPeriods = async (year) => {
     try {
       const data = await reportService.getPeriods(year);
+      
+      // Verificar si data es undefined o null
+      if (!data) {
+        setPeriods([]);
+        setFilters(prev => ({ ...prev, periodId: "" }));
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin periodos',
+          text: `No hay periodos disponibles para el año ${year}`
+        });
+        return;
+      }
+      
       setPeriods(data);
+      
       if (data.length > 0) {
         setFilters(prev => ({ ...prev, periodId: data[0].id }));
+      } else {
+        setFilters(prev => ({ ...prev, periodId: "" }));
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin periodos',
+          text: `No hay periodos disponibles para el año ${year}`
+        });
       }
     } catch (error) {
       console.error("Error al obtener períodos:", error);
+      setPeriods([]);
+      setFilters(prev => ({ ...prev, periodId: "" }));
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -67,6 +110,7 @@ const RecoveryReports = () => {
       });
     }
   };
+  
 
   const fetchSubjectsByGroup = async () => {
     try {
@@ -75,21 +119,34 @@ const RecoveryReports = () => {
         filters.periodId,
         filters.levelId
       );
+      
+      // Verificar si data es undefined o null
+      if (!data) {
+        setSubjectGroups([]);
+        setGroupedSubjects({});
+        return;
+      }
+      
       setSubjectGroups(data);
       
       // Agrupar materias por grupo
       const grouped = data.reduce((acc, item) => {
-        const groupName = item.groups.groupName;
-        if (!acc[groupName]) {
-          acc[groupName] = [];
+        // Verificar que item.groups exista antes de acceder a groupName
+        if (item.groups && item.groups.groupName) {
+          const groupName = item.groups.groupName;
+          if (!acc[groupName]) {
+            acc[groupName] = [];
+          }
+          acc[groupName].push(item);
         }
-        acc[groupName].push(item);
         return acc;
       }, {});
       
       setGroupedSubjects(grouped);
     } catch (error) {
       console.error("Error al obtener materias por grupo:", error);
+      setSubjectGroups([]);
+      setGroupedSubjects({});
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -99,7 +156,7 @@ const RecoveryReports = () => {
       setLoading(false);
     }
   };
-
+  
   const handleYearChange = (year) => {
     setFilters(prev => ({ ...prev, year }));
     fetchPeriods(year);
@@ -195,11 +252,16 @@ const handleFailedClick = (subject, groupName) => {
                   onChange={(e) => handlePeriodChange(e.target.value)}
                   className="appearance-none w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {periods.map((period) => (
-                    <option key={period.id} value={period.id}>
-                      {period.name}
-                    </option>
-                  ))}
+                  {!periods || periods.length === 0 ? (
+  <option value="">No hay periodos disponibles</option>
+) : (
+  periods.map((period) => (
+    <option key={period.id} value={period.id}>
+      {period.name}
+    </option>
+  ))
+)}
+
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />
@@ -215,11 +277,16 @@ const handleFailedClick = (subject, groupName) => {
                   onChange={(e) => handleLevelChange(e.target.value)}
                   className="appearance-none w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {educationalLevels.map((level) => (
-                    <option key={level.id} value={level.id}>
-                      {level.levelName}
-                    </option>
-                  ))}
+                  {!educationalLevels || educationalLevels.length === 0 ? (
+  <option value="">No hay niveles disponibles</option>
+) : (
+  educationalLevels.map((level) => (
+    <option key={level.id} value={level.id}>
+      {level.levelName}
+    </option>
+  ))
+)}
+
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />

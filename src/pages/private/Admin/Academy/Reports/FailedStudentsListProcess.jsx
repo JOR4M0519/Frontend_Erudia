@@ -10,16 +10,16 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
     levelId: levelId || "",
     subjectId: subject?.id || ""
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [failedStudents, setFailedStudents] = useState([]);
   const [educationalLevels, setEducationalLevels] = useState([]);
   const [periods, setPeriods] = useState([]);
-  
+
   // Estados para el modal de edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
-  
+
   // Estados para el modal de nueva recuperación
   const [isNewRecoveryModalOpen, setIsNewRecoveryModalOpen] = useState(false);
   const [groupStudents, setGroupStudents] = useState([]);
@@ -44,9 +44,10 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
     }
   }, [subject]);
 
+
   // Cargar datos de estudiantes reprobados cuando cambian los filtros
   useEffect(() => {
-    if (filters.levelId && filters.periodId) {
+    if (filters.levelId && filters.periodId && filters.levelId !== "" && filters.periodId !== "") {
       fetchFailedStudents();
     }
   }, [filters.year, filters.levelId, filters.periodId, filters.subjectId]);
@@ -61,9 +62,17 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
   const fetchEducationalLevels = async () => {
     try {
       const data = await reportService.getEducationalLevels();
+
+      // Verificar si data es undefined o null
+      if (!data) {
+        setEducationalLevels([]);
+        return;
+      }
+
       setEducationalLevels(data);
     } catch (error) {
       console.error("Error al obtener niveles educativos:", error);
+      setEducationalLevels([]);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -72,15 +81,39 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
     }
   };
 
+
   const fetchPeriods = async (year) => {
     try {
       const data = await reportService.getPeriods(year);
+
+      // Verificar si data es undefined o null
+      if (!data) {
+        setPeriods([]);
+        setFilters(prev => ({ ...prev, periodId: "" }));
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin periodos',
+          text: `No hay periodos disponibles para el año ${year}`
+        });
+        return;
+      }
+
       setPeriods(data);
+
       if (data.length > 0) {
         setFilters(prev => ({ ...prev, periodId: data[0].id }));
+      } else {
+        setFilters(prev => ({ ...prev, periodId: "" }));
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin periodos',
+          text: `No hay periodos disponibles para el año ${year}`
+        });
       }
     } catch (error) {
       console.error("Error al obtener períodos:", error);
+      setPeriods([]);
+      setFilters(prev => ({ ...prev, periodId: "" }));
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -97,12 +130,12 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
         filters.levelId,
         filters.year
       );
-      
 
-      
-      setFailedStudents(data);
+      // Verificar si data es undefined o null
+      setFailedStudents(data || []);
     } catch (error) {
       console.error("Error al obtener estudiantes reprobados:", error);
+      setFailedStudents([]);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -113,11 +146,12 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
     }
   };
 
+
   const fetchGroupStudents = async (groupId) => {
     try {
       console.log("Cargando estudiantes para el grupo ID:", groupId);
       const data = await reportService.fetchListUsersGroupData(groupId);
-      
+
       if (data && data.students) {
         console.log("Estudiantes cargados:", data.students);
         setGroupStudents(data.students);
@@ -148,16 +182,22 @@ const FailedStudentsListProcess = ({ subject, group, levelId, onBack }) => {
     return Number(num).toFixed(2);
   };
 
+
   // Manejar clic en el botón de editar nota de recuperación
   const handleEditClick = (student) => {
+    if (!student) {
+      console.error("No se puede editar un estudiante indefinido");
+      return;
+    }
+
     setEditingStudent(student);
     setIsEditModalOpen(true);
   };
 
-// Guardar cambios de edición
-const handleSaveEdit = async (formData) => {
+  // Guardar cambios de edición
+  const handleSaveEdit = async (formData) => {
     try {
-        console.log(formData)
+      console.log(formData)
       // Validar que los datos no sean undefined
       if (!formData.totalScore || formData.recovered === undefined) {
         Swal.fire({
@@ -167,24 +207,24 @@ const handleSaveEdit = async (formData) => {
         });
         return;
       }
-  
+
       console.log("Enviando datos de edición:", {
         recoveryId: editingStudent.id,
         newScore: formData.totalScore,
         status: formData.recovered
       });
-      
+
       // Llamar al endpoint para editar la recuperación
       await reportService.editRecoveryStudent(
         editingStudent.id,
         formData.totalScore,
         formData.recovered
       );
-      
+
       // Recargar datos
       fetchFailedStudents();
       setIsEditModalOpen(false);
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Éxito',
@@ -199,7 +239,7 @@ const handleSaveEdit = async (formData) => {
       });
     }
   };
-  
+
   // Eliminar recuperación
   const handleDeleteClick = (recoveryId) => {
     Swal.fire({
@@ -252,7 +292,7 @@ const handleSaveEdit = async (formData) => {
       }
 
       console.log("Enviando datos de recuperación:", formData);
-      
+
       // Llamada al endpoint del backend
       await reportService.recoverStudent(
         formData.idStudent,
@@ -260,11 +300,11 @@ const handleSaveEdit = async (formData) => {
         formData.idPeriod,
         formData.newScore
       );
-      
+
       // Recargar datos
       fetchFailedStudents();
       setIsNewRecoveryModalOpen(false);
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Éxito',
@@ -279,7 +319,7 @@ const handleSaveEdit = async (formData) => {
       });
     }
   };
-    console.log(failedStudents)
+  console.log(failedStudents)
   return (
     <div>
       <div className="mb-6 flex items-center">
@@ -325,11 +365,16 @@ const handleSaveEdit = async (formData) => {
                   onChange={(e) => handlePeriodChange(e.target.value)}
                   className="appearance-none w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {periods.map((period) => (
-                    <option key={period.id} value={period.id}>
-                      {period.name}
-                    </option>
-                  ))}
+                  {!periods || periods.length === 0 ? (
+                    <option value="">No hay periodos disponibles</option>
+                  ) : (
+                    periods.map((period) => (
+                      <option key={period.id} value={period.id}>
+                        {period.name}
+                      </option>
+                    ))
+                  )}
+
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />
@@ -345,11 +390,16 @@ const handleSaveEdit = async (formData) => {
                   disabled={true}
                   className="appearance-none w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm focus:outline-none"
                 >
-                  {educationalLevels.map((level) => (
-                    <option key={level.id} value={level.id}>
-                      {level.levelName}
-                    </option>
-                  ))}
+                  {!educationalLevels || educationalLevels.length === 0 ? (
+                    <option value="">No hay niveles disponibles</option>
+                  ) : (
+                    educationalLevels.map((level) => (
+                      <option key={level.id} value={level.id}>
+                        {level.levelName}
+                      </option>
+                    ))
+                  )}
+
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown className="h-4 w-4" />
@@ -412,7 +462,7 @@ const handleSaveEdit = async (formData) => {
                 <Plus className="h-4 w-4 mr-2" /> Nueva recuperación
               </button>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -444,14 +494,13 @@ const handleSaveEdit = async (formData) => {
                         <p className="mt-2 text-gray-500">Cargando datos...</p>
                       </td>
                     </tr>
-                  ) : failedStudents.length === 0 ? (
+                  ) : !failedStudents || failedStudents.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="text-center py-6">
                         <p className="text-gray-500">No hay estudiantes reprobados disponibles.</p>
                       </td>
                     </tr>
                   ) : (
-                    
                     failedStudents.map((item, index) => (
                       <tr key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -459,11 +508,10 @@ const handleSaveEdit = async (formData) => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                           <div className="flex items-center justify-center">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              item.subjectGrade.recovered === "Y" 
-                                ? "bg-green-100 text-green-800" 
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${item.subjectGrade.recovered === "Y"
+                                ? "bg-green-100 text-green-800"
                                 : "bg-red-100 text-red-800"
-                            }`}>
+                              }`}>
                               {item.subjectGrade.recovered === "Y" ? "Recuperado" : "Reprobado"}
                             </span>
                           </div>
@@ -502,23 +550,26 @@ const handleSaveEdit = async (formData) => {
         </div>
       </div>
 
-      {/* Modales */}
-      <EditRecoveryModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        student={editingStudent}
-        onSave={handleSaveEdit}
-      />
 
-      <NewRecoveryModal
-        isOpen={isNewRecoveryModalOpen}
-        onClose={() => setIsNewRecoveryModalOpen(false)}
-        subject={subject}
-        periods={periods}
-        students={groupStudents}
-        selectedPeriod={filters.periodId}
-        onSave={handleSaveNewRecovery}
-      />
+{/* Modales */}
+<EditRecoveryModal
+  isOpen={isEditModalOpen}
+  onClose={() => setIsEditModalOpen(false)}
+  student={editingStudent}
+  onSave={handleSaveEdit}
+/>
+
+<NewRecoveryModal
+  isOpen={isNewRecoveryModalOpen}
+  onClose={() => setIsNewRecoveryModalOpen(false)}
+  subject={subject || {}}
+  periods={periods || []}
+  students={groupStudents || []}
+  selectedPeriod={filters.periodId || ""}
+  failedStudents={failedStudents || []}
+  onSave={handleSaveNewRecovery}
+/>
+
     </div>
   );
 };
