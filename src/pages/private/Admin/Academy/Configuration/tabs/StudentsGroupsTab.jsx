@@ -204,6 +204,7 @@ const StudentsGroupsTab = () => {
     try {
       const newSubject = await configurationService.createSubject(subjectData);
       showNotification(`Materia ${newSubject.subjectName} creada exitosamente`);
+      return newSubject
     } catch (error) {
       console.error("Error al crear materia:", error);
       throw error;
