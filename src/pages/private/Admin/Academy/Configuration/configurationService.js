@@ -27,6 +27,18 @@ export const configurationService = {
     }
   },
 
+  deleteSubjectDimension: async (id) => {
+    try {
+      await request("DELETE",
+      apiEndpoints.SERVICES.ACADEMY,
+      apiEndpoints.API_ENDPOINTS.DIMENSIONS.RELATION_SUBJECTS.DELETE_BY_ID(id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting dimension:", error);
+      throw error;
+    }
+  },
+
   createDimension: async (dimension) => {
     try {
       const response = await request("POST",
@@ -52,7 +64,7 @@ export const configurationService = {
       throw error;
     }
   },
-  
+ 
   deleteDimension: async (id) => {
     try {
       await request("DELETE",
@@ -64,6 +76,8 @@ export const configurationService = {
       throw error;
     }
   },
+
+
 
   //SubjectKnowledges
 
@@ -105,7 +119,7 @@ export const configurationService = {
     }
   },
   
-  // Subject
+  //Subject
   
   getSubjects: async () => {
     try {

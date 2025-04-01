@@ -130,6 +130,7 @@ const API_ENDPOINTS = {
             GET_GROUP_BY_DIMENSIONS: "/subjects-dimensions",
             CREATE: "/subjects-dimensions",
             UPDATE_BY_ID: (id) => `/subjects-dimensions/${id}`,
+            DELETE_BY_ID: (id) => `/subjects-dimensions/${id}`,
         },
     },
 
