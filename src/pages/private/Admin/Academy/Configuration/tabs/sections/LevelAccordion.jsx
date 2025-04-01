@@ -1,31 +1,45 @@
 import React, { useState } from "react";
 import { 
-  ChevronDown, ChevronUp,  User, 
-  School,  FileText
+  ChevronDown, ChevronUp, User, 
+  School, FileText, Plus, BookOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-
 // Componente Acordeón para niveles educativos
-const LevelAccordion = ({ level, groups, selectedPeriod, onGroupClick }) => {
+const LevelAccordion = ({ level, groups, selectedPeriod, onGroupClick, onCreateGroup, onAssignSubject }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="border rounded-lg mb-4 overflow-hidden">
-      <div 
-        className="bg-gray-50 p-4 cursor-pointer flex justify-between items-center"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center">
+      <div className="bg-gray-50 p-4 flex justify-between items-center">
+        <div 
+          className="flex items-center flex-grow cursor-pointer"
+          onClick={() => setIsOpen(!isOpen)}
+        >
           <School className="mr-2 text-amber-500" size={20} />
           <h3 className="font-medium">{level.levelName}</h3>
           <span className="ml-2 bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
             {groups.length} {groups.length === 1 ? 'grupo' : 'grupos'}
           </span>
         </div>
-        <button className="text-gray-500">
-          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
+        <div className="flex items-center space-x-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onCreateGroup(level)}
+            className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm px-3 py-1 rounded-md"
+            title="Crear nuevo grupo"
+          >
+            <Plus size={16} />
+            Nuevo Grupo
+          </motion.button>
+          <button 
+            className="text-gray-500"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -51,60 +65,46 @@ const LevelAccordion = ({ level, groups, selectedPeriod, onGroupClick }) => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Mentor
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                         Acciones
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {groups.map((group) => (
-                      <tr 
-                        key={group.id} 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => selectedPeriod ? onGroupClick(group) : null}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="font-medium">{group.groupCode}</span>
+                      <tr key={group.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {group.groupCode}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {group.groupName}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex items-center">
-                            <User size={16} className="text-gray-400 mr-2" />
-                            <span>{group.mentor.firstName} {group.mentor.lastName}</span>
+                            <User size={16} className="mr-1 text-amber-500" />
+                            {group.mentor.firstName} {group.mentor.lastName}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {group.status === "A" ? (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Activo
-                            </span>
-                          ) : (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Inactivo
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">
-                          <button 
-                            className={`inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md ${
-                              selectedPeriod 
-                                ? 'text-amber-700 bg-amber-100 hover:bg-amber-200' 
-                                : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                            }`}
-                            disabled={!selectedPeriod}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (selectedPeriod) onGroupClick(group);
-                            }}
-                          >
-                            <FileText size={14} className="mr-1" />
-                            Ver materias
-                          </button>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => onAssignSubject(group)}
+                              className="text-amber-600 hover:text-amber-800 flex items-center gap-1"
+                              title="Asignar materia"
+                            >
+                              <BookOpen size={16} />
+                              <span className="hidden md:inline">Asignar Materia</span>
+                            </button>
+                            <button
+                              onClick={() => onGroupClick(group)}
+                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                              title="Ver materias"
+                              disabled={!selectedPeriod}
+                            >
+                              <FileText size={16} />
+                              <span className="hidden md:inline">Ver Materias</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -119,4 +119,4 @@ const LevelAccordion = ({ level, groups, selectedPeriod, onGroupClick }) => {
   );
 };
 
-export default LevelAccordion
+export default LevelAccordion;
