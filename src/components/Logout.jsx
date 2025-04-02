@@ -12,6 +12,7 @@ function Logout() {
   const logOut = () => {
     clearStorage(UserKey);
     dispatch(resetUser());
+    location.reload();  
     navigate(PublicRoutes.LOGIN, { replace: true });
   };
   

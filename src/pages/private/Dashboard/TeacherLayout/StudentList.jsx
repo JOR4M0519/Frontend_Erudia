@@ -6,6 +6,7 @@ import { subjectActivityService } from "../../Subject";
 import { BackButton } from "../../../../components";
 import { useNavigate } from "react-router-dom";
 import { PrivateRoutes } from "../../../../models";
+import { configViewService } from "../../Setting";
 
 
 export default function StudentList({ onStudentClick, showAttendance = false}) {
@@ -13,27 +14,33 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
   const [studentList, setStudentList] = useState({ students: [] });
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [attendance, setAttendance] = useState({}); // 🔹 Estado de asistencia
+  const [attendance, setAttendance] = useState({}); //  Estado de asistencia
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
 
 
-  // Suscribirse a la materia seleccionada
-  useEffect(() => {
-    const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
-      if (subjectString) {
-        setSelectedSubject(JSON.parse(subjectString));
-      }
-    });
+  // Suscribirse a la materia y periodo seleccionada
 
-    return () => subjectSubscription.unsubscribe();
-  }, []);
+    useEffect(() => {
+      const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+      const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
+        if (subjectString) {
+          setSelectedSubject(JSON.parse(subjectString));
+        }
+      });
+  
+      return () => {
+        periodSubscription.unsubscribe();
+        subjectSubscription.unsubscribe();
+      };
+    }, []);
 
-  // 🔹 Obtener la lista de estudiantes cuando cambia la materia seleccionada
+  // Obtener la lista de estudiantes cuando cambia la materia seleccionada
   useEffect(() => {
     if (!selectedSubject?.id) return;
 
     const fetchStudents = async () => {
       try {
-        await teacherDataService.fetchListUsersGroupData(selectedSubject.id);
+        await teacherDataService.fetchListUsersGroupData(selectedPeriod,selectedSubject.id);
         const updatedList = teacherDataService.getStudentGroupListValue();
         if (updatedList) {
           setStudentList(updatedList);

@@ -704,13 +704,13 @@ export const teacherDataService = {
    *  Obtiene la lista de estudiantes en un grupo específico.
    *  Mantiene `subjects` y solo actualiza `studentGroupList`.
    */
-  fetchListUsersGroupData: async (groupId) => {
+  fetchListUsersGroupData: async (periodId,subjectId) => {
     try {
       //  NO se limpia `subjects`, solo obtenemos estudiantes
       const responseGroupsTeacher = await request(
         "GET",
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.GROUPS.STUDENT_GROUPS_BY_GROUPID(groupId),
+        apiEndpoints.API_ENDPOINTS.SUBJECTS.GROUPS.GET_ALL_BY_PERIOD_AND_SUBJECT(periodId,subjectId),
         {}
       );
 

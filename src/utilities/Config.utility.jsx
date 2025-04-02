@@ -4,7 +4,7 @@ const config = {
 };
 
 const initialDataInstitution = {
-  nit: "901234567",
+  nit: "900123456-7",
 }
 
 export {initialDataInstitution,config}
