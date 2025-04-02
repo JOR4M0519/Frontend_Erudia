@@ -55,7 +55,7 @@ useEffect(() => {
     const fetchStudents = async () => {
         try {
             setIsLoading(true);
-            await teacherDataService.fetchListUsersGroupData(selectedSubject.id);
+            await teacherDataService.fetchListUsersGroupData(selectedPeriod,selectedSubject.id);
             const updatedList = teacherDataService.getStudentGroupListValue();
             
             if (updatedList?.students) {

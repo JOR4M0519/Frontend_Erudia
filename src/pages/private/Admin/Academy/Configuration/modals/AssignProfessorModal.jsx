@@ -28,7 +28,7 @@ const AssignProfessorModal = ({ isOpen, onClose, onSave }) => {
       
       // Cargar profesores (usuarios administrativos)
       const professorsData = await configurationService.getAdministrativeUsers();
-      setProfessors(professorsData.filter(user => user.status === "A"));
+      setProfessors(professorsData);
       
       setLoading(false);
     } catch (err) {

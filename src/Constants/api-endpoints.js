@@ -37,7 +37,9 @@ const API_ENDPOINTS = {
             UPDATE_BY_ID:  (id) => `/subjects/professors/${id}`,
         },
 
-
+        GROUPS: {
+            GET_ALL_BY_PERIOD_AND_SUBJECT: (periodId,subjectId) => `/subjects-groups/periods/${periodId}/subjects/${subjectId}`
+        },
     },
     
 

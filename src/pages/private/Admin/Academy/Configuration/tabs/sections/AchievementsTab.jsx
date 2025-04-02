@@ -261,16 +261,29 @@ const itemVariants = {
     try {
       setLoading(true);
       
-      // Construir objeto con la estructura correcta
-      const achievementData = {
-        id: editingAchievement.id,
-        achievement: achievementText.trim()
-      };
-  
-      await configurationService.updateAchievementGroupsKnowledge(
-        editingAchievement.id,
-        achievementData
-      );
+  // Encontrar el objeto de conocimiento correspondiente al logro que estamos editando
+  const achievementData = knowledges.find(item => item.id === editingAchievement.id);
+    
+  if (!achievementData) {
+    throw new Error("No se pudo encontrar el logro a editar");
+  }
+
+  // Construir objeto con la estructura correcta
+  const updateData = {
+    id: editingAchievement.id,
+    subjectKnowledge: {id: achievementData.subjectKnowledge.id},
+    group: {id: parseInt(selectedGroup)},
+    period: {id: parseInt(selectedPeriod)},
+    achievement: achievementText.trim()
+  };
+
+          
+
+
+  await configurationService.updateAchievementGroupsKnowledge(
+    editingAchievement.id,
+    updateData
+  );
   
       // Actualizar datos locales
       const updatedKnowledges = knowledges.map(item => {
