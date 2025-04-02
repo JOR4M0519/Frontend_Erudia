@@ -134,9 +134,9 @@ export default function Sidebar() {
       isAdminRoute: true,
       subItems: [
         { to: AdminRoutes.SYSTEM_USER, label: "Usuario", navKey: "ADMIN", isAdminRoute: true },
-        { to: AdminRoutes.SYSTEM_REGISTER, label: "Registro", navKey: "ADMIN", isAdminRoute: true },
-        { to: AdminRoutes.SYSTEM_MAINTENANCE, label: "Mantenimiento", navKey: "ADMIN", isAdminRoute: true },
-        { to: AdminRoutes.SYSTEM_APPEARANCE, label: "Apariencia", navKey: "ADMIN", isAdminRoute: true }
+        // { to: AdminRoutes.SYSTEM_REGISTER, label: "Registro", navKey: "ADMIN", isAdminRoute: true },
+        // { to: AdminRoutes.SYSTEM_MAINTENANCE, label: "Mantenimiento", navKey: "ADMIN", isAdminRoute: true },
+        // { to: AdminRoutes.SYSTEM_APPEARANCE, label: "Apariencia", navKey: "ADMIN", isAdminRoute: true }
       ]
     }
   ];

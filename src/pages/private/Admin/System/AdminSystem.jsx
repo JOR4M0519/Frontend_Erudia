@@ -14,27 +14,27 @@ const AdminSystem = () => {
       path: "/admin/sistema/usuario",
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100"
     },
-    {
-      title: "Registro",
-      description: "Administra los registros y bitácoras del sistema",
-      icon: <BookOpen className="h-12 w-12 text-indigo-600" />,
-      path: "/admin/sistema/registro",
-      bgColor: "bg-gradient-to-br from-indigo-50 to-indigo-100"
-    },
-    {
-      title: "Mantenimiento",
-      description: "Configura opciones de mantenimiento y respaldo",
-      icon: <PenTool className="h-12 w-12 text-gray-600" />,
-      path: "/admin/sistema/mantenimiento",
-      bgColor: "bg-gradient-to-br from-gray-50 to-gray-200"
-    },
-    {
-      title: "Apariencias",
-      description: "Personaliza la apariencia visual del sistema",
-      icon: <Palette className="h-12 w-12 text-purple-600" />,
-      path: "/admin/sistema/apariencias",
-      bgColor: "bg-gradient-to-br from-purple-50 to-purple-100"
-    }
+    // {
+    //   title: "Registro",
+    //   description: "Administra los registros y bitácoras del sistema",
+    //   icon: <BookOpen className="h-12 w-12 text-indigo-600" />,
+    //   path: "/admin/sistema/registro",
+    //   bgColor: "bg-gradient-to-br from-indigo-50 to-indigo-100"
+    // },
+    // {
+    //   title: "Mantenimiento",
+    //   description: "Configura opciones de mantenimiento y respaldo",
+    //   icon: <PenTool className="h-12 w-12 text-gray-600" />,
+    //   path: "/admin/sistema/mantenimiento",
+    //   bgColor: "bg-gradient-to-br from-gray-50 to-gray-200"
+    // },
+    // {
+    //   title: "Apariencias",
+    //   description: "Personaliza la apariencia visual del sistema",
+    //   icon: <Palette className="h-12 w-12 text-purple-600" />,
+    //   path: "/admin/sistema/apariencias",
+    //   bgColor: "bg-gradient-to-br from-purple-50 to-purple-100"
+    // }
   ];
 
   return (
