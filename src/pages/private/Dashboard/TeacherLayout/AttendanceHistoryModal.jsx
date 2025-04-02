@@ -554,7 +554,7 @@ const handleDeleteDate = async (date) => {
           return (
             <th key={`${date}-${scheduleId}`} className="text-xs p-2 font-medium border-r">
               {schedule?.subjectName}<br />
-              {schedule?.startTime.substring(0, 5)}-{schedule?.endTime.substring(0, 5)}
+              {/* {schedule?.startTime.substring(0, 5)}-{schedule?.endTime.substring(0, 5)} */}
             </th>
           );
         });

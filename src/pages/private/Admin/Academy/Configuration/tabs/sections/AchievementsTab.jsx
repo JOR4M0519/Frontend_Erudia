@@ -349,10 +349,18 @@ const itemVariants = {
     }
   };
 
-// Modificar la función startCreationMode para usar los valores ya seleccionados
+// función startCreationMode para que cargue los datos completos
 const startCreationMode = async () => {
   try {
     setLoading(true);
+    
+    // Cargar los períodos independientemente del flujo que se tome
+    const periodsData = await configurationService.getPeriods();
+    setAvailablePeriods(periodsData);
+    
+    // Cargar grupos independientemente del flujo que se tome
+    const groupsData = await configurationService.getAllGroups();
+    setAvailableGroups(groupsData);
     
     // Usar el período y grupo ya seleccionados
     if (selectedPeriod && selectedGroup) {
@@ -371,8 +379,6 @@ const startCreationMode = async () => {
       setCreationStep(3);
     } else {
       // Si no hay selección previa, seguir el flujo normal
-      const periodsData = await configurationService.getPeriods();
-      setAvailablePeriods(periodsData);
       setCreationMode(true);
       setCreationStep(1);
     }
@@ -1004,6 +1010,7 @@ const startCreationMode = async () => {
               >
                 <h3 className="font-medium text-blue-800 mb-2">Resumen</h3>
                 <ul className="space-y-2 text-sm text-blue-700">
+                  {console.log(availablePeriods,availableGroups)}
                   <li><span className="font-medium">Período:</span> {availablePeriods.find(p => p.id.toString() === newPeriodId)?.name}</li>
                   <li><span className="font-medium">Grupo:</span> {availableGroups.find(g => g.id.toString() === newGroupId)?.groupName}</li>
                   <li><span className="font-medium">Materia:</span> {selectedSubjectName}</li>

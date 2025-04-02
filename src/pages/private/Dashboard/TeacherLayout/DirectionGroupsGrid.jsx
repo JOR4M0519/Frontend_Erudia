@@ -38,6 +38,22 @@ const DirectionGroupsGrid = () => {
     return () => subjectSubscription.unsubscribe();
   }, []);
 
+  // Cargar estudiantes cuando cambia el grupo seleccionado
+  useEffect(() => {
+    if (!selectedGroup?.id) return;
+    
+    // Cargar la lista de estudiantes usando el método para dirección de grupo
+    const fetchStudents = async () => {
+      try {
+        await teacherDataService.fetchListUsersGroupDataByGroupId(selectedGroup.id);
+      } catch (error) {
+        console.error("Error cargando estudiantes del grupo:", error);
+      }
+    };
+    
+    fetchStudents();
+  }, [selectedGroup?.id]);
+
   useEffect(() => {
     const subscription = teacherDataService
       .getStudentGroupListData()
@@ -48,6 +64,7 @@ const DirectionGroupsGrid = () => {
       });
     return () => subscription.unsubscribe();
   }, []);
+  
   const onclickStudent = (student, type) => {
     const studentIndex = students.findIndex(s => s.id === student.id);
     const selectedStudentObj = {
@@ -135,7 +152,10 @@ const DirectionGroupsGrid = () => {
         isTeacher={true}
       />
 
-      <StudentList onStudentClick={onclickStudent} />
+      <StudentList 
+        onStudentClick={onclickStudent} 
+        isDirectionGroup={true} 
+      />
 
       <BackButton
         onClick={() => navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.HOME)}

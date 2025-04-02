@@ -249,30 +249,58 @@ const EmployeeConsolidated = () => {
           Swal.showLoading();
         }
       });
-
-      // Preparar datos para enviar
+  
+      // Convertir los IDs de roles a objetos UserRoleDomain
+      const rolesObjects = editedUserData.user.roles.map(roleId => ({
+        id: roleId,
+        name: "" // El nombre puede estar vacío, el backend lo llenará
+      }));
+  
+      // Preparar datos para enviar con la estructura correcta
       const updateData = {
-        user: {
-          ...editedUserData.user
+        userDomain: {
+          id: editedUserData.user.id,
+          username: editedUserData.user.username,
+          email: editedUserData.user.email,
+          firstName: editedUserData.user.firstName,
+          lastName: editedUserData.user.lastName,
+          roles: rolesObjects, // Ahora enviamos objetos en lugar de solo IDs
+          status: editedUserData.user.status,
+          promotionStatus: editedUserData.user.promotionStatus || "A"
         },
-        userDetail: {
-          ...editedUserData.userDetail,
-          userId: selectedUser.id
-        }
+        userDetailDomain: {
+          id: editedUserData.userDetail.id,
+          firstName: editedUserData.userDetail.firstName,
+          middleName: editedUserData.userDetail.middleName || "",
+          lastName: editedUserData.userDetail.lastName,
+          secondLastName: editedUserData.userDetail.secondLastName || "",
+          address: editedUserData.userDetail.address || "",
+          phoneNumber: editedUserData.userDetail.phoneNumber || "",
+          dateOfBirth: editedUserData.userDetail.dateOfBirth || "",
+          dni: editedUserData.userDetail.dni || "",
+          idType: {
+            id: editedUserData.userDetail.idTypeId || "",
+            name: ""
+          },
+          neighborhood: editedUserData.userDetail.neighborhood || "",
+          city: editedUserData.userDetail.city || "",
+          positionJob: editedUserData.userDetail.positionJob || ""
+        },
+        groupId: null
       };
-
+  
       await userService.updateUserFull(selectedUser.id, updateData);
-
+  
       // Actualizar la lista de usuarios
       const updatedUsers = await userService.getAdministrativeUsers();
       setUsers(updatedUsers);
-
+  
       Swal.fire(
         '¡Guardado!',
         'Los cambios han sido guardados correctamente.',
         'success'
       );
-
+  
       setIsEditing(false);
       handleCloseModal();
     } catch (err) {
@@ -284,7 +312,9 @@ const EmployeeConsolidated = () => {
       );
     }
   };
-
+  
+  
+  
   const clearFilters = () => {
     setStatusFilter("all");
     setSearchTerm("");

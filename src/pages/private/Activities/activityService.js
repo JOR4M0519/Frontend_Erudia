@@ -1,3 +1,4 @@
+import apiEndpoints from "../../../Constants/api-endpoints";
 import { request } from "../../../services/config/axios_helper";
 
 export const activityService = {
@@ -12,8 +13,8 @@ export const activityService = {
     try {
       const response = await request(
         "GET",
-        "academy",
-        `/achievements-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId, subjectId, groupId)
       );
 
       if (response.status === 200 && Array.isArray(response.data)) {
@@ -206,6 +207,7 @@ export const activityService = {
     }
   },
 
+  //cambiar a achievement
   getKnowledgesBySubject: async (periodId,subjectId) =>{
     
     const response = await request(
@@ -240,19 +242,12 @@ export const activityService = {
    * @param {string} knowledgeId - ID of the knowledge
    * @returns {Promise} - Promise with the update result
    */
-    updateActivityAchievement: async (achievementGroupId,subjectKnowledgeId,groupId,periodId,achievement ) => {
+    updateActivityAchievement: async (activityId,achievementGroupId) => {
       try {
         const response = await request(
           "PUT",
           "academy",
-          `/achievements-group/${achievementGroupId}`,
-          {
-            id: achievementGroupId,
-            subjectKnowledge: {id: subjectKnowledgeId},
-            group : {id: groupId}, 
-            period : {id: periodId},
-            achievement
-          }
+          apiEndpoints.API_ENDPOINTS.ACTIVITIES.UPDATE_ACHIEVEMENT_BY_ID(activityId,achievementGroupId),
         );
   
         return {
@@ -269,6 +264,45 @@ export const activityService = {
         };
       }
     },
+
+  //       /**
+  //  * Updates the knowledge associated with a subject
+  //  * @param {string} subjectKnowledgeId - ID of the subject knowledge relationship
+  //  * @param {string} subjectId - ID of the subject
+  //  * @param {string} knowledgeId - ID of the knowledge
+  //  * @returns {Promise} - Promise with the update result
+  //  */
+  //       updateActivityAchievement: async (achievementGroupId,subjectKnowledgeId,groupId,periodId,achievement ) => {
+  //         try {
+  //           const response = await request(
+  //             "PUT",
+  //             "academy",
+  //             `/achievements-group/${achievementGroupId}`,
+  //             {
+  //               id: achievementGroupId,
+  //               subjectKnowledge: {id: subjectKnowledgeId},
+  //               group : {id: groupId}, 
+  //               period : {id: periodId},
+  //               achievement
+  //             }
+  //           );
+      
+  //           return {
+  //             success: response.status === 200,
+  //             data: response.data,
+  //             message: "Conocimiento de la materia actualizado correctamente"
+  //           };
+  //         } catch (error) {
+  //           console.error("Error al actualizar el conocimiento de la materia:", error);
+  //           return {
+  //             success: false,
+  //             message: "No se pudo actualizar el conocimiento de la materia",
+  //             error
+  //           };
+  //         }
+  //       },
+
+    
   
     /**
  * Saves activity scores for multiple students

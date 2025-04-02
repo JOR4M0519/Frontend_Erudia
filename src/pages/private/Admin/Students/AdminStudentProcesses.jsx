@@ -37,7 +37,7 @@ const AdminStudentProcesses = () => {
               <h1 className="text-3xl font-bold text-gray-900">Procesos de Estudiantes</h1>
               <p className="mt-1 text-sm text-gray-500">Gestión de cambios de estado, promociones y ausencias de estudiantes</p>
             </div>
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <Calendar className="h-5 w-5 text-gray-400 mr-2" />
               <select 
                 className="form-select rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:outline-none focus:ring-primary focus:border-primary"
@@ -49,7 +49,7 @@ const AdminStudentProcesses = () => {
                   return <option key={year} value={year}>{year}</option>;
                 })}
               </select>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>

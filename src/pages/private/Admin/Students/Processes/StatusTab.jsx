@@ -384,7 +384,7 @@ const StatusTab = ({ year = new Date().getFullYear() }) => {
       
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
         <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Gestión de Estados de Promoción - {year}
+          Gestión de Estados de Promoción
         </h2>
         
         <div className="flex flex-wrap gap-4 mb-6">

@@ -34,24 +34,23 @@ export const employeeService = {
    * @param {Object} userData - Datos del usuario a crear
    * @returns {Promise<Object>} Usuario creado
    */
-  createAdministrativeUser: async (userData) => {
-    try {
-      const response = await request(
-        "POST",
-        apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.USER.CREATE_ADMINISTRATIVE,
-        userData
-      );
-
-      if (response.status === 201) {
-        return response.data;
-      }
-      throw new Error("Error al crear usuario administrativo");
-    } catch (error) {
-      console.error("Error al crear usuario administrativo:", error);
-      throw error;
+createAdministrativeUser: async (userData) => {
+  try {
+    const response = await request(
+      "POST",
+      apiEndpoints.SERVICES.GATEAWAY,
+      apiEndpoints.API_ENDPOINTS.USER.CREATE_ADMINISTRATIVE_GTW,
+      userData
+    );
+    if (response.status === 200 || response.status === 201) {
+      return response.data;
     }
-  },
+    throw new Error("Error al crear usuario administrativo");
+  } catch (error) {
+    console.error("Error al crear usuario administrativo:", error);
+    throw error;
+  }
+},
 
   /**
    * Obtiene los tipos de identificación
@@ -117,7 +116,7 @@ export const userService = {
       const response = await request(
         "PATCH",
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.USER.UPDATE_FULL(userId),
+        apiEndpoints.API_ENDPOINTS.USER.UPDATE_DETAIL_BY_ID(userId),
         userData
       );
 

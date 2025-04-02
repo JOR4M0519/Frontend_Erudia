@@ -9,7 +9,7 @@ import { PrivateRoutes } from "../../../../models";
 import { configViewService } from "../../Setting";
 
 
-export default function StudentList({ onStudentClick, showAttendance = false}) {
+export default function StudentList({ onStudentClick, showAttendance = false, isDirectionGroup = false }) {
   const userState = useSelector((store) => store.selectedUser);
   const [studentList, setStudentList] = useState({ students: [] });
   const [selectedSubject, setSelectedSubject] = useState(null);
@@ -19,20 +19,19 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
 
 
   // Suscribirse a la materia y periodo seleccionada
-
-    useEffect(() => {
-      const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
-      const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
-        if (subjectString) {
-          setSelectedSubject(JSON.parse(subjectString));
-        }
-      });
+  useEffect(() => {
+    const periodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
+    const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
+      if (subjectString) {
+        setSelectedSubject(JSON.parse(subjectString));
+      }
+    });
   
-      return () => {
-        periodSubscription.unsubscribe();
-        subjectSubscription.unsubscribe();
-      };
-    }, []);
+    return () => {
+      periodSubscription.unsubscribe();
+      subjectSubscription.unsubscribe();
+    };
+  }, []);
 
   // Obtener la lista de estudiantes cuando cambia la materia seleccionada
   useEffect(() => {
@@ -40,7 +39,14 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
 
     const fetchStudents = async () => {
       try {
-        await teacherDataService.fetchListUsersGroupData(selectedPeriod,selectedSubject.id);
+        // Usar endpoint diferente según si viene de dirección de grupo o no
+        if (isDirectionGroup) {
+          // Para dirección de grupo, usamos el método por ID de grupo
+          await teacherDataService.fetchListUsersGroupDataByGroupId(selectedSubject.id);
+        } else {
+          // Para materias normales, usamos el método por periodo y materia
+          await teacherDataService.fetchListUsersGroupData(selectedPeriod, selectedSubject.id);
+        }
         const updatedList = teacherDataService.getStudentGroupListValue();
         if (updatedList) {
           setStudentList(updatedList);
@@ -58,63 +64,63 @@ export default function StudentList({ onStudentClick, showAttendance = false}) {
     };
 
     fetchStudents();
-  }, [selectedSubject?.id, userState?.id]);
+  }, [selectedSubject?.id, userState?.id, isDirectionGroup, selectedPeriod]);
 
-// Función para cambiar el estado de asistencia
-const toggleAttendance = (studentId) => {
-  const currentStatus = attendance[studentId];
-  const newStatus = currentStatus === 'P' ? 'A' : currentStatus === 'A' ? 'T' : 'P';
+  // Función para cambiar el estado de asistencia
+  const toggleAttendance = (studentId) => {
+    const currentStatus = attendance[studentId];
+    const newStatus = currentStatus === 'P' ? 'A' : currentStatus === 'A' ? 'T' : 'P';
   
-  setAttendance(prev => ({
-    ...prev,
-    [studentId]: newStatus
-  }));
+    setAttendance(prev => ({
+      ...prev,
+      [studentId]: newStatus
+    }));
 
-  // Notificar al padre del cambio
-  onStudentClick(studentId, newStatus);
-};
+    // Notificar al padre del cambio
+    onStudentClick(studentId, newStatus);
+  };
 
-// Función para cambiar todos los estados
-const setAllAttendance = (status) => {
-  const newAttendance = {};
-  studentList.students.forEach(student => {
-    newAttendance[student.id] = status;
-  });
-  setAttendance(newAttendance);
+  // Función para cambiar todos los estados
+  const setAllAttendance = (status) => {
+    const newAttendance = {};
+    studentList.students.forEach(student => {
+      newAttendance[student.id] = status;
+    });
+    setAttendance(newAttendance);
   
-  // Notificar al padre de todos los cambios
-  studentList.students.forEach(student => {
-    onStudentClick(student.id, status);
-  });
-};
+    // Notificar al padre de todos los cambios
+    studentList.students.forEach(student => {
+      onStudentClick(student.id, status);
+    });
+  };
 
-// Función para obtener el estilo del botón de asistencia
-const getAttendanceStyle = (status) => {
-  switch (status) {
-    case 'P':
-      return "bg-green-500 text-white";
-    case 'A':
-      return "bg-red-500 text-white";
-    case 'T':
-      return "bg-yellow-500 text-white";
-    default:
-      return "bg-gray-500 text-white";
-  }
-};
+  // Función para obtener el estilo del botón de asistencia
+  const getAttendanceStyle = (status) => {
+    switch (status) {
+      case 'P':
+        return "bg-green-500 text-white";
+      case 'A':
+        return "bg-red-500 text-white";
+      case 'T':
+        return "bg-yellow-500 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
+  };
 
-// Función para obtener el icono y texto del estado
-const getAttendanceContent = (status) => {
-  switch (status) {
-    case 'P':
-      return { icon: <CheckSquare className="w-5 h-5" />, text: "Presente" };
-    case 'A':
-      return { icon: <XSquare className="w-5 h-5" />, text: "Ausente" };
-    case 'T':
-      return { icon: <Clock className="w-5 h-5" />, text: "Tarde" };
-    default:
-      return { icon: <CheckSquare className="w-5 h-5" />, text: "Presente" };
-  }
-};
+  // Función para obtener el icono y texto del estado
+  const getAttendanceContent = (status) => {
+    switch (status) {
+      case 'P':
+        return { icon: <CheckSquare className="w-5 h-5" />, text: "Presente" };
+      case 'A':
+        return { icon: <XSquare className="w-5 h-5" />, text: "Ausente" };
+      case 'T':
+        return { icon: <Clock className="w-5 h-5" />, text: "Tarde" };
+      default:
+        return { icon: <CheckSquare className="w-5 h-5" />, text: "Presente" };
+    }
+  };
 
   // 🔹 Verificar si no hay estudiantes cargados
   if (!studentList.students || studentList.students.length === 0) {
@@ -192,7 +198,7 @@ const getAttendanceContent = (status) => {
         >
           Ver Información
         </button>
-        <button
+        {isDirectionGroup &&(<button
           onClick={(e) => {
             e.stopPropagation();
             onStudentClick(student, 'grades');
@@ -200,7 +206,7 @@ const getAttendanceContent = (status) => {
           className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
         >
           Ver Calificaciones
-        </button>
+        </button>)}
       </div>
     )}
   </div>

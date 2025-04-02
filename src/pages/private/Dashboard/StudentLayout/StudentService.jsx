@@ -210,8 +210,8 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
   try {
     const response = await request(
       "PUT", 
-      "academy", 
-      `/users/detail/${userId}`,
+      apiEndpoints.SERVICES.ACADEMY, 
+      apiEndpoints.API_ENDPOINTS.USER.UPDATE_DETAIL_BY_ID(userId),
       personalInfo
     );
 
@@ -725,8 +725,36 @@ export const teacherDataService = {
     }
   },
 
+    /**
+   *  Obtiene la lista de estudiantes en un grupo específico.
+   *  Mantiene `subjects` y solo actualiza `studentGroupList`.
+   */
+    fetchListUsersGroupDataByGroupId: async (groupId) => {
+      try {
+        //  NO se limpia `subjects`, solo obtenemos estudiantes
+        const responseGroupsTeacher = await request(
+          "GET",
+          apiEndpoints.SERVICES.ACADEMY,
+          apiEndpoints.API_ENDPOINTS.GROUPS.STUDENT_GROUPS_BY_GROUPID(groupId),
+          {}
+        );
+  
+        if (responseGroupsTeacher.status === 200 && responseGroupsTeacher.data.length > 0) {
+          const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); //  Instancia base
+          studentGroupList.addStudents(responseGroupsTeacher.data); //  Agrega estudiantes
+  
+          teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); //  Guarda en el estado
+        }
+      } catch (error) {
+        console.error("Error cargando lista de estudiantes:", error);
+      }
+    },
+    
+  
 
 };
+
+
 
 
 //  Exportar todo en un solo archivo

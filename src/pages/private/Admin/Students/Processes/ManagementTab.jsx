@@ -12,17 +12,23 @@ const ManagementTab = () => {
   const [loading, setLoading] = useState(false);
   const [idTypes, setIdTypes] = useState([]);
 
-  // Estado para almacenar los datos del formulario
+  // Estado para almacenar los datos del formulario con la estructura correcta
   const [formData, setFormData] = useState({
     userDomain: {
       username: "",
       email: "",
       firstName: "",
       lastName: "",
-      password: "123456", // Contraseña por defecto
-      roles: ["ROLE_STUDENT"], // Rol por defecto para estudiantes
-      status: "A", // Activo por defecto
-      promotionStatus: "A" // Activo por defecto
+      password: "",
+      roles: [
+        {
+          role: {
+            roleName: "ROLE_STUDENT"
+          }
+        }
+      ],
+      status: "A",
+      promotionStatus: "P"
     },
     userDetailDomain: {
       firstName: "",
@@ -97,6 +103,19 @@ const ManagementTab = () => {
     }
   }, [selectedLevel, groups]);
 
+  // Actualizar la contraseña cuando cambia el DNI
+  useEffect(() => {
+    if (formData.userDetailDomain.dni) {
+      setFormData(prevState => ({
+        ...prevState,
+        userDomain: {
+          ...prevState.userDomain,
+          password: formData.userDetailDomain.dni
+        }
+      }));
+    }
+  }, [formData.userDetailDomain.dni]);
+
   // Manejar cambios en los campos del formulario
   const handleChange = (section, field, value) => {
     setFormData(prevState => ({
@@ -108,7 +127,7 @@ const ManagementTab = () => {
     }));
   };
 
-  // Manejar cambios en campos anidados
+  // Manejar cambios en campos anidados como idType
   const handleNestedChange = (section, nestedField, field, value) => {
     setFormData(prevState => ({
       ...prevState,
@@ -122,7 +141,7 @@ const ManagementTab = () => {
     }));
   };
 
-  // Actualizar el nombre del tipo de ID cuando cambia el ID
+  // Manejar cambios en el tipo de ID
   const handleIdTypeChange = (e) => {
     const selectedId = parseInt(e.target.value);
     const selectedType = idTypes.find(type => type.id === selectedId);
@@ -156,31 +175,59 @@ const ManagementTab = () => {
     }));
   };
 
+  // Sincronizar los nombres entre userDomain y userDetailDomain
+  const handleNameChange = (field, value) => {
+    if (field === "firstName" || field === "lastName") {
+      setFormData(prevState => ({
+        ...prevState,
+        userDomain: {
+          ...prevState.userDomain,
+          [field]: value
+        },
+        userDetailDomain: {
+          ...prevState.userDetailDomain,
+          [field]: value
+        }
+      }));
+    }
+  };
+
+  // Manejar cambio de DNI - actualiza también la contraseña
+  const handleDniChange = (e) => {
+    const newDni = e.target.value;
+    setFormData(prevState => ({
+      ...prevState,
+      userDetailDomain: {
+        ...prevState.userDetailDomain,
+        dni: newDni
+      },
+      userDomain: {
+        ...prevState.userDomain,
+        password: newDni // La contraseña será el número de documento
+      }
+    }));
+  };
+
   // Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Asegurarse de que los nombres coincidan entre userDomain y userDetailDomain
-      const updatedFormData = {
-        ...formData,
-        userDomain: {
-          ...formData.userDomain,
-          firstName: formData.userDetailDomain.firstName,
-          lastName: formData.userDetailDomain.lastName
-        }
-      };
-
       // Generar username automáticamente si está vacío (firstName.lastName)
-      if (!updatedFormData.userDomain.username) {
-        const firstName = formData.userDetailDomain.firstName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const lastName = formData.userDetailDomain.lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        updatedFormData.userDomain.username = `${firstName}.${lastName}`;
+      let dataToSubmit = { ...formData };
+      
+      if (!dataToSubmit.userDomain.username) {
+        const firstName = dataToSubmit.userDetailDomain.firstName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const lastName = dataToSubmit.userDetailDomain.lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        dataToSubmit.userDomain.username = `${firstName}.${lastName}`;
       }
 
+      // Asegurar que la contraseña sea el número de documento
+      dataToSubmit.userDomain.password = dataToSubmit.userDetailDomain.dni;
+
       // Enviar datos al servidor
-      await studentAdminService.createStudentFetchingGroup(updatedFormData);
+      await studentAdminService.createStudentFetchingGroup(dataToSubmit);
       
       // Mostrar mensaje de éxito con SweetAlert
       Swal.fire({
@@ -197,10 +244,16 @@ const ManagementTab = () => {
           email: "",
           firstName: "",
           lastName: "",
-          password: "123456",
-          roles: ["ROLE_STUDENT"],
+          password: "",
+          roles: [
+            {
+              role: {
+                roleName: "ROLE_STUDENT"
+              }
+            }
+          ],
           status: "A",
-          promotionStatus: "A"
+          promotionStatus: "P"
         },
         userDetailDomain: {
           firstName: "",
@@ -212,7 +265,7 @@ const ManagementTab = () => {
           dateOfBirth: "",
           dni: "",
           idType: {
-            id: 2, // TI por defecto para estudiantes
+            id: 2,
             name: "TI"
           },
           neighborhood: "",
@@ -272,7 +325,10 @@ const ManagementTab = () => {
                   required
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring-primary focus:border-primary"
                   value={formData.userDetailDomain.firstName}
-                  onChange={(e) => handleChange("userDetailDomain", "firstName", e.target.value)}
+                  onChange={(e) => {
+                    handleChange("userDetailDomain", "firstName", e.target.value);
+                    handleNameChange("firstName", e.target.value);
+                  }}
                 />
               </div>
               
@@ -297,7 +353,10 @@ const ManagementTab = () => {
                   required
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring-primary focus:border-primary"
                   value={formData.userDetailDomain.lastName}
-                  onChange={(e) => handleChange("userDetailDomain", "lastName", e.target.value)}
+                  onChange={(e) => {
+                    handleChange("userDetailDomain", "lastName", e.target.value);
+                    handleNameChange("lastName", e.target.value);
+                  }}
                 />
               </div>
               
@@ -343,8 +402,11 @@ const ManagementTab = () => {
                   required
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring-primary focus:border-primary"
                   value={formData.userDetailDomain.dni}
-                  onChange={(e) => handleChange("userDetailDomain", "dni", e.target.value)}
+                  onChange={handleDniChange}
                 />
+                <p className="text-xs text-amber-600 mt-1 font-medium">
+                  La contraseña será el número de documento
+                </p>
               </div>
               
               <div>
@@ -512,6 +574,7 @@ const ManagementTab = () => {
                     <option value="A">Activo</option>
                     <option value="P">Pendiente</option>
                     <option value="R">Repitente</option>
+                    <option value="I">Inactivo</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
                 </div>
@@ -520,30 +583,29 @@ const ManagementTab = () => {
           </div>
 
           <div className="flex justify-end">
-          <button
-  type="submit"
-  disabled={loading}
-  className={`px-6 py-2.5 text-white rounded-md transition-all flex items-center justify-center cursor-pointer shadow-sm
-    ${loading 
-      ? "bg-gray-500 cursor-not-allowed opacity-80" 
-      : "bg-blue-600 hover:bg-blue-700 hover:shadow-md active:translate-y-0.5 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 focus:outline-none"
-    }
-  `}
-  aria-live="polite"
->
-  {loading ? (
-    <>
-      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white  mr-2"></div>
-      Procesando...
-    </>
-  ) : (
-    <>
-      <Save className="h-4 w-4 mr-2" />
-      Registrar Estudiante
-    </>
-  )}
-</button>
-
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-6 py-2.5 text-white rounded-md transition-all flex items-center justify-center cursor-pointer shadow-sm
+                ${loading 
+                  ? "bg-gray-500 cursor-not-allowed opacity-80" 
+                  : "bg-blue-600 hover:bg-blue-700 hover:shadow-md active:translate-y-0.5 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 focus:outline-none"
+                }
+              `}
+              aria-live="polite"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white mr-2"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Registrar Estudiante
+                </>
+              )}
+            </button>
           </div>
         </form>
       )}

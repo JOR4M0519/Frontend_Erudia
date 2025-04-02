@@ -41,7 +41,13 @@ export default function ActivitiesGrading() {
     const formattedActivity = {
       ...initialActivity,
       startDate: initialActivity.startDate || null,
-      endDate: initialActivity.endDate || null
+      endDate: initialActivity.endDate || null,
+      // Asegurarnos de que subject esté disponible
+      subject: location.state.subject || null,
+      // Asegurar otros campos potencialmente problemáticos
+      groupId: initialActivity.groupId || location.state.subject?.group?.id,
+      achievementGroupId: initialActivity.achievementGroupId || null,
+      knowledge: initialActivity.knowledge || null
     };
   
     setActivity(formattedActivity);
@@ -220,18 +226,16 @@ export default function ActivitiesGrading() {
     try {
         setIsLoading(true);
         
-        // Verificamos que tengamos todos los datos necesarios
-        if (!data.achievementGroupId || !data.subjectKnowledgeId) {
-            throw new Error("Faltan datos requeridos para actualizar el logro");
+       // Verificamos que tengamos todos los datos necesarios
+        if (!data || !data.id || !data.achievementGroupId) {
+          throw new Error("Faltan datos requeridos para actualizar el logro");
         }
+
         
         // Llamada a la API para actualizar el logro
         const response = await activityService.updateActivityAchievement(
-            data.achievementGroupId,
-            data.subjectKnowledgeId,
-            data.groupId,
-            data.periodId,
-            data.achievement,
+          data.id,
+          data.achievementGroupId,
         );
 
         if (response.success) {
@@ -633,11 +637,14 @@ export default function ActivitiesGrading() {
 
       {/*  Modal de Logro */}
       <AchievementModal
-        isOpen={isAchieveModalOpen}
-        onClose={() => setIsAchieveModalOpen(false)}
-        activity={activity}
-        onSave={handleSaveLogro}
-      />
+  isOpen={isAchieveModalOpen}
+  onClose={(isCancelled) => {
+    setIsAchieveModalOpen(false);
+    // No hacemos nada más cuando se cierra el modal
+  }}
+  activity={activity} 
+  onSave={handleSaveLogro}
+/>
       <EvaluationSchemeModal
         isOpen={isSchemeModalOpen}
         onClose={() => setIsSchemeModalOpen(false)}

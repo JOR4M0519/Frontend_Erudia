@@ -22,10 +22,10 @@ const AcademicConfiguration = () => {
 
   const tabs = [
     { id: "areas", label: "Áreas" },
-    { id: "periodo", label: "Periodo" },
-    { id: "esquemas", label: "Esquemas" },
-    // { id: "observaciones", label: "Observaciones" },
     { id: "niveles", label: "Niveles académicos" },
+    { id: "esquemas", label: "Esquemas" },
+    { id: "periodo", label: "Periodo" },
+    // { id: "observaciones", label: "Observaciones" },
     // { id: "estados", label: "Estados de usuario" },
     { id: "knowledges", label: "Saberes" },
     { id: "groups", label: "Grupos & Materias" },

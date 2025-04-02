@@ -15,29 +15,40 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
   const [idTypes, setIdTypes] = useState([]);
   const [roles, setRoles] = useState([]);
   
+  // Estado con la estructura correcta para el backend
   const [formData, setFormData] = useState({
-    user: {
+    userDomain: {
       username: "",
       email: "",
       firstName: "",
       lastName: "",
       password: "",
+      roles: [], // Lo transformaremos antes de enviar
       status: "A",
-      roles: []
+      promotionStatus: null // Inicialmente null, solo se usará para estudiantes
     },
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    secondLastName: "",
-    address: "",
-    phoneNumber: "",
-    dateOfBirth: "",
-    dni: "",
-    idTypeId: "",
-    neighborhood: "",
-    city: "",
-    positionJob: ""
+    userDetailDomain: {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      secondLastName: "",
+      address: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      dni: "",
+      idType: {  // Objeto completo, no solo ID
+        id: "",
+        name: ""
+      },
+      neighborhood: "",
+      city: "",
+      positionJob: ""
+    },
+    groupId: null // Aunque no sea necesario para administrativos, mantener la estructura
   });
+
+  // Estado para rastrear si hay un rol de estudiante seleccionado
+  const [hasStudentRole, setHasStudentRole] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -55,24 +66,62 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
       }
     };
 
-    // If modal is open or component is used as standalone page
     if (isOpen || isStandalone) {
       fetchInitialData();
     }
   }, [isOpen, isStandalone]);
 
+  // Verificar si un rol de estudiante está seleccionado para mostrar/ocultar campos específicos
+  useEffect(() => {
+    const isStudentSelected = formData.userDomain.roles.some(
+      r => r.role && r.role.roleName && r.role.roleName.toLowerCase() === "estudiante"
+    );
+    
+    setHasStudentRole(isStudentSelected);
+    
+    // Si no es estudiante, el promotionStatus debe ser null
+    if (!isStudentSelected && formData.userDomain.promotionStatus !== null) {
+      setFormData({
+        ...formData,
+        userDomain: {
+          ...formData.userDomain,
+          promotionStatus: null
+        }
+      });
+    } else if (isStudentSelected && formData.userDomain.promotionStatus === null) {
+      // Si es estudiante y el valor es null, establecer un valor por defecto
+      setFormData({
+        ...formData,
+        userDomain: {
+          ...formData.userDomain,
+          promotionStatus: "A"
+        }
+      });
+    }
+  }, [formData.userDomain.roles]);
+
+  // Manejar cambios en campos directos
   const handleInputChange = (e, section) => {
     const { name, value } = e.target;
     
-    if (section) {
+    if (section === "userDomain") {
       setFormData({
         ...formData,
-        [section]: {
-          ...formData[section],
+        userDomain: {
+          ...formData.userDomain,
+          [name]: value
+        }
+      });
+    } else if (section === "userDetailDomain") {
+      setFormData({
+        ...formData,
+        userDetailDomain: {
+          ...formData.userDetailDomain,
           [name]: value
         }
       });
     } else {
+      // Para manejar otros campos que no estén en estas secciones
       setFormData({
         ...formData,
         [name]: value
@@ -80,24 +129,54 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
     }
   };
 
+  // Manejar cambio de tipo de ID
+  const handleIdTypeChange = (e) => {
+    const selectedId = parseInt(e.target.value);
+    const selectedType = idTypes.find(type => type.id === selectedId);
+    
+    setFormData({
+      ...formData,
+      userDetailDomain: {
+        ...formData.userDetailDomain,
+        idType: {
+          id: selectedId,
+          name: selectedType ? selectedType.name : ""
+        }
+      }
+    });
+  };
+
+  // Manejar cambios en roles (checkbox)
   const handleRoleChange = (e) => {
     const roleId = parseInt(e.target.value);
     const isChecked = e.target.checked;
+    const selectedRole = roles.find(r => r.id === roleId);
     
     if (isChecked) {
+      // Agregar el rol a la lista de roles seleccionados
       setFormData({
         ...formData,
-        user: {
-          ...formData.user,
-          roles: [...formData.user.roles, roleId]
+        userDomain: {
+          ...formData.userDomain,
+          roles: [
+            ...formData.userDomain.roles,
+            {
+              role: {
+                id: roleId,
+                roleName: selectedRole ? selectedRole.roleName : "",
+                status: true
+              }
+            }
+          ]
         }
       });
     } else {
+      // Eliminar el rol de la lista de roles seleccionados
       setFormData({
         ...formData,
-        user: {
-          ...formData.user,
-          roles: formData.user.roles.filter(id => id !== roleId)
+        userDomain: {
+          ...formData.userDomain,
+          roles: formData.userDomain.roles.filter(r => r.role.id !== roleId)
         }
       });
     }
@@ -106,23 +185,23 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validaciones básicas
-    if (!formData.user.username || !formData.user.email || !formData.user.password) {
-      Swal.fire('Error', 'Los campos de usuario, email y contraseña son obligatorios', 'error');
+    // Validaciones básicas (contraseña ya no es obligatoria)
+    if (!formData.userDomain.username || !formData.userDomain.email) {
+      Swal.fire('Error', 'Los campos de usuario y email son obligatorios', 'error');
       return;
     }
 
-    if (!formData.firstName || !formData.lastName) {
+    if (!formData.userDetailDomain.firstName || !formData.userDetailDomain.lastName) {
       Swal.fire('Error', 'Los campos de nombre y apellido son obligatorios', 'error');
       return;
     }
 
-    if (!formData.dni || !formData.idTypeId) {
+    if (!formData.userDetailDomain.dni || !formData.userDetailDomain.idType.id) {
       Swal.fire('Error', 'El documento de identidad y su tipo son obligatorios', 'error');
       return;
     }
 
-    if (formData.user.roles.length === 0) {
+    if (formData.userDomain.roles.length === 0) {
       Swal.fire('Error', 'Debe seleccionar al menos un rol para el usuario', 'error');
       return;
     }
@@ -130,41 +209,58 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
     try {
       setLoading(true);
       
-      // Sincronizar nombres entre user y userDetail
+      // Preparar datos para enviar, con contraseña opcional y promotionStatus adecuado
       const dataToSend = {
         ...formData,
-        user: {
-          ...formData.user,
-          firstName: formData.firstName,
-          lastName: formData.lastName
+        userDomain: {
+          ...formData.userDomain,
+          firstName: formData.userDetailDomain.firstName,
+          lastName: formData.userDetailDomain.lastName,
+          // Si la contraseña está vacía, no la enviamos o la enviamos como null
+          password: formData.userDomain.password || null,
+          // El estado de promoción ya está configurado como null si no es estudiante
         }
       };
       
-      await employeeService.createAdministrativeUser(dataToSend);
+      const response = await employeeService.createAdministrativeUser(dataToSend);
+      
+      // Verificar si hay errores en la respuesta, aunque el status sea 200
+      if (response && response.error) {
+        throw new Error(response.message || 'Error al crear el usuario');
+      }
       
       Swal.fire('¡Éxito!', 'Usuario administrativo creado correctamente', 'success');
+      
+      // Resetear formulario con la estructura correcta
       setFormData({
-        user: {
+        userDomain: {
           username: "",
           email: "",
           firstName: "",
           lastName: "",
           password: "",
+          roles: [],
           status: "A",
-          roles: []
+          promotionStatus: null
         },
-        firstName: "",
-        middleName: "",
-        lastName: "",
-        secondLastName: "",
-        address: "",
-        phoneNumber: "",
-        dateOfBirth: "",
-        dni: "",
-        idTypeId: "",
-        neighborhood: "",
-        city: "",
-        positionJob: ""
+        userDetailDomain: {
+          firstName: "",
+          middleName: "",
+          lastName: "",
+          secondLastName: "",
+          address: "",
+          phoneNumber: "",
+          dateOfBirth: "",
+          dni: "",
+          idType: {
+            id: "",
+            name: ""
+          },
+          neighborhood: "",
+          city: "",
+          positionJob: ""
+        },
+        groupId: null
       });
       
       if (isStandalone) {
@@ -177,10 +273,15 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
       }
     } catch (error) {
       console.error("Error al crear usuario:", error);
-      Swal.fire('Error', 'No se pudo crear el usuario administrativo', 'error');
+      Swal.fire('Error', error.message || 'No se pudo crear el usuario administrativo', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Verificar si un rol está seleccionado
+  const isRoleSelected = (roleId) => {
+    return formData.userDomain.roles.some(r => r.role.id === roleId);
   };
 
   // Render the form content (used in both modal and standalone)
@@ -202,8 +303,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
               <input
                 type="text"
                 name="username"
-                value={formData.user.username}
-                onChange={(e) => handleInputChange(e, "user")}
+                value={formData.userDomain.username}
+                onChange={(e) => handleInputChange(e, "userDomain")}
                 className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 required
               />
@@ -218,8 +319,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="email"
                   name="email"
-                  value={formData.user.email}
-                  onChange={(e) => handleInputChange(e, "user")}
+                  value={formData.userDomain.email}
+                  onChange={(e) => handleInputChange(e, "userDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />
@@ -228,17 +329,17 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña *
+                Contraseña
               </label>
               <div className="flex items-center">
                 <Key className="h-4 w-4 text-gray-400 mr-2" />
                 <input
                   type="password"
                   name="password"
-                  value={formData.user.password}
-                  onChange={(e) => handleInputChange(e, "user")}
+                  value={formData.userDomain.password}
+                  onChange={(e) => handleInputChange(e, "userDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
+                  // Ya no es required
                 />
               </div>
             </div>
@@ -251,8 +352,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <Shield className="h-4 w-4 text-gray-400 mr-2" />
                 <select
                   name="status"
-                  value={formData.user.status}
-                  onChange={(e) => handleInputChange(e, "user")}
+                  value={formData.userDomain.status}
+                  onChange={(e) => handleInputChange(e, "userDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="A">Activo</option>
@@ -260,6 +361,28 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 </select>
               </div>
             </div>
+            
+            {/* Mostrar campo Estado de Promoción solo si el rol de estudiante está seleccionado */}
+            {hasStudentRole && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estado de Promoción
+                </label>
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 text-gray-400 mr-2" />
+                  <select
+                    name="promotionStatus"
+                    value={formData.userDomain.promotionStatus || "A"}
+                    onChange={(e) => handleInputChange(e, "userDomain")}
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="A">Activo</option>
+                    <option value="I">Inactivo</option>
+                    <option value="P">Pendiente</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -278,8 +401,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.firstName}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />
@@ -292,8 +415,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="middleName"
-                  value={formData.middleName}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.middleName}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -307,8 +430,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.lastName}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />
@@ -321,8 +444,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="secondLastName"
-                  value={formData.secondLastName}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.secondLastName}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -337,8 +460,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="date"
                   name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.dateOfBirth}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -362,8 +485,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="tel"
                   name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.phoneNumber}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -378,8 +501,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.address}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -393,8 +516,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="neighborhood"
-                  value={formData.neighborhood}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.neighborhood}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -406,8 +529,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.city}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -428,9 +551,9 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                   Tipo de Documento *
                 </label>
                 <select
-                  name="idTypeId"
-                  value={formData.idTypeId}
-                  onChange={(e) => handleInputChange(e)}
+                  name="idType"
+                  value={formData.userDetailDomain.idType.id}
+                  onChange={handleIdTypeChange}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 >
@@ -450,8 +573,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="dni"
-                  value={formData.dni}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.dni}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />
@@ -467,8 +590,8 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                 <input
                   type="text"
                   name="positionJob"
-                  value={formData.positionJob}
-                  onChange={(e) => handleInputChange(e)}
+                  value={formData.userDetailDomain.positionJob}
+                  onChange={(e) => handleInputChange(e, "userDetailDomain")}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -486,7 +609,7 @@ const AddEmployee = ({ isOpen, onClose, onSuccess, section }) => {
                       name={`role-${role.id}`}
                       type="checkbox"
                       value={role.id}
-                      checked={formData.user.roles.includes(role.id)}
+                      checked={isRoleSelected(role.id)}
                       onChange={handleRoleChange}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />

@@ -9,12 +9,12 @@ export default function SchedulePreview() {
   return (
     <>
 
-      <div onClick={() => setIsOpen(true)}
+      {/* <div onClick={() => setIsOpen(true)}
         className="cursor-pointer bg-white hover:shadow-lg transition-shadow p-3 flex flex-col items-center rounded-full text-center border border-gray-300 shadow-sm"
       >
         <Calendar className="w-6 h-6 text-gray-600" />
         <span className="text-xs text-gray-700 font-medium mt-1">Mi horario</span>
-      </div>
+      </div> */}
 
 
 

@@ -34,7 +34,7 @@ const AdminStudentReport = () => {
               <h1 className="text-3xl font-bold text-gray-900">Reportes de Estudiantes</h1>
               <p className="mt-1 text-sm text-gray-500">Información detallada sobre los estudiantes del colegio</p>
             </div>
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <Calendar className="h-5 w-5 text-gray-400 mr-2" />
               <select 
                 className="form-select rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:outline-none focus:ring-primary focus:border-primary"
@@ -46,7 +46,7 @@ const AdminStudentReport = () => {
                   return <option key={year} value={year}>{year}</option>;
                 })}
               </select>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>

@@ -6,13 +6,16 @@ const API_ENDPOINTS = {
     USER: {
         GET_ALL: "/users",
         GET_BY_ID: (id) => `/users/${id}`,
+        
         GET_DETAIL: (id) => `/users/detail/${id}`,
+        UPDATE_DETAIL_BY_ID: (id) => `/users/detail/${id}`,
+
         UPDATE_FULL: (id) => `/users/${id}/full`,
         UPDATE_STATUS: (id) => `/users/${id}/status`,
         GET_ADMINISTRATIVE: "/roles/users/administrative",
         GET_STUDENTS: "/roles/users/students",
-        CREATE_ADMINISTRATIVE: "/users/administrative",
 
+        CREATE_ADMINISTRATIVE_GTW: "/private/users/register",
         CREATE_STUDENT_GTW: '/private/users/students/register',
     },
 
@@ -142,6 +145,12 @@ const API_ENDPOINTS = {
 
     ROLE:{
         GET_ALL: '/roles',
+    },
+
+    ACTIVITIES:{
+        GET_ALL: '/activities',
+        UPDATE_ACHIEVEMENT_BY_ID: (activityId,knowledgeId) => `/activities/${activityId}/knowledges/${knowledgeId}`,
+        
     },
 
     
