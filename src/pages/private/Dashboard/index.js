@@ -1,3 +1,3 @@
-export { default as StudentTopBar } from './StudentTopBar';
+export { default as UserTopBar } from './UserTopBar';
 export { default as Dashboard } from './Dashboard';
 

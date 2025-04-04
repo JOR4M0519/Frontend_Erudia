@@ -1,5 +1,7 @@
 {
 (
+version: 21.5.0 
+
 npm init -y
 npm create vite@latest
 
@@ -18,6 +20,12 @@ npm run dev
     npm install rxjs
     npm install react-toastify
     npm install framer-motion
+    npm install react-datepicker    
+    npm install sweetalert2
+    npm install tailwind-scrollbar
+    react-hook-form
+    react-beautiful-dnd
+
 
 
     npm install tailwindcss @tailwindcss/vite

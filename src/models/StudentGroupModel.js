@@ -1,27 +1,33 @@
 export class StudentGroupModel {
+  
     constructor(data) {
+      const groupKey = data.group ? "group" : "groups"; // Detectar cuál existe
+      const groupData = data[groupKey] || {}; // Usar la que esté disponible
+
       this.group = {
-        id: data.groups?.id || null,
-        groupCode: data.groups?.groupCode || "",
-        groupName: data.groups?.groupName || "",
+        id: groupData.id || null,
+        groupCode: groupData.groupCode || "",
+        groupName: groupData.groupName || "",
         level: {
-          id: data.groups?.level?.id || null,
-          levelName: data.groups?.level?.levelName || "",
+          id: groupData.level?.id || null,
+          levelName: groupData.level?.levelName || "",
         },
         mentor: {
-          id: data.groups?.mentor?.id || null,
-          firstName: data.groups?.mentor?.firstName || "Desconocido",
-          lastName: data.groups?.mentor?.lastName || "Desconocido",
-          email: data.groups?.mentor?.email || "Desconocido",
+          id: groupData.mentor?.id || null,
+          firstName: groupData.mentor?.firstName || "Desconocido",
+          lastName: groupData.mentor?.lastName || "Desconocido",
+          email: groupData.mentor?.email || "Desconocido",
         },
       };
   
       // Lista vacía de materias, la llenaremos después
       this.subjects = [];
+      this.students = [];
     }
   
     // Método para agregar materias después de instanciar el objeto
     addSubjects(subjectsData) {
+      
       this.subjects = subjectsData.map(item => ({
         id: item.subjectProfessor?.subject?.id,
         subjectName: item.subjectProfessor?.subject?.subjectName,
@@ -33,12 +39,23 @@ export class StudentGroupModel {
         },
       }));
     }
+
+    addStudents(studentsGroupList) {
+      this.students = studentsGroupList.map(item => ({
+        id:           item.student?.id,
+        firstName:   item.student?.firstName,
+        lastName:   item.student?.lastName,
+        name:       item.student?.firstName +" "+ item.student?.lastName,
+        
+      }));
+    }
   
     // Método para obtener el objeto en formato JSON
     toJSON() {
       return {
         group: this.group,
         subjects: this.subjects,
+        students: this.students,
       };
     }
   }

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Navigate, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AuthGuard, RoleGuard, MultiRoleGuard } from './guards';
 import { PrivateRoutes, PublicRoutes, Roles } from './models';
@@ -15,16 +15,18 @@ import { Dashboard } from './pages/private/Dashboard';
 import { Admin } from './pages/private/Admin';
 import { Subject } from './pages/private/Subject';
 import { Activities } from './pages/private/Activities';
-import { StudentTracking } from './pages/private/StudentTracking';
+import { DetailStudentTracking, StudentTracking } from './pages/private/StudentTracking';
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
+
 
 // const Login = lazy(() => import('./pages/login/Login'));
 // const Private = lazy(() => import('./pages/Private/Private'));
 
 
 function App() {
+
   return (
     <div className="App">
       <Suspense fallback={<div>Loading...</div>}>
@@ -39,10 +41,11 @@ function App() {
 
               {/* 🔹 Rutas Privadas (con Layout dentro del `AuthGuard`) */}
               <Route element={<AuthGuard privateValidation={true} />}>
+
                 <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
 
                 <Route element={<MultiRoleGuard navKey="ADMIN" />}>
-                  <Route path={PrivateRoutes.ADMIN} element={<Admin />} />
+                  <Route path={`${PrivateRoutes.ADMIN}/*`} element={<Admin />} />
                 </Route>
 
                 <Route element={<MultiRoleGuard navKey="PROFILE" />}>
@@ -61,9 +64,32 @@ function App() {
                   <Route path={PrivateRoutes.ACTIVITIES} element={<Activities />} />
                 </Route>
 
+                {/* <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
+                  <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />}>
+                    <Route 
+                      path={PrivateRoutes.STUDENTTRACKING+PrivateRoutes.STUDENTTRACKINGDETAILS} 
+                      element={<DetailStudentTracking />} 
+                    />
+                  </Route>
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
+                </Route> */}
+                {/* <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
+                  <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />} />
+                  <Route path={PrivateRoutes.STUDENTTRACKINGDETAILS} element={<DetailStudentTracking />} />
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
+                </Route> */}
+
                 <Route element={<MultiRoleGuard navKey="STUDENTTRACKING" />}>
                   <Route path={PrivateRoutes.STUDENTTRACKING} element={<StudentTracking />} />
+                  <Route
+                    path={PrivateRoutes.STUDENTTRACKING + PrivateRoutes.STUDENTTRACKINGDETAILS}
+                    element={<DetailStudentTracking />}
+                  />
+                  <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
                 </Route>
+
+
+
 
                 <Route element={<MultiRoleGuard navKey="SETTINGS" />}>
                   <Route path={PrivateRoutes.SETTINGS} element={<Settings />} />

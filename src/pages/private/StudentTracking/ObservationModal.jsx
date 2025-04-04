@@ -1,18 +1,41 @@
-import { X, Pencil } from "lucide-react"
+import React from "react";
+import { X, Pencil } from "lucide-react";
 
-export default function ObservationModal({ isOpen, observation, onClose }) {
-  if (!isOpen || !observation) return null
+export default function ObservationModal({ isOpen, observationData, onClose }) {
+  if (!isOpen ) return null;
+  //if (!isOpen || !observation) return null;
+  
+  const testObservation = {
+    title: "Falta de Atención en Clase",
+    date: "2024-02-27",
+    teacher: {
+      firstName: "María",
+      lastName: "Gómez",
+    },
+    situation:
+      "El estudiante ha mostrado dificultades para mantener la atención en clase, a pesar de múltiples llamados de atención por parte del docente.",
+    commitment:
+      "El estudiante se compromete a participar activamente en clase y reducir distracciones, además de llevar un registro de tareas completadas.",
+    followUp:
+      "Se realizará un seguimiento semanal durante el próximo mes para evaluar mejoras en la concentración y participación.",
+  };
+  const observation = observationData || testObservation;
 
   const handleSave = () => {
     // Implementar lógica de guardado
-    console.log("Guardando observación...")
-    onClose()
-  }
+    console.log("Guardando observación...");
+    onClose();
+  };
 
   const handleExport = () => {
     // Implementar lógica de exportación
-    console.log("Exportando observador...")
-  }
+    console.log("Exportando observador...");
+  };
+
+  const handleEditSection = (section) => {
+    // Aquí se puede implementar la lógica para editar cada sección (situación, compromiso, seguimiento)
+    console.log(`Editando sección: ${section}`);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -30,7 +53,9 @@ export default function ObservationModal({ isOpen, observation, onClose }) {
             </div>
             <div>
               <h3 className="font-medium text-gray-900">Profesor</h3>
-              <p className="text-gray-600">{observation.teacher.firstName+" "+observation.teacher.lastName}</p>
+              <p className="text-gray-600">
+                {observation.teacher.firstName + " " + observation.teacher.lastName}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -44,7 +69,9 @@ export default function ObservationModal({ isOpen, observation, onClose }) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-medium">Situación</h3>
-              <Pencil className="w-4 h-4 text-gray-400" />
+              <button onClick={() => handleEditSection("situación")}>
+                <Pencil className="w-4 h-4 text-gray-400" />
+              </button>
             </div>
             <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{observation.situation}</p>
           </div>
@@ -53,7 +80,9 @@ export default function ObservationModal({ isOpen, observation, onClose }) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-medium">Compromiso del estudiante</h3>
-              <Pencil className="w-4 h-4 text-gray-400" />
+              <button onClick={() => handleEditSection("compromiso")}>
+                <Pencil className="w-4 h-4 text-gray-400" />
+              </button>
             </div>
             <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{observation.commitment}</p>
           </div>
@@ -62,7 +91,9 @@ export default function ObservationModal({ isOpen, observation, onClose }) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-medium">Seguimiento</h3>
-              <Pencil className="w-4 h-4 text-gray-400" />
+              <button onClick={() => handleEditSection("seguimiento")}>
+                <Pencil className="w-4 h-4 text-gray-400" />
+              </button>
             </div>
             <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{observation.followUp}</p>
           </div>
@@ -85,6 +116,5 @@ export default function ObservationModal({ isOpen, observation, onClose }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

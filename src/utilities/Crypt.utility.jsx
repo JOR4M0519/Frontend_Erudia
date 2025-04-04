@@ -1,7 +1,7 @@
 import CryptoJS from "crypto-js";
 import { persistStorage } from "./webStorage.utility";
 import { UserInfo } from "../models";
-import config from "./config.utility";
+import {config} from "./";
 
 /**
  * Encripta la Data.
@@ -31,8 +31,23 @@ export const encodeData = (data) => {
  */
 export const decodeRoles = (roles) => {
     try {
-            const rolesDecoded = roles.map(role => decryptData(role)); 
-            return rolesDecoded
+        // Si no hay roles, devolver array vacío
+        if (!roles || roles.length === 0) {
+            return [];
+        }
+
+        // Verificar si estamos recibiendo objetos UserRoleDomain
+        if (typeof roles[0] === 'object') {
+            // Extraer el nombre del rol de cada objeto y luego desencriptar
+            return roles.map(roleObj => {
+                // Verificar la estructura del objeto para acceder al nombre del rol
+                const roleName = roleObj.role?.name || roleObj.name || roleObj.roleName || '';
+                return decryptData(roleName);
+            });
+        } else {
+            // Mantener la compatibilidad con el formato anterior (array de strings)
+            return roles.map(role => decryptData(role));
+        }
     } catch (error) {
         console.error("Error al desencriptar los roles:", error);
         return [];
