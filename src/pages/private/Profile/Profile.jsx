@@ -116,6 +116,7 @@ function Profile() {
     const fetchFamilyDetails = async () => {
       try {
         const familyData = await studentDataService.getListRelativeFamily(userId);
+        console.log()
         if (familyData) setFamilyInfo(familyData);
       } catch (error) {
         console.error("Error obteniendo datos familiares:", error);
@@ -501,9 +502,9 @@ function Profile() {
           <UserX size={40} className="text-gray-400" />
         </div>
         <p className="text-gray-600">No se encontraron familiares registrados.</p>
-        <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        {/* <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
           Agregar familiar
-        </button>
+        </button> */}
       </div>
     )}
   </div>

@@ -15,6 +15,7 @@ import { AdminInstitutionConfig, FamilyReport } from "./Institution";
 import { AdminStudentProcesses, AdminStudentReport } from "./Students";
 import { AddEmployee, EmployeeConsolidated } from "./Employees";
 import { AcademicConfiguration, AcademicProcesses, AcademicReports } from "./Academy";
+import { SystemUsers } from "./System";
 
 
 // Función helper para remover el prefijo '/admin' de las rutas
@@ -62,7 +63,7 @@ const Admin = () => {
       <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_SCHEDULE)} element={<AdminAcademy section="schedule" />} />
       
       {/* Subpáginas de Sistema */}
-      <Route path={removeAdminPrefix(AdminRoutes.SYSTEM_USER)} element={<AdminSystem section="user" />} />
+      <Route path={removeAdminPrefix(AdminRoutes.SYSTEM_USER)} element={<SystemUsers section="user" />} />
       <Route path={removeAdminPrefix(AdminRoutes.SYSTEM_REGISTER)} element={<AdminSystem section="register" />} />
       <Route path={removeAdminPrefix(AdminRoutes.SYSTEM_MAINTENANCE)} element={<AdminSystem section="maintenance" />} />
       <Route path={removeAdminPrefix(AdminRoutes.SYSTEM_APPEARANCE)} element={<AdminSystem section="appearance" />} />
