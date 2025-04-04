@@ -5,15 +5,41 @@ const API_ENDPOINTS = {
     },
     USER: {
         GET_ALL: "/users",
+        UPDATE_USER_PASSWORD_BY_USERNAME: `/private/users/password`,
         GET_BY_ID: (id) => `/users/${id}`,
         
         GET_DETAIL: (id) => `/users/detail/${id}`,
         UPDATE_DETAIL_BY_ID: (id) => `/users/detail/${id}`,
+        UPDATE_ALL_DETAIL_BY_ID: (id) => `/users/detail/${id}/all`,
 
         UPDATE_FULL: (id) => `/users/${id}/full`,
         UPDATE_STATUS: (id) => `/users/${id}/status`,
         GET_ADMINISTRATIVE: "/roles/users/administrative",
         GET_STUDENTS: "/roles/users/students",
+        
+        FAMILY: {
+            // Endpoints del UserController
+            //GET_ALL_USERS_WITH_RELATIONS: `/users/detail/family`,
+            //GET_USER_RELATIVES: (userId) => `/users/detail/family/${userId}`,
+            //GET_STUDENTS_BY_RELATIVE: (relativeId) => `/users/detail/family/${relativeId}/students`,
+            //CREATE_FAMILY_RELATION: (userId) => `/users/detail/family/create/${userId}`,
+            //GET_FAMILY_REPORTS: `/users/detail/families/report`,
+            
+            // Endpoints del nuevo FamilyControllerDetail
+            ALL_USERS_WITH_RELATIONS: `/families/users`,
+            CREATE_RELATIONS: `/families`,
+            UPDATE_RELATION: (id) => `/families/${id}`,
+            DELETE_RELATION: (id) => `/families/${id}`,
+            GET_RELATIONS_BY_USER: (userId) => `/families/users/${userId}`,
+            GET_REPORTS: `/families/reports`,
+            RELATION_TYPE:{
+                GET_ALL: "/relationship-types", 
+                CREATE: '/relationship-types',
+                DELETE_BY_ID: (id) => `/relationship-types/${id}`,
+                GET_BY_ID: (id) => `/relationship-types/${id}`,
+                UPDATE_BY_ID: (id) => `/relationship-types/${id}`,
+            }
+          },
 
         CREATE_ADMINISTRATIVE_GTW: "/private/users/register",
         CREATE_STUDENT_GTW: '/private/users/students/register',

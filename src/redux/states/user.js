@@ -26,7 +26,8 @@ export const userSlice = createSlice({
       const selectedUserData = {
         id: action.payload.id,
         roles: action.payload.roles, 
-        name: action.payload.name
+        name: action.payload.name,
+        username: action.payload.username
       };
 
       persistStorage(SelectedUserKey, selectedUserData);

@@ -148,60 +148,60 @@ const EmployeeConsolidated = () => {
     }
   };
 
-  const handleRowClick = async (userId) => {
-    try {
-      setDetailLoading(true);
-      setIsModalOpen(true);
-  
-      const detail = await userService.getUserDetail(userId);
-      setSelectedUser(detail.user);
-      setUserDetail(detail);
-  
-      // Extraer los IDs de roles del usuario para la edición
-      // Verificamos si roles existe antes de hacer map
-      const userRoleIds = detail.user.roles ? detail.user.roles.map(role => role.id) : [];  
+const handleRowClick = async (userId) => {
+  try {
+    setDetailLoading(true);
+    setIsModalOpen(true);
 
-      // Inicializar datos para edición
-      setEditedUserData({
-        user: {
-          id: detail.user.id,
-          firstName: detail.user.firstName,
-          lastName: detail.user.lastName,
-          email: detail.user.email,
-          username: detail.user.username,
-          status: detail.user.status,
-          roles: userRoleIds // Ahora será un array vacío si roles es null
-        },
-        userDetail: {
-          id: detail.id,
-          firstName: detail.firstName,
-          middleName: detail.middleName || "",
-          lastName: detail.lastName,
-          secondLastName: detail.secondLastName || "",
-          address: detail.address,
-          phoneNumber: detail.phoneNumber,
-          dateOfBirth: detail.dateOfBirth,
-          dni: detail.dni,
-          idTypeId: detail.idType?.id,
-          neighborhood: detail.neighborhood,
-          city: detail.city,
-          positionJob: detail.positionJob
-        }
-      });
-  
-      setIsEditing(false);
-      setDetailLoading(false);
-    } catch (err) {
-      console.error("Error al cargar detalles del usuario:", err);
-      Swal.fire(
-        'Error',
-        'No se pudieron cargar los detalles del usuario',
-        'error'
-      );
-      setIsModalOpen(false);
-      setDetailLoading(false);
-    }
-  };
+    const detail = await userService.getUserDetail(userId);
+    setSelectedUser(detail.user);
+    setUserDetail(detail);
+
+    // Guardar la estructura completa de los roles en lugar de solo los IDs
+    const userRoles = detail.user.roles || [];
+
+    // Inicializar datos para edición
+    setEditedUserData({
+      user: {
+        id: detail.user.id,
+        firstName: detail.user.firstName,
+        lastName: detail.user.lastName,
+        email: detail.user.email,
+        username: detail.user.username,
+        status: detail.user.status,
+        roles: userRoles // Guardamos el array completo de roles
+      },
+      userDetail: {
+        id: detail.id,
+        firstName: detail.firstName,
+        middleName: detail.middleName || "",
+        lastName: detail.lastName,
+        secondLastName: detail.secondLastName || "",
+        address: detail.address,
+        phoneNumber: detail.phoneNumber,
+        dateOfBirth: detail.dateOfBirth,
+        dni: detail.dni,
+        idTypeId: detail.idType?.id,
+        neighborhood: detail.neighborhood,
+        city: detail.city,
+        positionJob: detail.positionJob
+      }
+    });
+
+    setIsEditing(false);
+    setDetailLoading(false);
+  } catch (err) {
+    console.error("Error al cargar detalles del usuario:", err);
+    Swal.fire(
+      'Error',
+      'No se pudieron cargar los detalles del usuario',
+      'error'
+    );
+    setIsModalOpen(false);
+    setDetailLoading(false);
+  }
+};
+
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -228,15 +228,44 @@ const EmployeeConsolidated = () => {
     const roleId = parseInt(e.target.value);
     const isChecked = e.target.checked;
     
-    setEditedUserData(prev => ({
-      ...prev,
-      user: {
-        ...prev.user,
-        roles: isChecked 
-          ? [...prev.user.roles, roleId]
-          : prev.user.roles.filter(id => id !== roleId)
+    setEditedUserData(prev => {
+      // Buscar el rol completo en la lista de roles disponibles
+      const roleObject = roles.find(r => r.id === roleId);
+      
+      if (!roleObject) return prev;
+      
+      // Si está marcado, agregamos el rol con la estructura completa
+      // Si no está marcado, lo quitamos
+      if (isChecked) {
+        // Creamos un objeto de rol con la estructura correcta
+        const newUserRole = {
+          id: null, // Este ID se generará en el backend
+          userId: selectedUser.id,
+          role: {
+            id: roleObject.id,
+            roleName: roleObject.roleName,
+            status: true
+          }
+        };
+        
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+            roles: [...prev.user.roles, newUserRole]
+          }
+        };
+      } else {
+        // Filtrar para eliminar el rol deseleccionado
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+            roles: prev.user.roles.filter(r => r.role?.id !== roleId)
+          }
+        };
       }
-    }));
+    });
   };
 
   const handleSaveChanges = async () => {
@@ -250,12 +279,6 @@ const EmployeeConsolidated = () => {
         }
       });
   
-      // Convertir los IDs de roles a objetos UserRoleDomain
-      const rolesObjects = editedUserData.user.roles.map(roleId => ({
-        id: roleId,
-        name: "" // El nombre puede estar vacío, el backend lo llenará
-      }));
-  
       // Preparar datos para enviar con la estructura correcta
       const updateData = {
         userDomain: {
@@ -264,7 +287,7 @@ const EmployeeConsolidated = () => {
           email: editedUserData.user.email,
           firstName: editedUserData.user.firstName,
           lastName: editedUserData.user.lastName,
-          roles: rolesObjects, // Ahora enviamos objetos en lugar de solo IDs
+          roles: editedUserData.user.roles, // Ahora roles tiene la estructura completa
           status: editedUserData.user.status,
           promotionStatus: editedUserData.user.promotionStatus || "A"
         },
@@ -312,7 +335,6 @@ const EmployeeConsolidated = () => {
       );
     }
   };
-  
   
   
   const clearFilters = () => {
@@ -541,3 +563,5 @@ const EmployeeConsolidated = () => {
 };
 
 export default EmployeeConsolidated;
+
+

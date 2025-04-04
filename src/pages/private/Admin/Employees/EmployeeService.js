@@ -116,7 +116,7 @@ export const userService = {
       const response = await request(
         "PATCH",
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.USER.UPDATE_DETAIL_BY_ID(userId),
+        apiEndpoints.API_ENDPOINTS.USER.UPDATE_ALL_DETAIL_BY_ID(userId),
         userData
       );
 

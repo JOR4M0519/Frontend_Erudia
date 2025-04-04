@@ -1,5 +1,3 @@
-// Layout.jsx con el sidebar ajustado
-
 import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { SearchModal } from "../windows/Search";

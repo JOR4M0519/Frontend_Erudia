@@ -278,7 +278,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
         </div>
 
         {/* Barra de búsqueda */}
-        <motion.button
+        {/* <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => searchService.open()}
@@ -286,7 +286,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
         >
           <span className="text-gray-500">Buscar en el sistema...</span>
           <Search className="w-5 h-5 text-blue-600" />
-        </motion.button>
+        </motion.button> */}
 
         {/* Selector de Periodo + Otros Controles */}
         <div className="flex items-center gap-5">
