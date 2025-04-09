@@ -2,6 +2,7 @@ import React from "react";
 import { User, BookOpen, Palette, PenTool } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { AdminRoutes } from "../../../../models";
 
 const AdminSystem = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const AdminSystem = () => {
       title: "Usuario",
       description: "Gestiona los usuarios y permisos del sistema",
       icon: <User className="h-12 w-12 text-blue-600" />,
-      path: "/admin/sistema/usuario",
+      path: AdminRoutes.SYSTEM_USER,
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100"
     },
     // {

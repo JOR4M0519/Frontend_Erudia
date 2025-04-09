@@ -591,7 +591,7 @@ const StudentsGroupsTab = () => {
               }`}
           >
             <BookOpen size={18} className="mr-1" />
-            Materias y Profesores
+            Materia/Profesor
           </button>
 
           {/* Nueva pestaña */}
@@ -606,7 +606,7 @@ const StudentsGroupsTab = () => {
               }`}
           >
             <Grid size={18} className="mr-1" />
-            Relación Materia/Grupo
+            Materia/Grupo
           </button>
         </nav>
       </div>

@@ -18,6 +18,7 @@ import {
   AlertCircle,
   FileText
 } from "lucide-react";
+import { PrivateRoutes } from "../../../models";
 
 export default function Activities() {
   const [activities, setActivities] = useState({});
@@ -290,7 +291,7 @@ export default function Activities() {
         )}
       </div>
 
-      <BackButton onClick={() => navigate("/dashboard")} />
+      <BackButton onClick={() => navigate(PrivateRoutes.DASHBOARD)} />
       <ActivityModal />
     </div>
   );

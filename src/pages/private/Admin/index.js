@@ -3,7 +3,6 @@ export * from './Admin';
 export { adminStudentService } from './AdminService';
 
 export { default as Admin } from './Admin';
-export { default as AdminLayout } from './AdminLayout';
 
 /**
  * Admin Institution 
