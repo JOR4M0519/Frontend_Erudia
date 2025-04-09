@@ -108,7 +108,7 @@ export default function Layout({ children }) {
         {/* Overlay para cerrar sidebar en móvil */}
         {isMobile && sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-30 z-30"
+            className="fixed inset-0 backdrop-blur-xs bg-opacity-30 z-30"
             onClick={() => setSidebarOpen(false)}
           />
         )}

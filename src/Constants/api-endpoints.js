@@ -49,6 +49,8 @@ const API_ENDPOINTS = {
         GET_ALL: '/groups',
         CREATE: '/groups',
         ACTIVE_ALL: '/groups/active',
+        UPDATE_BY_ID: (id) => `/groups/${id}`,
+        DELETE_BY_ID: (id) => `/groups/${id}`,
         STUDENT_GROUPS_ALL: '/student-groups/active',
         STUDENT_GROUPS_BY_GROUPID: (groupId) => `/student-groups/groups/${groupId}/users`,
 
@@ -58,12 +60,14 @@ const API_ENDPOINTS = {
         GET_ALL: '/subjects',
         CREATE: '/subjects',
         UPDATE_BY_ID: (id) => `/subjects/${id}`,
+        DELETE_BY_ID: (id) => `/subjects/${id}`,
         SUBJECTS_BY_GROUPS_LEVEL: (periodId,levelId) => `/subjects-groups/periods/${periodId}/edu-level/${levelId}`,
     
         PROFESSORS:{
             GET_ALL:  `/subjects/professors`,
             CREATE: `/subjects/professors`,
             UPDATE_BY_ID:  (id) => `/subjects/professors/${id}`,
+            DELETE_BY_ID: (id) => `/subjects/professors/${id}`,
         },
 
         GROUPS: {
@@ -139,6 +143,9 @@ const API_ENDPOINTS = {
         GET_ALL_BY_YEAR_ACTIVE: (year) => `/periods/active/${year}`,
         GET_ALL_BY_SETTING_AND_YEAR: (settingId,year) => 
             `/periods/settings/${settingId}/active/${year}`,
+        GET_PERCENTAGE_VALIDATION_BY_YEAR: (year) => 
+            `/periods/verify-year/${year}`,
+
         CREATE: `/periods`,
         UPDATE_BY_ID:  (id) => `/periods/${id}`,
     },

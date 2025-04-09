@@ -44,162 +44,146 @@ export default function AsistanceGrid() {
     }, []);
 
     // 🔹 Obtener la lista de estudiantes al cargar el componente
-// En el useEffect donde se cargan los estudiantes
-// Modificar el useEffect de carga de estudiantes
-useEffect(() => {
-    if (!selectedSubject?.id) {
-        console.log("No hay materia seleccionada, esperando...");
-        return;
-    }
-
-    const fetchStudents = async () => {
-        try {
-            setIsLoading(true);
-            await teacherDataService.fetchListUsersGroupData(selectedPeriod,selectedSubject.id);
-            const updatedList = teacherDataService.getStudentGroupListValue();
-            
-            if (updatedList?.students) {
-                setStudents(updatedList.students);
-                
-                // Inicializar todos como presentes
-                const initialAttendance = updatedList.students.reduce((acc, student) => {
-                    acc[student.id] = 'P'; // Inicializar como Presente
-                    return acc;
-                }, {});
-                
-                setAttendance(initialAttendance);
-            }
-        } catch (error) {
-            console.error("Error al obtener la lista de estudiantes:", error);
-        } finally {
-            setIsLoading(false);
+    // En el useEffect donde se cargan los estudiantes
+    // Modificar el useEffect de carga de estudiantes
+    useEffect(() => {
+        if (!selectedSubject?.id) {
+            console.log("No hay materia seleccionada, esperando...");
+            return;
         }
+
+        const fetchStudents = async () => {
+            try {
+                setIsLoading(true);
+                await teacherDataService.fetchListUsersGroupData(selectedPeriod, selectedSubject.id);
+                const updatedList = teacherDataService.getStudentGroupListValue();
+
+                if (updatedList?.students) {
+                    setStudents(updatedList.students);
+
+                    // Inicializar todos como presentes
+                    const initialAttendance = updatedList.students.reduce((acc, student) => {
+                        acc[student.id] = 'P'; // Inicializar como Presente
+                        return acc;
+                    }, {});
+
+                    setAttendance(initialAttendance);
+                }
+            } catch (error) {
+                console.error("Error al obtener la lista de estudiantes:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStudents();
+    }, [selectedSubject?.id, userState?.id]);
+
+    const toggleAttendance = (studentId, status) => {
+        setAttendance(prev => ({
+            ...prev,
+            [studentId]: status
+        }));
     };
 
-    fetchStudents();
-}, [selectedSubject?.id, userState?.id]);
-
-const toggleAttendance = (studentId, status) => {
-    setAttendance(prev => ({
-        ...prev,
-        [studentId]: status
-    }));
-};
-
-const handleSave = async () => {
-    try {
-        // Validaciones iniciales
-        if (!students.length) {
-            await Swal.fire({
+    const handleSave = async () => {
+        try {
+          // Validaciones iniciales
+          const validationChecks = [
+            { condition: !students.length, message: 'No hay estudiantes para guardar' },
+            { condition: !selectedSubject?.id, message: 'No hay materia seleccionada' },
+            { condition: !selectedDate, message: 'No hay fecha seleccionada' },
+            { condition: !selectedPeriod, message: 'No hay periodo seleccionado' },
+            { condition: !userState?.id, message: 'No se encontró información del profesor' }
+          ];
+      
+          // Verificar cada validación
+          for (const check of validationChecks) {
+            if (check.condition) {
+              await Swal.fire({
                 title: 'Error',
-                text: 'No hay estudiantes para guardar',
+                text: check.message,
                 icon: 'error'
-            });
-            return;
-        }
-
-        if (!selectedSubject?.id) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'No hay materia seleccionada',
-                icon: 'error'
-            });
-            return;
-        }
-
-        if (!selectedDate) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'No hay fecha seleccionada',
-                icon: 'error'
-            });
-            return;
-        }
-
-        if (!selectedPeriod) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'No hay periodo seleccionado',
-                icon: 'error'
-            });
-            return;
-        }
-
-        if (!userState?.id) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'No se encontró información del profesor',
-                icon: 'error'
-            });
-            return;
-        }
-
-        // Activar estado de guardado
-        setIsSaving(true);
-
-        // Crear array de registros de asistencia simplificado
-        const attendanceRecords = students.map(student => {
-            const now = new Date();
-            // Ajustar a hora de Colombia (UTC-5)
-            now.setHours(now.getHours() - 5);
-            
-            return {
-                student: { id: student.id },
-                attendanceDate: selectedDate,
-                status: attendance[student.id] || 'P',
-                recordedAt: now.toISOString()
-            };
-        });
-
-        // Mostrar progreso
-        const loadingSwal = Swal.fire({
+              });
+              return;
+            }
+          }
+      
+          // Activar estado de guardado
+          setIsSaving(true);
+          
+          // Crear array de registros de asistencia
+          const attendanceRecords = students.map(student => ({
+            student: { id: student.id },
+            attendanceDate: selectedDate,
+            status: attendance[student.id] || 'P',
+            recordedAt: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString() // Ajuste a hora Colombia
+          }));
+          
+          // Mostrar progreso
+          const loadingSwal = Swal.fire({
             title: 'Guardando asistencia',
             text: 'Por favor espere...',
             allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        // Hacer el llamado al backend con los parámetros en la URL
-        const response = await attendanceService.saveAttendanceBatch(
+            didOpen: () => Swal.showLoading()
+          });
+          
+          // Llamado al backend
+          const response = await attendanceService.saveAttendanceBatch(
             attendanceRecords,
-            selectedSubject.group.id,    // groupId
-            selectedSubject.id,          // subjectId
-            userState.id,                // professorId
-            selectedPeriod            // periodId
-        );
-        
-        // Cerrar el diálogo de carga
-        await loadingSwal.close();
-
-        if (response) {
-            // Mostrar éxito
-            await Swal.fire({
-                title: 'Éxito',
-                text: 'Asistencia guardada correctamente',
-                icon: 'success'
-            });
-
-            // Opcional: Limpiar o resetear el estado
-            const initialAttendance = students.reduce((acc, student) => {
-                acc[student.id] = 'P';
-                return acc;
-            }, {});
-            setAttendance(initialAttendance);
-        }
-
-    } catch (error) {
-        console.error("Error al guardar la asistencia:", error);
-        await Swal.fire({
+            selectedSubject.group.id,
+            selectedSubject.id,
+            userState.id,
+            selectedPeriod
+          );
+          
+          // Cerrar diálogo de carga
+          await loadingSwal.close();
+          
+          // Mostrar mensaje de éxito
+          await Swal.fire({
+            title: 'Éxito',
+            text: 'Asistencia guardada correctamente',
+            icon: 'success'
+          });
+          
+          // Resetear estado
+          const initialAttendance = students.reduce((acc, student) => {
+            acc[student.id] = 'P';
+            return acc;
+          }, {});
+          setAttendance(initialAttendance);
+          
+        } catch (error) {
+          console.error("Error al guardar la asistencia:", error);
+          
+          // Extraer mensaje de error del backend
+          let errorMessage = 'Error al guardar la asistencia';
+          
+          // Manejar diferentes formatos de respuesta de error
+          if (error.response) {
+            // Respuesta del servidor con error
+            if (error.response.data && error.response.data.message) {
+              // Formato ErrorDto { message: "..." }
+              errorMessage = error.response.data.message;
+            } else if (typeof error.response.data === 'string') {
+              // Respuesta de error como string
+              errorMessage = error.response.data;
+            }
+          } else if (error.message) {
+            // Error de red u otro tipo
+            errorMessage = error.message;
+          }
+          
+          await Swal.fire({
             title: 'Error',
-            text: error.message || 'Error al guardar la asistencia',
+            text: errorMessage,
             icon: 'error'
-        });
-    } finally {
-        setIsSaving(false);
-    }
-};
+          });
+        } finally {
+          setIsSaving(false);
+        }
+    };
     // Loading state
     if (isLoading) {
         return (
@@ -234,13 +218,13 @@ const handleSave = async () => {
 
     return (
         <div className="space-y-6">
-            <AttendanceHeader 
+            <AttendanceHeader
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 subject={selectedSubject}
             />
 
-<StudentList 
+            <StudentList
                 showAttendance={true}
                 onStudentClick={toggleAttendance}
 
@@ -253,16 +237,16 @@ const handleSave = async () => {
                 >
                     Ver Historial
                 </button>
-                <button 
-    onClick={handleSave} 
-    className={`px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors flex items-center ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
-    disabled={isSaving}
->
-    {isSaving && (
-        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-    )}
-    {isSaving ? 'Guardando...' : 'Guardar'}
-</button>
+                <button
+                    onClick={handleSave}
+                    className={`px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors flex items-center ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    disabled={isSaving}
+                >
+                    {isSaving && (
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    )}
+                    {isSaving ? 'Guardando...' : 'Guardar'}
+                </button>
             </div>
 
             <BackButton

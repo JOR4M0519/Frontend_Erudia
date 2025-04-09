@@ -380,9 +380,16 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
    */
   getUserDetails: async (familyMemberId) => {
     try {
-      const response = await request("GET", "academy", `/users/detail/${familyMemberId}`, {});
+      const response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_DETAIL(familyMemberId),
+        {});
 
       if (response.status === 200) {
+
+        console.log(response)
+
         return {
           id: response.data.id,
           name: `${response.data.firstName ?? ""} ${response.data.middleName ?? ""} ${response.data.lastName ?? ""} ${response.data.secondLastName ?? ""}`.trim(),
@@ -477,6 +484,7 @@ getIdTypes: async () => {
       const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
+        console.log(responseGroups)
         studentGroup.addSubjects(responseGroups.data);
         studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
       }

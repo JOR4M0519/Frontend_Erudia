@@ -31,6 +31,7 @@ export class StudentGroupModel {
       this.subjects = subjectsData.map(item => ({
         id: item.subjectProfessor?.subject?.id,
         subjectName: item.subjectProfessor?.subject?.subjectName,
+        group: item.groups || "Desconocido", 
         teacher: {
           id: item.subjectProfessor?.professor?.id || null,
           firstName: item.subjectProfessor?.professor?.firstName || "Desconocido",

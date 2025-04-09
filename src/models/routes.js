@@ -24,7 +24,7 @@ export const PrivateRoutes = {
 
   ADMIN:            '/admin',  
   GRADES:           '/grades-general',
-  SETTINGS:         '/settings',
+  SETTINGS:         '/configuracion',
   
 };
 

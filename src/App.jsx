@@ -19,6 +19,7 @@ import { DetailStudentTracking, StudentTracking } from './pages/private/StudentT
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
+import { SystemUsers } from './pages/private/Admin/System';
 
 
 // const Login = lazy(() => import('./pages/login/Login'));
@@ -87,8 +88,6 @@ function App() {
                   />
                   <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
                 </Route>
-
-
 
 
                 <Route element={<MultiRoleGuard navKey="SETTINGS" />}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, ChevronDown, ChevronUp, Search, Copy, Trash2, Move, Eye } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Search, Copy, Trash2, Move, Eye, AlertTriangle } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import Swal from "sweetalert2";
 import { configurationService } from "../../";
@@ -38,21 +38,25 @@ const AssociationsTab = ({
   // Estado para búsqueda en panel de saberes
   const [knowledgeSearchTerm, setKnowledgeSearchTerm] = useState("");
 
+  // Estado para almacenar la validación de porcentajes por materia
+  const [subjectPercentages, setSubjectPercentages] = useState({});
+
+  // Estado para contar materias con porcentajes inválidos
+  const [invalidSubjectsCount, setInvalidSubjectsCount] = useState(0);
 
   // Cargar todas las materias al iniciar
-useEffect(() => {
-  const loadAllSubjects = async () => {
-    try {
-      const subjects = await configurationService.getSubjects();
-      setAllSubjects(subjects);
-    } catch (error) {
-      console.error("Error al cargar todas las materias:", error);
-    }
-  };
-  
-  loadAllSubjects();
-}, []);
-
+  useEffect(() => {
+    const loadAllSubjects = async () => {
+      try {
+        const subjects = await configurationService.getSubjects();
+        setAllSubjects(subjects);
+      } catch (error) {
+        console.error("Error al cargar todas las materias:", error);
+      }
+    };
+    
+    loadAllSubjects();
+  }, []);
 
   // Actualizar showKnowledgePanel cuando cambia editMode
   useEffect(() => {
@@ -64,6 +68,11 @@ useEffect(() => {
     groupAssociationsBySubject();
   }, [subjectKnowledges, subjectSearchTerm, knowledgeFilter, statusFilter, allSubjects]);
 
+  // Calcular los porcentajes por materia cuando cambian las asociaciones agrupadas
+  useEffect(() => {
+    calculateSubjectPercentages();
+  }, [groupedAssociations]);
+
   // Filtrar saberes disponibles para el panel lateral
   useEffect(() => {
     const filtered = allKnowledges.filter(knowledge =>
@@ -72,45 +81,78 @@ useEffect(() => {
     setAvailableKnowledges(filtered);
   }, [allKnowledges, knowledgeSearchTerm]);
 
-  // Agrupar asociaciones por materia
-// Agrupar asociaciones por materia
-const groupAssociationsBySubject = () => {
-  const filteredAssociations = getFilteredSubjectKnowledges();
-  const grouped = {};
-  
-  // Primero, agregar todas las materias disponibles (incluso sin asociaciones)
-  allSubjects.forEach(subject => {
-    if (!grouped[subject.id]) {
-      grouped[subject.id] = {
-        subject: subject,
-        knowledges: []
-      };
-    }
-  });
-  
-  // Luego, agregar los saberes asociados a cada materia
-  filteredAssociations.forEach(item => {
-    const subjectId = item.idSubject.id;
+  // Calcular porcentajes por materia y validar si suman 100%
+  const calculateSubjectPercentages = () => {
+    const percentages = {};
+    let invalidCount = 0;
     
-    if (!grouped[subjectId]) {
-      grouped[subjectId] = {
-        subject: item.idSubject,
-        knowledges: []
-      };
-    }
-    
-    // Agregar el saber con su ID de asociación
-    grouped[subjectId].knowledges.push({
-      id: item.idKnowledge.id,
-      associationId: item.id,
-      name: item.idKnowledge.name,
-      percentage: item.idKnowledge.percentage,
-      status: item.idKnowledge.status
+    Object.keys(groupedAssociations).forEach(subjectId => {
+      const knowledges = groupedAssociations[subjectId].knowledges;
+      if (knowledges.length > 0) {
+        const totalPercentage = knowledges.reduce((sum, knowledge) => {
+          return sum + (parseFloat(knowledge.percentage) || 0);
+        }, 0);
+        
+        const isValid = Math.abs(totalPercentage - 100) < 0.001; // Consideramos válido si está a 0.001 de 100%
+        
+        percentages[subjectId] = {
+          total: totalPercentage,
+          isValid: isValid
+        };
+        
+        if (!isValid) {
+          invalidCount++;
+        }
+      } else {
+        percentages[subjectId] = {
+          total: 0,
+          isValid: false
+        };
+      }
     });
-  });
-  
-  setGroupedAssociations(grouped);
-};
+    
+    setSubjectPercentages(percentages);
+    setInvalidSubjectsCount(invalidCount);
+  };
+
+  // Agrupar asociaciones por materia
+  const groupAssociationsBySubject = () => {
+    const filteredAssociations = getFilteredSubjectKnowledges();
+    const grouped = {};
+    
+    // Primero, agregar todas las materias disponibles (incluso sin asociaciones)
+    allSubjects.forEach(subject => {
+      if (!grouped[subject.id]) {
+        grouped[subject.id] = {
+          subject: subject,
+          knowledges: []
+        };
+      }
+    });
+    
+    // Luego, agregar los saberes asociados a cada materia
+    filteredAssociations.forEach(item => {
+      const subjectId = item.idSubject.id;
+      
+      if (!grouped[subjectId]) {
+        grouped[subjectId] = {
+          subject: item.idSubject,
+          knowledges: []
+        };
+      }
+      
+      // Agregar el saber con su ID de asociación
+      grouped[subjectId].knowledges.push({
+        id: item.idKnowledge.id,
+        associationId: item.id,
+        name: item.idKnowledge.name,
+        percentage: item.idKnowledge.percentage,
+        status: item.idKnowledge.status
+      });
+    });
+    
+    setGroupedAssociations(grouped);
+  };
 
   // Filtrar asociaciones de saberes con materias
   const getFilteredSubjectKnowledges = () => {
@@ -132,6 +174,20 @@ const groupAssociationsBySubject = () => {
     }));
   };
 
+  // Expandir automáticamente todas las materias con porcentajes inválidos
+  const expandInvalidSubjects = () => {
+    const newExpandedState = { ...expandedSubjects };
+    
+    Object.keys(subjectPercentages).forEach(subjectId => {
+      if (!subjectPercentages[subjectId].isValid && 
+          groupedAssociations[subjectId].knowledges.length > 0) {
+        newExpandedState[subjectId] = true;
+      }
+    });
+    
+    setExpandedSubjects(newExpandedState);
+  };
+
   // Resetear filtros
   const resetFilters = () => {
     setSubjectSearchTerm("");
@@ -146,6 +202,94 @@ const groupAssociationsBySubject = () => {
 
     return groupedAssociations[subjectId].knowledges.some(
       knowledge => knowledge.id === knowledgeId
+    );
+  };
+
+  // Renderizar alerta global de porcentajes inválidos
+  const renderGlobalPercentageAlert = () => {
+    if (invalidSubjectsCount === 0) return null;
+    
+    return (
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800">
+              Atención: Porcentajes incorrectos
+            </h3>
+            <div className="mt-2 text-sm text-yellow-700">
+              <p>
+                {invalidSubjectsCount === 1 
+                  ? 'Hay 1 materia cuyos saberes no suman exactamente el 100% requerido.' 
+                  : `Hay ${invalidSubjectsCount} materias cuyos saberes no suman exactamente el 100% requerido.`}
+              </p>
+              <button 
+                onClick={expandInvalidSubjects}
+                className="mt-2 text-sm font-medium text-yellow-800 hover:text-yellow-900 underline"
+              >
+                Mostrar materias con porcentajes incorrectos
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Renderizar alerta de porcentajes para una materia
+  const renderPercentageAlert = (subjectId) => {
+    if (!subjectPercentages[subjectId] || groupedAssociations[subjectId].knowledges.length === 0) {
+      return null;
+    }
+
+    const { total, isValid } = subjectPercentages[subjectId];
+    
+    return (
+      <div className={isValid 
+        ? 'bg-green-50 border-l-4 border-green-400 p-3 rounded-md shadow-sm mb-3' 
+        : 'bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-md shadow-sm mb-3'
+      }>
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            {isValid ? (
+              <div className="h-4 w-4 text-green-400">✓</div>
+            ) : (
+              <AlertTriangle className="h-4 w-4 text-yellow-400" aria-hidden="true" />
+            )}
+          </div>
+          <div className="ml-3 flex-grow">
+            <p className="text-xs text-gray-700 mb-1">
+              <span className="font-medium">
+                {isValid ? 'Correcto:' : 'Advertencia:'}
+              </span> 
+              {isValid 
+                ? ` Los saberes suman exactamente 100%.`
+                : ` Los saberes suman ${total.toFixed(1)}% en lugar del 100% requerido.`}
+            </p>
+            
+            {/* Barra de progreso */}
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div 
+                className={
+                  isValid ? 'h-1.5 rounded-full bg-green-600' : 
+                  (total > 100 ? 'h-1.5 rounded-full bg-red-600' : 'h-1.5 rounded-full bg-yellow-400')
+                } 
+                style={{ width: `${Math.min(total, 100)}%` }}
+              ></div>
+            </div>
+            
+            {!isValid && (
+              <p className="text-xs text-gray-500 mt-1">
+                {total < 100 
+                  ? `Faltan ${(100 - total).toFixed(1)}% para completar el 100% requerido.` 
+                  : `El total excede en ${(total - 100).toFixed(1)}% el máximo permitido.`}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -471,29 +615,30 @@ const groupAssociationsBySubject = () => {
     }
   };
 
-// Filtrar materias por nombre
-const filterSubjectsByName = () => {
-  // Si no hay término de búsqueda, devolver todas las materias
-  if (!subjectSearchTerm.trim()) {
-    return Object.values(groupedAssociations);
-  }
-  
-  // Convertir el término de búsqueda a minúsculas para una comparación insensible a mayúsculas/minúsculas
-  const searchTermLower = subjectSearchTerm.toLowerCase();
-  
-  // Filtrar las materias que coinciden con el término de búsqueda
-  return Object.values(groupedAssociations).filter(group => 
-    group.subject.subjectName.toLowerCase().includes(searchTermLower)
-  );
-};
-
-
+  // Filtrar materias por nombre
+  const filterSubjectsByName = () => {
+    // Si no hay término de búsqueda, devolver todas las materias
+    if (!subjectSearchTerm.trim()) {
+      return Object.values(groupedAssociations);
+    }
+    
+    // Convertir el término de búsqueda a minúsculas para una comparación insensible a mayúsculas/minúsculas
+    const searchTermLower = subjectSearchTerm.toLowerCase();
+    
+    // Filtrar las materias que coinciden con el término de búsqueda
+    return Object.values(groupedAssociations).filter(group => 
+      group.subject.subjectName.toLowerCase().includes(searchTermLower)
+    );
+  };
 
   // Renderizado condicional basado en el modo de edición
   const renderContent = () => {
     if (editMode) {
       return (
         <DragDropContext onDragEnd={handleDragEnd}>
+          {/* Alerta global de porcentajes inválidos */}
+          {renderGlobalPercentageAlert()}
+          
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Panel lateral de saberes disponibles */}
             <div className={`lg:w-1/4 bg-white rounded-lg shadow p-4 ${showKnowledgePanel ? 'block' : 'hidden lg:block'}`}>
@@ -601,7 +746,6 @@ const filterSubjectsByName = () => {
                         />
                       </div>
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Saber
@@ -674,6 +818,12 @@ const filterSubjectsByName = () => {
                           <span className="ml-2 text-sm text-gray-500">
                             {group.knowledges.length} saberes asociados
                           </span>
+                          {/* Indicador de porcentaje inválido */}
+                          {group.knowledges.length > 0 && subjectPercentages[group.subject.id] && !subjectPercentages[group.subject.id].isValid && (
+                            <span className="ml-2 text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full">
+                              {subjectPercentages[group.subject.id].total.toFixed(1)}%
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2">
                           {editMode && (
@@ -710,6 +860,9 @@ const filterSubjectsByName = () => {
                               {...provided.droppableProps}
                               className="p-4 bg-gray-50"
                             >
+                              {/* Alerta de validación de porcentajes */}
+                              {renderPercentageAlert(group.subject.id)}
+                              
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {group.knowledges.map((knowledge, index) => (
                                   <Draggable
@@ -798,6 +951,9 @@ const filterSubjectsByName = () => {
       // Modo de visualización (sin arrastre)
       return (
         <div className="flex flex-col gap-4">
+          {/* Alerta global de porcentajes inválidos */}
+          {renderGlobalPercentageAlert()}
+          
           {/* Filtros para asociaciones */}
           {showFilters && (
             <div className="bg-white rounded-lg shadow p-4 mb-2">
@@ -886,6 +1042,12 @@ const filterSubjectsByName = () => {
                       <span className="ml-2 text-sm text-gray-500">
                         {group.knowledges.length} saberes asociados
                       </span>
+                      {/* Indicador de porcentaje inválido */}
+                      {group.knowledges.length > 0 && subjectPercentages[group.subject.id] && !subjectPercentages[group.subject.id].isValid && (
+                        <span className="ml-2 text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full">
+                          {subjectPercentages[group.subject.id].total.toFixed(1)}%
+                        </span>
+                      )}
                     </div>
                     <button
                       className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
@@ -901,6 +1063,9 @@ const filterSubjectsByName = () => {
                   {/* Contenido del acordeón */}
                   {expandedSubjects[group.subject.id] && (
                     <div className="p-4 bg-gray-50">
+                      {/* Alerta de validación de porcentajes */}
+                      {renderPercentageAlert(group.subject.id)}
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {group.knowledges.map((knowledge) => (
                           <div

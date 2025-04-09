@@ -6,6 +6,7 @@ import { PrivateRoutes, Roles } from "../../../../models";
 import { GradesStudent, HomeStudent, teacherDataService } from "../StudentLayout";
 import { ActivitiesGrading, ActivityModal, SubjectActivities} from "../../Activities";
 import { AsistanceGrid, DirectionGroupsGrid } from ".";
+import { SystemUsers } from "../../Admin/System";
 
 export default function TeacherLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
@@ -51,6 +52,7 @@ export default function TeacherLayout() {
         {hasStudentRole && (
           <Route path={PrivateRoutes.GRADES} element={<GradesStudent />} />
         )}
+        
       </Routes>
       <ActivityModal /> 
     </div>

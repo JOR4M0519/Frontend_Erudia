@@ -8,6 +8,8 @@ export { default as LevelsAcademyTab } from './tabs/LevelsAcademyTab';
 export { default as UserStatesTab } from './tabs/UserStatesTab';
 
 export { default as StudentsGroupsTab } from './tabs/StudentsGroupsTab';
+export { default as SubjectProfessorsTab } from './tabs/sections/SubjectProfessorsTab';
+//export { default as AcademicConfigurationTabs } from './tabs/sections/AcademicConfigurationTabs';
 export { default as LevelAccordion } from './tabs/sections/LevelAccordion';
 export { default as SubjectsModal } from './modals/SubjectsModal';
 
@@ -19,6 +21,7 @@ export { default as KnowledgesTab } from './tabs/sections/KnowledgesTab';
 export { default as KnowledgeModal } from './modals/KnowledgeModal';
 
 export { default as CreateGroupModal } from './modals/CreateGroupModal';
+export { default as EditGroupModal } from './modals/EditGroupModal';
 export { default as AssignSubjectModal } from './modals/AssignSubjectModal';
 export { default as AssignProfessorModal } from './modals/AssignProfessorModal';
 

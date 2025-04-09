@@ -1,108 +1,170 @@
 import React, { useState } from "react";
 import { 
   ChevronDown, ChevronUp, User, 
-  School, FileText, Plus, BookOpen
+  School, FileText, Plus, BookOpen, Trash2,
+  Hash, Type, Edit // Nuevos iconos
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Componente Acordeón para niveles educativos
-const LevelAccordion = ({ level, groups, selectedPeriod, onGroupClick, onCreateGroup, onAssignSubject }) => {
+const LevelAccordion = ({ 
+  level, 
+  groups, 
+  onCreateGroup,
+  onEditGroup, // Nueva prop para edición
+  onAssignSubject, 
+  onViewSubjects,
+  onDeleteGroup,
+  periodSelected
+}) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const toggleAccordion = () => {
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div className="border rounded-lg mb-4 overflow-hidden">
-      <div className="bg-gray-50 p-4 flex justify-between items-center">
-        <div 
-          className="flex items-center flex-grow cursor-pointer"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <School className="mr-2 text-amber-500" size={20} />
-          <h3 className="font-medium">{level.levelName}</h3>
-          <span className="ml-2 bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-            {groups.length} {groups.length === 1 ? 'grupo' : 'grupos'}
-          </span>
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      {/* Cabecera del acordeón */}
+      <div
+        className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+        onClick={toggleAccordion}
+      >
+        <div className="flex items-center">
+          <School className="text-blue-600 mr-2" size={20} />
+          <div>
+            <h3 className="font-medium">{level.levelName}</h3>
+            <p className="text-sm text-gray-500">
+              {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onCreateGroup(level)}
-            className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm px-3 py-1 rounded-md"
-            title="Crear nuevo grupo"
+        <div className="flex items-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateGroup();
+            }}
+            className="mr-4 text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 flex items-center"
           >
-            <Plus size={16} />
-            Nuevo Grupo
-          </motion.button>
-          <button 
-            className="text-gray-500"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <Plus size={16} className="mr-1" />
+            Crear Grupo
           </button>
+          {isOpen ? (
+            <ChevronUp className="text-gray-400" size={20} />
+          ) : (
+            <ChevronDown className="text-gray-400" size={20} />
+          )}
         </div>
       </div>
 
+      {/* Contenido del acordeón */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="p-2">
+            <div className="border-t border-gray-200">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Código
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Nombre
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Mentor
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Director de Grupo
                       </th>
-                      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Acciones
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {groups.map((group) => (
-                      <tr key={group.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {group.groupCode}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {group.groupName}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <User size={16} className="mr-1 text-amber-500" />
-                            {group.mentor.firstName} {group.mentor.lastName}
+                      <tr key={group.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 flex items-center">
+                            <Hash size={16} className="text-gray-400 mr-2" />
+                            {group.groupCode}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 flex items-center">
+                            <Type size={16} className="text-blue-500 mr-2" />
+                            {group.groupName}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <User size={16} className="text-amber-500 mr-2" />
+                            <div className="text-sm text-gray-900">
+                              {group.mentor ? (
+                                `${group.mentor.firstName} ${group.mentor.lastName}`
+                              ) : (
+                                <span className="text-gray-500 italic">
+                                  Sin asignar
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">
                             <button
-                              onClick={() => onAssignSubject(group)}
-                              className="text-amber-600 hover:text-amber-800 flex items-center gap-1"
-                              title="Asignar materia"
+                              onClick={() => onEditGroup(group)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Editar grupo"
                             >
-                              <BookOpen size={16} />
-                              <span className="hidden md:inline">Asignar Materia</span>
+                              <Edit size={18} />
                             </button>
                             <button
-                              onClick={() => onGroupClick(group)}
-                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                              title="Ver materias"
-                              disabled={!selectedPeriod}
+                              onClick={() => onAssignSubject(group)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                              title="Asignar materia"
                             >
-                              <FileText size={16} />
-                              <span className="hidden md:inline">Ver Materias</span>
+                              <FileText size={18} />
+                            </button>
+                            <button
+                              onClick={() => onViewSubjects(group)}
+                              className={`${
+                                periodSelected 
+                                  ? "text-blue-600 hover:text-blue-900" 
+                                  : "text-gray-400 cursor-not-allowed"
+                              }`}
+                              disabled={!periodSelected}
+                              title={
+                                periodSelected 
+                                  ? "Ver materias" 
+                                  : "Seleccionar periodo académico"
+                              }
+                            >
+                              <BookOpen size={18} />
+                            </button>
+                            <button
+                              onClick={() => onDeleteGroup(group.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Eliminar grupo"
+                            >
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>

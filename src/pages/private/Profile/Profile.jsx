@@ -44,7 +44,7 @@ function Profile() {
         const data = await studentDataService.getUserDetails(userId);
         if (data) {
           setUserInfo(data);
-          
+          console.log(data)
           // Extraer el tipo de ID de la cadena de identidad
           const identityParts = data.personalInfo.identity?.split('-') || [];
           const dniValue = identityParts[0]?.trim() || "";
@@ -270,7 +270,7 @@ function Profile() {
     if (isAdmin) return true;
     return commonEditableFields.includes(fieldName);
   };
-
+  console.log(userInfo)
   if (!userInfo) {
     return <p className="text-gray-500">Cargando perfil...</p>;
   }

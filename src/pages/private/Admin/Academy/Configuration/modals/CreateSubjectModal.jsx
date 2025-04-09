@@ -1,40 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { X, Check, BookOpen, AlertCircle } from "lucide-react";
+import { X, Check, BookOpen, AlertCircle, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { configurationService } from "../";
 
-const CreateSubjectModal = ({ isOpen, onClose, onSave }) => {
+const CreateSubjectModal = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  professors = [], 
+  withProfessorAssignment = false 
+}) => {
   const [subjectName, setSubjectName] = useState("");
-  const [dimensions, setDimensions] = useState([]);
-  const [selectedDimension, setSelectedDimension] = useState("");
+  const [selectedProfessor, setSelectedProfessor] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingDimensions, setLoadingDimensions] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Cargar las dimensiones al abrir el modal
   useEffect(() => {
-    const fetchDimensions = async () => {
-      if (isOpen) {
-        try {
-          setLoadingDimensions(true);
-          const dimensionsData = await configurationService.getDimensions();
-          setDimensions(dimensionsData);
-          
-          // Seleccionar la primera dimensión por defecto si existe
-          if (dimensionsData.length > 0) {
-            setSelectedDimension(dimensionsData[0].id.toString());
-          }
-          
-          setLoadingDimensions(false);
-        } catch (err) {
-          console.error("Error al cargar dimensiones:", err);
-          setError("No se pudieron cargar las dimensiones");
-          setLoadingDimensions(false);
-        }
-      }
-    };
-    
-    fetchDimensions();
+    if (isOpen) {
+      setSubjectName("");
+      setSelectedProfessor("");
+      setError("");
+    }
   }, [isOpen]);
 
   const handleSubmit = async (e) => {
@@ -44,36 +30,29 @@ const CreateSubjectModal = ({ isOpen, onClose, onSave }) => {
       setError("El nombre de la materia es obligatorio");
       return;
     }
-
-    if (!selectedDimension) {
-      setError("Debe seleccionar una dimensión");
-      return;
-    }
-
+    
     try {
       setLoading(true);
       
-      // 1. Crear la materia
-      const subjectData = {
-        subjectName: subjectName,
+      // Crear la materia
+      const newSubject = await configurationService.createSubject({
+        subjectName: subjectName.trim(),
         status: "A"
-      };
+      });
       
-      const newSubject = await onSave(subjectData);
-      console.log(newSubject)
-      // 2. Crear la relación Subject-Dimension
-      await configurationService.createSubjectDimension(
-        parseInt(selectedDimension),
-        newSubject.id
-      );
+      // Si se seleccionó un profesor, asignarlo a la materia
+      if (withProfessorAssignment && selectedProfessor) {
+        await configurationService.createSubjectProfessors({
+          subject: { id: newSubject.id },
+          professor: { id: parseInt(selectedProfessor) }
+        });
+      }
       
-      setLoading(false);
-      setSubjectName("");
-      setSelectedDimension("");
-      onClose();
-    } catch (err) {
-      console.error("Error al crear materia o asociarla a dimensión:", err);
-      setError("Error al crear la materia o asociarla a la dimensión");
+      onSave(newSubject);
+    } catch (error) {
+      console.error("Error al crear materia:", error);
+      setError("Ocurrió un error al crear la materia");
+    } finally {
       setLoading(false);
     }
   };
@@ -82,96 +61,93 @@ const CreateSubjectModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+        transition={{ duration: 0.2 }}
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
       >
-        <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center">
-            <BookOpen size={20} className="mr-2 text-amber-500" />
-            Crear Nueva Materia
-          </h2>
-          <button 
+        <div className="flex justify-between items-center border-b p-4">
+          <h2 className="text-xl font-semibold text-gray-800">Crear Nueva Materia</h2>
+          <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre de la Materia *
-            </label>
-            <input
-              type="text"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-              placeholder="Ej: Matemáticas Avanzadas"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dimensión *
-            </label>
-            {loadingDimensions ? (
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-amber-500"></div>
-                <span>Cargando dimensiones...</span>
-              </div>
-            ) : dimensions.length === 0 ? (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 flex items-center">
-                <AlertCircle size={16} className="mr-2" />
-                <span className="text-sm">No hay dimensiones disponibles</span>
-              </div>
-            ) : (
-              <select
-                value={selectedDimension}
-                onChange={(e) => setSelectedDimension(e.target.value)}
-                className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-                required
-              >
-                <option value="">Seleccione una dimensión</option>
-                {dimensions.map((dimension) => (
-                  <option key={dimension.id} value={dimension.id}>
-                    {dimension.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
+        <form onSubmit={handleSubmit} className="p-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
-              <AlertCircle size={16} className="mr-2" />
-              {error}
+            <div className="mb-4 bg-red-50 text-red-700 p-3 rounded-md flex items-start">
+              <AlertCircle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="mb-4">
+            <label htmlFor="subjectName" className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre de la Materia
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <BookOpen size={18} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="subjectName"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                placeholder="Ej. Matemáticas"
+                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {withProfessorAssignment && (
+            <div className="mb-4">
+              <label htmlFor="professor" className="block text-sm font-medium text-gray-700 mb-1">
+                Asignar Profesor (Opcional)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User size={18} className="text-gray-400" />
+                </div>
+                <select
+                  id="professor"
+                  value={selectedProfessor}
+                  onChange={(e) => setSelectedProfessor(e.target.value)}
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleccionar profesor (opcional)</option>
+                  {professors.map((professor) => (
+                    <option key={professor.id} value={professor.id}>
+                      {professor.firstName} {professor.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              disabled={loading}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 flex items-center"
-              disabled={loading || loadingDimensions || dimensions.length === 0}
+              disabled={loading}
+              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {loading ? (
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
+                <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
               ) : (
-                <Check size={18} className="mr-2" />
+                <Check size={18} className="mr-1" />
               )}
               Crear Materia
             </button>
@@ -183,3 +159,4 @@ const CreateSubjectModal = ({ isOpen, onClose, onSave }) => {
 };
 
 export default CreateSubjectModal;
+

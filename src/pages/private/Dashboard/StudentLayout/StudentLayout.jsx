@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { decodeRoles } from "../../../../utilities";
 import { AsistanceGrid, DirectionGroupsGrid } from "../TeacherLayout";
 import { PrivateRoutes, Roles } from "../../../../models";
+import { SystemUsers } from "../../Admin/System";
 
 export default function StudentLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
@@ -45,7 +46,9 @@ export default function StudentLayout() {
         
         {/* Rutas comunes o que requieren otros roles */}
         <Route path={PrivateRoutes.ASISTANCE} element={<AsistanceGrid />} />
+        
       </Routes>
+      
       <ActivityModal /> 
     </div>
   );

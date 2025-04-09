@@ -63,7 +63,7 @@ export default function SubjectGrid() {
     subjectActivityService.setSelectedSubject(subjectString);
     navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT);
   };
-
+console.log(subjects)
   return (
     <div>
       {/* Sección de Materias */}

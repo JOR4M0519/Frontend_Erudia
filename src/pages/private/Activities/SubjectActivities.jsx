@@ -60,11 +60,11 @@ export default function SubjectActivities() {
         } else {
           const grade = await studentDataService.getPeriodGrade(selectedSubject.id, selectedPeriod, userState.id);
           setPeriodGrade(grade);
-
+          console.log(selectedSubject.group?.id)
           const taskData = await studentDataService.getActivities(
             selectedSubject.id,
             selectedPeriod,
-            studentDataService.getStudentDataValue()?.group?.id,
+            selectedSubject.group?.id,
             userState.id
           );
           setTasks(Array.isArray(taskData) ? taskData : []);

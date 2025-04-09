@@ -9,6 +9,6 @@ export const SideBarRoles = {
     ACTIVITIES:     [Roles.ADMIN,Roles.STUDENT],
     STUDENTTRACKING:[Roles.ADMIN,Roles.TEACHER,Roles.STUDENT],
     ADMIN:          [Roles.ADMIN,],
-    SETTINGS:       [Roles.ADMIN,]
+    SETTINGS:       [Roles.ADMIN,Roles.TEACHER,Roles.STUDENT]
     //SEARCH:         [Roles.ADMIN,Roles.USER],
   };

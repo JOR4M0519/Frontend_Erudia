@@ -83,7 +83,7 @@ const Login = () => {
                     // Store user information in Redux
                     console.log("Auth response:", responseData);
                     const userInfo = encodeUserInfo(
-                        responseData.user.id,
+                        responseData.user.user.id,
                         responseData.accessToken,
                         responseData.refreshToken);
                     dispatch(createUser({...userInfo}));

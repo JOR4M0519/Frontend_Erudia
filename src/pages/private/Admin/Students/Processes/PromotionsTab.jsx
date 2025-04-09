@@ -242,7 +242,11 @@ const PromotionsTab = () => {
       };
       
       // Llamada al servicio para actualizar estados de promoción
-      await studentAdminService.promoteStudents(promotionData);
+      const result = await studentAdminService.promoteStudents(promotionData);
+      
+      if (!result.success) {
+        throw new Error(result.message || "Error en la promoción");
+      }
       
       Swal.fire({
         icon: 'success',
@@ -277,7 +281,7 @@ const PromotionsTab = () => {
       Swal.fire({
         icon: 'error',
         title: 'Error en la promoción',
-        text: 'No se pudieron promover los estudiantes. Por favor, intente nuevamente.',
+        text: error.message || 'No se pudieron promover los estudiantes. Por favor, intente nuevamente.',
         confirmButtonColor: '#F59E0B'
       });
     } finally {
@@ -338,7 +342,7 @@ const PromotionsTab = () => {
       setLoading(true);
       
       // Procesar cada grupo de destino por separado
-      const promotionPromises = Object.entries(promotionsByTarget).map(([targetId, studentIds]) => {
+      const promotionPromises = Object.entries(promotionsByTarget).map(async ([targetId, studentIds]) => {
         if (studentIds.length === 0) return Promise.resolve();
         
         const promotionData = {
@@ -347,7 +351,11 @@ const PromotionsTab = () => {
           promotionStatus: "A"  // Por defecto promover como Activo
         };
         
-        return studentAdminService.promoteStudents(promotionData);
+        const result = await studentAdminService.promoteStudents(promotionData);
+        if (!result.success) {
+          throw new Error(result.message || "Error en la promoción");
+        }
+        return result;
       });
       
       // Esperar a que todas las promociones se completen
@@ -386,7 +394,7 @@ const PromotionsTab = () => {
       Swal.fire({
         icon: 'error',
         title: 'Error en la promoción masiva',
-        text: 'No se pudieron promover los estudiantes. Por favor, intente nuevamente.',
+        text: error.message || 'No se pudieron promover los estudiantes. Por favor, intente nuevamente.',
         confirmButtonColor: '#F59E0B'
       });
     } finally {
