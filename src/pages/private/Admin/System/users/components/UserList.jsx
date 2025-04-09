@@ -1,6 +1,7 @@
 import React from "react";
 import { Users, Search, Filter, UserPlus, Eye } from "lucide-react";
 import { motion } from "framer-motion";
+import Swal from "sweetalert2"; // Importamos SweetAlert2
 
 const UserList = ({ 
   users,
@@ -27,6 +28,30 @@ const UserList = ({
         {role.role.roleName}
       </span>
     ));
+  };
+
+  // Verificar si un usuario tiene el rol de "estudiante"
+  const isStudent = (userData) => {
+    if (!userData.userDetail?.user?.roles || userData.userDetail.user.roles.length === 0) return false;
+    
+    return userData.userDetail.user.roles.some(role => 
+      role.role.roleName.toLowerCase() === 'estudiante'
+    );
+  };
+
+  // Manejar clic en el botón de detalles
+  const handleDetailsButtonClick = (userData, e) => {
+    if (isStudent(userData)) {
+      showUserDetails(userData, e);
+    } else {
+      // Mostrar SweetAlert con el mensaje indicado
+      Swal.fire({
+        title: 'Acción no permitida',
+        text: 'Solo se pueden agregar a los estudiantes un familiar',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6'
+      });
+    }
   };
 
   // Renderizar el estado de un usuario
@@ -175,8 +200,12 @@ const UserList = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={(e) => showUserDetails(userData, e)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        onClick={(e) => handleDetailsButtonClick(userData, e)}
+                        className={`mr-3 ${
+                          isStudent(userData)
+                            ? "text-blue-600 hover:text-blue-900"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
                       >
                         <Eye className="h-5 w-5" />
                       </button>
