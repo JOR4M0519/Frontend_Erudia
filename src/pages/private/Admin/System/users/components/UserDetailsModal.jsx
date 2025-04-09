@@ -1,6 +1,7 @@
 import React from "react";
 import { X, UserPlus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import Swal from "sweetalert2"; // Importamos SweetAlert2
 
 const UserDetailsModal = ({ 
   showModal, 
@@ -9,6 +10,33 @@ const UserDetailsModal = ({
   prepareRelationshipModal, 
   deleteRelation 
 }) => {
+  
+  // Verificar si un usuario tiene el rol de "estudiante"
+  const isStudent = (user) => {
+    if (!user?.userDetail?.user?.roles || user.userDetail.user.roles.length === 0) return false;
+    
+    return user.userDetail.user.roles.some(role => 
+      role.role.roleName.toLowerCase() === 'estudiante'
+    );
+  };
+
+  // Manejar clic en el botón "Añadir"
+  const handleAddRelationClick = (e) => {
+    e.stopPropagation();
+    closeModal();
+
+    if (isStudent(selectedUser)) {
+      prepareRelationshipModal(selectedUser);
+    } else {
+      // Mostrar SweetAlert con el mensaje indicado
+      Swal.fire({
+        title: 'Acción no permitida',
+        text: 'Solo se pueden agregar a los estudiantes un familiar',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6'
+      });
+    }
+  };
   
   // Renderizar el estado de un usuario
   const renderStatus = (status) => {
@@ -141,12 +169,12 @@ const UserDetailsModal = ({
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="font-semibold text-gray-800">Relaciones Familiares</h4>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeModal();
-                        prepareRelationshipModal(selectedUser);
-                      }}
-                      className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      onClick={handleAddRelationClick}
+                      className={`inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded ${
+                        isStudent(selectedUser) 
+                          ? "text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" 
+                          : "text-gray-500 bg-gray-100 cursor-not-allowed"
+                      }`}
                     >
                       <UserPlus className="h-4 w-4 mr-1" />
                       Añadir

@@ -39,10 +39,12 @@ const UserList = ({
     );
   };
 
-  // Manejar clic en el botón de detalles
-  const handleDetailsButtonClick = (userData, e) => {
+  // Manejar clic en el botón de añadir relación
+  const handleAddRelationshipClick = (userData, e) => {
+    e.stopPropagation();
+    
     if (isStudent(userData)) {
-      showUserDetails(userData, e);
+      prepareRelationshipModal(userData);
     } else {
       // Mostrar SweetAlert con el mensaje indicado
       Swal.fire({
@@ -200,21 +202,21 @@ const UserList = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={(e) => handleDetailsButtonClick(userData, e)}
-                        className={`mr-3 ${
-                          isStudent(userData)
-                            ? "text-blue-600 hover:text-blue-900"
-                            : "text-gray-400 cursor-not-allowed"
-                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showUserDetails(userData, e);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         <Eye className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          prepareRelationshipModal(userData);
-                        }}
-                        className="text-green-600 hover:text-green-900"
+                        onClick={(e) => handleAddRelationshipClick(userData, e)}
+                        className={`${
+                          isStudent(userData)
+                            ? "text-green-600 hover:text-green-900"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
                       >
                         <UserPlus className="h-5 w-5" />
                       </button>
