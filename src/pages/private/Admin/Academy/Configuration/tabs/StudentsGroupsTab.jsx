@@ -401,8 +401,12 @@ const handleViewSubjects = async (group) => {
     }
   };
 
-  const handleSubjectAssigned = async () => {
+  const handleSubjectAssigned = async (subjectGroupData) => {
+
+    
     try {
+      await configurationService.createSubjectGroups(subjectGroupData);
+
       setShowAssignSubjectModal(false);
       
       Swal.fire({
@@ -411,6 +415,11 @@ const handleViewSubjects = async (group) => {
         text: "La materia ha sido asignada exitosamente al grupo",
       });
     } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo asignar la materia al grupo.'
+      });
       console.error("Error al asignar materia:", error);
     }
   };
@@ -706,6 +715,7 @@ const handleViewSubjects = async (group) => {
           onClose={() => setShowAssignSubjectModal(false)}
           group={selectedGroup}
           onSave={handleSubjectAssigned}
+          selectedPeriodId={periodFilter}
         />
       )}
 

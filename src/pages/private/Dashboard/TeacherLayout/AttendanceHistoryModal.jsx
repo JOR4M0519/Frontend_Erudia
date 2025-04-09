@@ -358,7 +358,7 @@ const handleDeleteDate = async (date) => {
   if (!isOpen) return null;
 
   return (
-    <section className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <section className="fixed inset-0 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <article className="bg-white rounded-xl w-full max-w-6xl shadow-lg max-h-[90vh] flex flex-col">
         <header className="p-6 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold">Historial de Asistencia</h2>

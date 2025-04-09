@@ -38,7 +38,7 @@ export default function ObservationModal({ isOpen, observationData, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl w-full max-w-3xl shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
