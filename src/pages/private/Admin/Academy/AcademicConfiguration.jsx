@@ -28,7 +28,7 @@ const AcademicConfiguration = () => {
     // { id: "observaciones", label: "Observaciones" },
     // { id: "estados", label: "Estados de usuario" },
     { id: "knowledges", label: "Saberes" },
-    { id: "groups", label: "Grupos & Materias" },
+    { id: "groups", label: "Grupos/Materias" },
   ];
 
   return (

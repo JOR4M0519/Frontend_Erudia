@@ -606,7 +606,7 @@ const StudentsGroupsTab = () => {
               }`}
           >
             <Grid size={18} className="mr-1" />
-            Asignación Máteria/Grupo
+            Relación Materia/Grupo
           </button>
         </nav>
       </div>
