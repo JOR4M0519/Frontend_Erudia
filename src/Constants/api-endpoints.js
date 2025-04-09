@@ -124,10 +124,13 @@ const API_ENDPOINTS = {
                 `/achievements-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
 
                 GROUP:{
+                    GET_ALL: `/subjects-groups`,
                     GET_ALL_BY_PERIOD_AND_GROUP: (periodId,groupId) =>
                         `/subjects-groups/groups/${groupId}/periods/${periodId}`,
                     CREATE: `/subjects-groups`,
                     UPDATE_BY_ID: (subjectGroupId) =>
+                        `/subjects-groups/${subjectGroupId}`,
+                    DELETE_BY_ID: (subjectGroupId) =>
                         `/subjects-groups/${subjectGroupId}`,
                 },
 

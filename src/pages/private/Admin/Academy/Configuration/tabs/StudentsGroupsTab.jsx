@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { 
-  ChevronDown, ChevronUp, Search, Filter, Users, Book, User, Calendar, 
+import {
+  ChevronDown, ChevronUp, Search, Filter, Users, Book, User, Calendar,
   School, BookOpen, Check, X, Info, FileText, RefreshCw, Plus, UserPlus,
   Trash2, Edit, Eye, Grid, List
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
-import { configurationService,
+import {
+  configurationService,
   LevelAccordion,
   CreateGroupModal,
   AssignSubjectModal,
@@ -14,6 +15,7 @@ import { configurationService,
   AssignProfessorModal,
   SubjectsModal,
   SubjectProfessorsTab,
+  SubjectGroupsTab,
   EditGroupModal
 } from "../";
 const StudentsGroupsTab = () => {
@@ -24,7 +26,8 @@ const StudentsGroupsTab = () => {
   const [professors, setProfessors] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [subjectProfessors, setSubjectProfessors] = useState([]);
-  
+  const [subjectGroups, setSubjectGroups] = useState([]);
+
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
@@ -33,9 +36,9 @@ const StudentsGroupsTab = () => {
   const currentYear = new Date().getFullYear();
   const [yearFilter, setYearFilter] = useState(String(currentYear));
   const [availableYears, setAvailableYears] = useState(() => {
-    return [currentYear-2, currentYear-1, currentYear, currentYear+1, currentYear+2];
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
   });
-  
+
   // Estados para modales
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showCreateSubjectModal, setShowCreateSubjectModal] = useState(false);
@@ -48,10 +51,10 @@ const StudentsGroupsTab = () => {
 
   // Estado para carga inicial
   const [loading, setLoading] = useState(true);
-  
+
   // Estado para pestañas
-  const [activeTab, setActiveTab] = useState("groups"); // "groups" o "subjects"
-  
+  const [activeTab, setActiveTab] = useState("groups"); // "groups", "subjects" o "subjectGroups"
+
   // Estado para modo de edición
   const [editMode, setEditMode] = useState(false);
 
@@ -63,25 +66,23 @@ const StudentsGroupsTab = () => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        const [levelsData, groupsData, professorsData, subjectsData, subjectProfessorsData] = await Promise.all([
+        const [levelsData, groupsData, professorsData, subjectsData, subjectProfessorsData, subjectGroupsData] = await Promise.all([
           configurationService.getEducationalLevels(),
           configurationService.getAllGroups(),
           configurationService.getAdministrativeUsers(),
           configurationService.getSubjects(),
-          configurationService.getSubjectProfessors()
+          configurationService.getSubjectProfessors(),
+          configurationService.getSubjectGroups()
         ]);
-        
+
         setLevels(levelsData);
         setGroups(groupsData);
         setProfessors(professorsData);
         setSubjects(subjectsData);
         setSubjectProfessors(subjectProfessorsData);
-        
-        // // Generar años (últimos 5 años)
-        // const currentYear = new Date().getFullYear();
-        // const years = Array.from({length: 5}, (_, i) => currentYear - i);
-        // setAvailableYears(years);
-        
+        setSubjectGroups(subjectGroupsData);
+
+
         setLoading(false);
       } catch (error) {
         console.error("Error cargando datos iniciales:", error);
@@ -93,10 +94,10 @@ const StudentsGroupsTab = () => {
         setLoading(false);
       }
     };
-    
+
     loadInitialData();
   }, []);
-  
+
   // Cargar periodos cuando cambia el año seleccionado
   useEffect(() => {
     const loadPeriods = async () => {
@@ -105,7 +106,7 @@ const StudentsGroupsTab = () => {
         setPeriodFilter("");
         return;
       }
-      
+
       try {
         const periodsData = await configurationService.getPeriodsByYear(yearFilter);
         setPeriods(periodsData);
@@ -119,18 +120,45 @@ const StudentsGroupsTab = () => {
         });
       }
     };
-    
+
     loadPeriods();
   }, [yearFilter]);
 
   // Filtrar grupos según los filtros aplicados
   const filteredGroups = groups.filter((group) => {
-    const matchesSearch = group.groupName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         group.groupCode.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = group.groupName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      group.groupCode.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = levelFilter ? group.level.id === parseInt(levelFilter) : true;
-    
+
     return matchesSearch && matchesLevel;
   });
+
+  // Añadir este método si no existe ya
+  const refreshAllData = async () => {
+    try {
+      setLoading(true);
+      const [
+        updatedGroups,
+        updatedSubjects,
+        updatedSubjectProfessors,
+        updatedSubjectGroups
+      ] = await Promise.all([
+        configurationService.getAllGroups(),
+        configurationService.getSubjects(),
+        configurationService.getSubjectProfessors(),
+        configurationService.getSubjectGroups()
+      ]);
+
+      setGroups(updatedGroups);
+      setSubjects(updatedSubjects);
+      setSubjectProfessors(updatedSubjectProfessors);
+      setSubjectGroups(updatedSubjectGroups);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+      setLoading(false);
+    }
+  };
 
 
   const handleEditGroup = (group) => {
@@ -142,16 +170,16 @@ const StudentsGroupsTab = () => {
     try {
       // Actualizar el grupo en el backend
       let updatedGroup = await configurationService.updateGroups(groupId, groupData);
-      
+
       // Si el grupo tiene mentor pero la información está incompleta
       if (updatedGroup.mentor && (!updatedGroup.mentor.firstName || !updatedGroup.mentor.lastName)) {
         try {
           // Obtener todos los grupos para asegurar que tenemos datos completos
           const allGroups = await configurationService.getAllGroups();
-          
+
           // Encontrar el grupo recién actualizado con datos completos
           const completeGroup = allGroups.find(g => g.id === updatedGroup.id);
-          
+
           if (completeGroup) {
             updatedGroup = completeGroup;
           }
@@ -160,15 +188,15 @@ const StudentsGroupsTab = () => {
           // Continuamos con los datos que tenemos
         }
       }
-      
+
       // Actualizar el estado local reemplazando el grupo editado
-      setGroups(prevGroups => prevGroups.map(group => 
+      setGroups(prevGroups => prevGroups.map(group =>
         group.id === groupId ? updatedGroup : group
       ));
-      
+
       // Cerrar el modal
       setShowEditGroupModal(false);
-      
+
       // Mostrar notificación
       Swal.fire({
         icon: "success",
@@ -210,16 +238,16 @@ const StudentsGroupsTab = () => {
     try {
       // Crear el grupo en el backend
       let newGroup = await configurationService.createGroups(groupData);
-      
+
       // Si el grupo tiene mentor pero la información está incompleta
       if (newGroup.mentor && (!newGroup.mentor.firstName || !newGroup.mentor.lastName)) {
         try {
           // Obtener todos los grupos para asegurar que tenemos datos completos
           const allGroups = await configurationService.getAllGroups();
-          
+
           // Encontrar el grupo recién creado con datos completos
           const completeGroup = allGroups.find(g => g.id === newGroup.id);
-          
+
           if (completeGroup) {
             newGroup = completeGroup;
           }
@@ -228,36 +256,46 @@ const StudentsGroupsTab = () => {
           // Continuamos con los datos que tenemos
         }
       }
-      
+
       // Cerrar el modal (esto ocurre automáticamente por el onSave callback)
       setShowCreateGroupModal(false);
-      
+
       // Actualizar el estado local añadiendo el nuevo grupo con datos completos
       setGroups(prevGroups => [...prevGroups, newGroup]);
-      
+
       // Mostrar notificación con Swal
       Swal.fire({
         icon: "success",
         title: "Grupo creado",
         text: `El grupo ${newGroup.groupName} ha sido creado exitosamente`,
       });
-      
+
       return newGroup;
     } catch (error) {
       console.error("Error al crear el grupo:", error);
-      
+
       // Mostrar error con Swal
       Swal.fire({
         icon: "error",
         title: "Error",
         text: "No se pudo crear el grupo. Intente nuevamente."
       });
-      
+
       throw error;
     }
   };
 
-  
+  const handleSubjectGroupUpdated = async () => {
+    try {
+      // Recargar las asignaciones de materias a grupos
+      const updatedSubjectGroups = await configurationService.getSubjectGroups();
+      setSubjectGroups(updatedSubjectGroups);
+    } catch (error) {
+      console.error("Error al actualizar asignaciones de materias a grupos:", error);
+    }
+  };
+
+
   const handleAssignSubject = (group) => {
     if (!periodFilter) {
       Swal.fire({
@@ -265,7 +303,7 @@ const StudentsGroupsTab = () => {
         title: "Seleccione un periodo",
         text: "Debe seleccionar un periodo académico para asignar materias",
       });
-      
+
       // Scroll hacia el selector de periodo si está disponible
       if (periodSelectorRef.current) {
         periodSelectorRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -273,56 +311,56 @@ const StudentsGroupsTab = () => {
       }
       return;
     }
-    
+
     setSelectedGroup(group);
     setShowAssignSubjectModal(true);
   };
 
-// Modifica la función handleViewSubjects para guardar las materias junto con el grupo
-const handleViewSubjects = async (group) => {
-  if (!periodFilter) {
-    Swal.fire({
-      icon: "warning",
-      title: "Seleccione un periodo",
-      text: "Debe seleccionar un periodo académico para ver las materias",
-    });
-    
-    // Scroll hacia el selector de periodo si está disponible
-    if (periodSelectorRef.current) {
-      periodSelectorRef.current.scrollIntoView({ behavior: 'smooth' });
-      periodSelectorRef.current.focus();
+  // Modifica la función handleViewSubjects para guardar las materias junto con el grupo
+  const handleViewSubjects = async (group) => {
+    if (!periodFilter) {
+      Swal.fire({
+        icon: "warning",
+        title: "Seleccione un periodo",
+        text: "Debe seleccionar un periodo académico para ver las materias",
+      });
+
+      // Scroll hacia el selector de periodo si está disponible
+      if (periodSelectorRef.current) {
+        periodSelectorRef.current.scrollIntoView({ behavior: 'smooth' });
+        periodSelectorRef.current.focus();
+      }
+      return;
     }
-    return;
-  }
-  
-  try {
-    setLoading(true);
-    
-    // Cargar materias del grupo para el período seleccionado
-    const groupSubjectsData = await configurationService.getSubjectsByGroupAndLevel(
-      periodFilter,
-      group.level.id
-    );
-    
-    // Filtrar solo las materias de este grupo específico
-    const filteredGroupSubjects = groupSubjectsData.filter(
-      item => item.groups && item.groups.id === group.id
-    );
-    
-    // Guardar el grupo seleccionado con sus materias
-    setSelectedGroup({...group, subjectsData: filteredGroupSubjects});
-    setShowSubjectsModal(true);
-    setLoading(false);
-  } catch (error) {
-    console.error("Error al cargar materias del grupo:", error);
-    setLoading(false);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "No se pudieron cargar las materias del grupo",
-    });
-  }
-};
+
+    try {
+      setLoading(true);
+
+      // Cargar materias del grupo para el período seleccionado
+      const groupSubjectsData = await configurationService.getSubjectsByGroupAndLevel(
+        periodFilter,
+        group.level.id
+      );
+
+      // Filtrar solo las materias de este grupo específico
+      const filteredGroupSubjects = groupSubjectsData.filter(
+        item => item.groups && item.groups.id === group.id
+      );
+
+      // Guardar el grupo seleccionado con sus materias
+      setSelectedGroup({ ...group, subjectsData: filteredGroupSubjects });
+      setShowSubjectsModal(true);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al cargar materias del grupo:", error);
+      setLoading(false);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudieron cargar las materias del grupo",
+      });
+    }
+  };
 
   const handleDeleteGroup = async (groupId) => {
     try {
@@ -339,11 +377,11 @@ const handleViewSubjects = async (group) => {
 
       if (result.isConfirmed) {
         await configurationService.deleteGroups(groupId);
-        
+
         // Recargar grupos
         const updatedGroups = await configurationService.getAllGroups();
         setGroups(updatedGroups);
-        
+
         Swal.fire(
           '¡Eliminado!',
           'El grupo académico ha sido eliminado correctamente.',
@@ -364,10 +402,10 @@ const handleViewSubjects = async (group) => {
   const handleGroupCreated = async (newGroup) => {
     try {
       setShowCreateGroupModal(false);
-      
+
       // Agregar el nuevo grupo al estado directamente en lugar de recargar todos
       setGroups(prevGroups => [...prevGroups, newGroup]);
-      
+
       Swal.fire({
         icon: "success",
         title: "Grupo creado",
@@ -381,16 +419,16 @@ const handleViewSubjects = async (group) => {
   const handleSubjectCreated = async (newSubject) => {
     try {
       setShowCreateSubjectModal(false);
-      
+
       // Recargar materias y relaciones
       const [updatedSubjects, updatedSubjectProfessors] = await Promise.all([
         configurationService.getSubjects(),
         configurationService.getSubjectProfessors()
       ]);
-      
+
       setSubjects(updatedSubjects);
       setSubjectProfessors(updatedSubjectProfessors);
-      
+
       Swal.fire({
         icon: "success",
         title: "Materia creada",
@@ -403,12 +441,12 @@ const handleViewSubjects = async (group) => {
 
   const handleSubjectAssigned = async (subjectGroupData) => {
 
-    
+
     try {
       await configurationService.createSubjectGroups(subjectGroupData);
 
       setShowAssignSubjectModal(false);
-      
+
       Swal.fire({
         icon: "success",
         title: "Materia asignada",
@@ -427,16 +465,16 @@ const handleViewSubjects = async (group) => {
   const handleProfessorAssigned = async () => {
     try {
       setShowAssignProfessorModal(false);
-      
+
       // Recargar relaciones profesor-materia
       const [updatedSubjects, updatedSubjectProfessors] = await Promise.all([
         configurationService.getSubjects(),
         configurationService.getSubjectProfessors()
       ]);
-      
+
       setSubjects(updatedSubjects);
       setSubjectProfessors(updatedSubjectProfessors);
-      
+
       Swal.fire({
         icon: "success",
         title: "Profesor asignado",
@@ -454,19 +492,19 @@ const handleViewSubjects = async (group) => {
         configurationService.getSubjects(),
         configurationService.getSubjectProfessors()
       ]);
-      
+
       setSubjects(updatedSubjects);
       setSubjectProfessors(updatedSubjectProfessors);
     } catch (error) {
       console.error("Error al actualizar datos:", error);
     }
   };
-  
+
 
   const handleYearChange = (e) => {
     const selectedYear = e.target.value;
     setYearFilter(selectedYear);
-    
+
     // Si seleccionaron el último año disponible, añadir dos años más
     if (parseInt(selectedYear) === availableYears[availableYears.length - 1]) {
       const lastYear = availableYears[availableYears.length - 1];
@@ -478,22 +516,21 @@ const handleViewSubjects = async (group) => {
     <div className="p-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h1 className="text-2xl font-bold mb-4 md:mb-0">Gestión de Grupos y Materias</h1>
-        
+
         <div className="flex space-x-2">
-          {activeTab === "subjects" && (
+          {(activeTab === "subjects" || activeTab === "subjectGroups") && (
             <button
               onClick={() => setEditMode(!editMode)}
-              className={`px-4 py-2 rounded-md flex items-center ${
-                editMode 
-                  ? "bg-amber-100 text-amber-700" 
+              className={`px-4 py-2 rounded-md flex items-center ${editMode
+                  ? "bg-amber-100 text-amber-700"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               <Edit size={18} className="mr-1" />
               {editMode ? "Finalizar edición" : "Editar relaciones"}
             </button>
           )}
-          
+
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center"
@@ -501,7 +538,7 @@ const handleViewSubjects = async (group) => {
             <Filter size={18} className="mr-1" />
             {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
           </button>
-          
+
           {activeTab === "groups" && (
             <button
               onClick={() => setShowCreateSubjectModal(true)}
@@ -512,7 +549,7 @@ const handleViewSubjects = async (group) => {
               Crear Materia
             </button>
           )}
-          
+
           {activeTab === "subjects" && (
             <button
               onClick={() => setShowAssignProfessorModal(true)}
@@ -525,6 +562,7 @@ const handleViewSubjects = async (group) => {
         </div>
       </div>
 
+
       {/* Pestañas de navegación */}
       <div className="mb-6 border-b">
         <nav className="flex space-x-4">
@@ -533,35 +571,48 @@ const handleViewSubjects = async (group) => {
               setActiveTab("groups");
               setEditMode(false);
             }}
-            className={`py-2 px-4 flex items-center ${
-              activeTab === "groups"
-                ? "border-b-2 border-blue-500 text-blue-600 font-medium"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`py-2 px-4 flex items-center ${activeTab === "groups"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             <Users size={18} className="mr-1" />
             Grupos
           </button>
-          
+
           <button
             onClick={() => {
               setActiveTab("subjects");
               setEditMode(false);
             }}
-            className={`py-2 px-4 flex items-center ${
-              activeTab === "subjects"
-                ? "border-b-2 border-blue-500 text-blue-600 font-medium"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`py-2 px-4 flex items-center ${activeTab === "subjects"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             <BookOpen size={18} className="mr-1" />
             Materias y Profesores
           </button>
+
+          {/* Nueva pestaña */}
+          <button
+            onClick={() => {
+              setActiveTab("subjectGroups");
+              setEditMode(false);
+            }}
+            className={`py-2 px-4 flex items-center ${activeTab === "subjectGroups"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            <Grid size={18} className="mr-1" />
+            Asignación Máteria/Grupo
+          </button>
         </nav>
       </div>
-      
- {/* Selección de año y periodo académico (siempre visible) */}
- <div className="bg-white rounded-lg shadow p-4 mb-4">
+
+      {/* Selección de año y periodo académico (siempre visible) */}
+      <div className="bg-white rounded-lg shadow p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -659,16 +710,16 @@ const handleViewSubjects = async (group) => {
               {Object.values(groupedByLevel).length > 0 ? (
                 Object.values(groupedByLevel).map(({ level, groups }) => (
                   <LevelAccordion
-  key={level.id}
-  level={level}
-  groups={groups}
-  onCreateGroup={() => handleCreateGroup(level.id)}
-  onEditGroup={handleEditGroup} // Nuevo prop
-  onAssignSubject={handleAssignSubject}
-  onViewSubjects={handleViewSubjects}
-  onDeleteGroup={handleDeleteGroup}
-  periodSelected={!!periodFilter}
-/>
+                    key={level.id}
+                    level={level}
+                    groups={groups}
+                    onCreateGroup={() => handleCreateGroup(level.id)}
+                    onEditGroup={handleEditGroup} // Nuevo prop
+                    onAssignSubject={handleAssignSubject}
+                    onViewSubjects={handleViewSubjects}
+                    onDeleteGroup={handleDeleteGroup}
+                    periodSelected={!!periodFilter}
+                  />
                 ))
               ) : (
                 <div className="bg-white rounded-lg shadow p-8 text-center">
@@ -677,7 +728,7 @@ const handleViewSubjects = async (group) => {
               )}
             </div>
           </div>
-        ) : (
+        ) : activeTab === "subjects" ? (
           <SubjectProfessorsTab
             subjects={subjects}
             professors={professors}
@@ -685,6 +736,18 @@ const handleViewSubjects = async (group) => {
             showFilters={showFilters}
             editMode={editMode}
             onDataUpdated={handleDataUpdated}
+          />
+        ) : (
+          <SubjectGroupsTab
+            subjectGroups={subjectGroups}
+            allGroups={groups}
+            allSubjects={subjects}
+            allProfessors={professors}
+            periods={periods}
+            showFilters={showFilters}
+            editMode={editMode}
+            onSubjectGroupUpdated={handleSubjectGroupUpdated}
+            selectedPeriodId={periodFilter}
           />
         )}
       </div>
@@ -742,14 +805,14 @@ const handleViewSubjects = async (group) => {
       )}
 
       {/* Modales */}
-{showSubjectsModal && selectedGroup && (
-  <SubjectsModal
-    isOpen={showSubjectsModal}
-    onClose={() => setShowSubjectsModal(false)}
-    group={selectedGroup}
-    subjects={selectedGroup.subjectsData || []} // Usamos los datos cargados específicamente
-  />
-)}
+      {showSubjectsModal && selectedGroup && (
+        <SubjectsModal
+          isOpen={showSubjectsModal}
+          onClose={() => setShowSubjectsModal(false)}
+          group={selectedGroup}
+          subjects={selectedGroup.subjectsData || []} // Usamos los datos cargados específicamente
+        />
+      )}
     </div>
   );
 };

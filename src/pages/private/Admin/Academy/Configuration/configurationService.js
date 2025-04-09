@@ -652,6 +652,39 @@ export const configurationService = {
     }
   },
 
+
+  deleteSubjectGroups: async (subjectGroupsId) => {
+    try {
+      const response = await request("DELETE",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GROUP.DELETE_BY_ID(subjectGroupsId)
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al actualizar el saber", error);
+      throw error;
+    }
+  },
+
+  getSubjectGroups: async () => {
+    try {
+      const response = await request(
+        'GET',
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GROUP.GET_ALL
+      );
+
+      if (response.status !== 200) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener grupos activos:", error);
+      throw error;
+    }
+  },
+
   getAllSubjectGroupsByPeriodAndGroup: async (periodId, groupId) => {
     try {
       const response = await request(
