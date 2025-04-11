@@ -114,7 +114,7 @@ export default function Layout({ children }) {
         )}
 
         {/* Contenido principal */}
-        <main className={`flex-1 p-6 overflow-auto bg-gray-50 ${isMobile && sidebarOpen ? 'opacity-100' : 'opacity-100'}`}>
+        <main className="flex-1 p-6 overflow-auto bg-gray-50">
           {children}
         </main>
       </div>

@@ -459,9 +459,9 @@ getIdTypes: async () => {
 
       if (response.status === 200) {
         return response.data.map((student) => ({
-          id: student.relativeUser.id,
-          name: `${student.relativeUser.firstName} ${student.relativeUser.lastName}`,
-          username: student.relativeUser.username
+          id: student.user.id,
+          name: `${student.user.firstName} ${student.user.lastName}`,
+          username: student.user.username
         }));
       }
 
