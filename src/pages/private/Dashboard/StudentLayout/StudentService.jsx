@@ -733,6 +733,31 @@ export const teacherDataService = {
     }
   },
 
+  /**
+   *  Obtiene la lista de estudiantes en un grupo específico.
+   *  Mantiene `subjects` y solo actualiza `studentGroupList`.
+   */
+  fetchListUsersGroupDataBySubject: async (periodId,subjectId,groupId) => {
+    try {
+      //  NO se limpia `subjects`, solo obtenemos estudiantes
+      const responseGroupsTeacher = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.SUBJECTS.GROUPS.GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP(periodId,subjectId,groupId),
+        {}
+      );
+
+      if (responseGroupsTeacher.status === 200 && responseGroupsTeacher.data.length > 0) {
+        const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); //  Instancia base
+        studentGroupList.addStudents(responseGroupsTeacher.data); //  Agrega estudiantes
+
+        teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); //  Guarda en el estado
+      }
+    } catch (error) {
+      console.error("Error cargando lista de estudiantes:", error);
+    }
+  },
+
     /**
    *  Obtiene la lista de estudiantes en un grupo específico.
    *  Mantiene `subjects` y solo actualiza `studentGroupList`.

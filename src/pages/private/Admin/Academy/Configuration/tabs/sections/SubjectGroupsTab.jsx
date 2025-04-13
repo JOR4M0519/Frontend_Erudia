@@ -44,7 +44,36 @@ const SubjectGroupsTab = ({
   
   // Estado para materias-profesor disponibles (filtradas)
   const [availableSubjectProfessors, setAvailableSubjectProfessors] = useState([]);
+  // Agregar este estado al inicio del componente junto con los otros estados
+const [availableGroups, setAvailableGroups] = useState(allGroups || []);
+
+// Y luego agregar este useEffect
+useEffect(() => {
+  const loadActiveGroups = async () => {
+    try {
+      setLoading(true);
+      const activeGroupsData = await configurationService.getActiveGroups();
+      // Combinar con los grupos existentes sin duplicados
+      const allAvailableGroups = [...allGroups];
+      const existingGroupIds = new Set(allGroups.map(group => group.id));
+      
+      activeGroupsData.forEach(group => {
+        if (!existingGroupIds.has(group.id)) {
+          allAvailableGroups.push(group);
+        }
+      });
+      
+      setAvailableGroups(allAvailableGroups);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al cargar grupos activos:", error);
+      setLoading(false);
+    }
+  };
   
+  loadActiveGroups();
+}, [allGroups]);
+
   // Estado para todas las materias-profesor
   const [allSubjectProfessors, setAllSubjectProfessors] = useState([]);
   
@@ -77,6 +106,33 @@ const SubjectGroupsTab = ({
     
     loadSubjectProfessors();
   }, []);
+  
+// Y luego agregar este useEffect
+useEffect(() => {
+  const loadActiveGroups = async () => {
+    try {
+      setLoading(true);
+      const activeGroupsData = await configurationService.getActiveGroups();
+      // Combinar con los grupos existentes sin duplicados
+      const allAvailableGroups = [...allGroups];
+      const existingGroupIds = new Set(allGroups.map(group => group.id));
+      
+      activeGroupsData.forEach(group => {
+        if (!existingGroupIds.has(group.id)) {
+          allAvailableGroups.push(group);
+        }
+      });
+      
+      setAvailableGroups(allAvailableGroups);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al cargar grupos activos:", error);
+      setLoading(false);
+    }
+  };
+  
+  loadActiveGroups();
+}, [allGroups]);
   
   // Agrupar asignaciones cuando cambian los datos o filtros
   useEffect(() => {
@@ -121,32 +177,51 @@ const SubjectGroupsTab = ({
   };
 
   // Agrupar por grupos
-  const groupByGroups = (filteredAssignments) => {
-    const grouped = {};
+// Agrupar por grupos
+const groupByGroups = (filteredAssignments) => {
+  const grouped = {};
+  
+  // Primero, agregar todos los grupos disponibles
+  availableGroups.forEach(group => {
+    // Aplicar filtros si están establecidos
+    const matchesGroupFilter = groupFilter === "" || group.id.toString() === groupFilter;
+    const matchesStatusFilter = statusFilter === "" || group.status === statusFilter;
+    const matchesLevelFilter = levelFilter === "" || (group.level && group.level.id.toString() === levelFilter);
     
-    // Agrupar por grupo
-    filteredAssignments.forEach(item => {
-      const groupId = item.groups.id;
-      
-      if (!grouped[groupId]) {
-        grouped[groupId] = {
-          group: item.groups,
-          subjects: []
-        };
-      }
-      
-      grouped[groupId].subjects.push({
-        id: item.id,
-        subjectProfessor: item.subjectProfessor,
-        period: item.academicPeriod
-      });
+    // Solo incluir el grupo si cumple con los filtros
+    if (matchesGroupFilter && matchesStatusFilter && matchesLevelFilter) {
+      grouped[group.id] = {
+        group: group,
+        subjects: []
+      };
+    }
+  });
+  
+  // Luego, agregar las materias a los grupos correspondientes
+  filteredAssignments.forEach(item => {
+    const groupId = item.groups.id;
+    
+    if (!grouped[groupId]) {
+      // Si el grupo no estaba en la lista (por algún motivo), agregarlo
+      grouped[groupId] = {
+        group: item.groups,
+        subjects: []
+      };
+    }
+    
+    grouped[groupId].subjects.push({
+      id: item.id,
+      subjectProfessor: item.subjectProfessor,
+      period: item.academicPeriod
     });
-    
-    setGroupedAssignments(grouped);
-    
-    // No necesitamos unassignedSubjects cuando agrupamos por grupos
-    setUnassignedSubjects([]);
-  };
+  });
+  
+  setGroupedAssignments(grouped);
+  
+  // No necesitamos unassignedSubjects cuando agrupamos por grupos
+  setUnassignedSubjects([]);
+};
+
 
   // Agrupar por materias-profesor
   const groupBySubjects = (filteredAssignments) => {
@@ -331,7 +406,7 @@ const SubjectGroupsTab = ({
           title: 'Seleccionar grupo',
           input: 'select',
           inputOptions: Object.fromEntries(
-            allGroups.map(group => [
+            availableGroups.map(group => [
               group.id, 
               `${group.groupName} (${group.groupCode}) - ${group.level.levelName}`
             ])
@@ -627,7 +702,7 @@ const SubjectGroupsTab = ({
               showSubjectsPanel={showSubjectsPanel}
               setShowSubjectsPanel={setShowSubjectsPanel}
               resetFilters={resetFilters}
-              allGroups={allGroups}
+              allGroups={availableGroups}
               allProfessors={allProfessors}
               levels={levels}
               periods={periods}
@@ -691,7 +766,7 @@ const SubjectGroupsTab = ({
               <div className="mb-4">
                 <h3 className="font-medium mb-2">Seleccionar grupos destino</h3>
                 <div className="max-h-48 overflow-y-auto border rounded-md p-2">
-                  {allGroups.map(group => (
+                {availableGroups.map(group => (
                     <div key={group.id} className="flex items-center mb-1">
                       <input
                         type="checkbox"

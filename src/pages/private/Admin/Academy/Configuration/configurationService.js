@@ -587,6 +587,25 @@ export const configurationService = {
     }
   },
 
+    async getActiveGroups() {
+        try {
+            const response = await request(
+                'GET',
+                apiEndpoints.SERVICES.ACADEMY,
+                apiEndpoints.API_ENDPOINTS.GROUPS.ACTIVE_ALL
+            );
+    
+            if (response.status !== 200) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+    
+            return response.data;
+        } catch (error) {
+            console.error("Error al obtener grupos activos:", error);
+            throw error;
+        }
+    },
+
   createGroups: async (groupData) => {
     try {
       const response = await request("POST",

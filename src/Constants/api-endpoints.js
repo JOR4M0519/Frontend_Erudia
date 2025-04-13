@@ -71,7 +71,9 @@ const API_ENDPOINTS = {
         },
 
         GROUPS: {
-            GET_ALL_BY_PERIOD_AND_SUBJECT: (periodId,subjectId) => `/subjects-groups/periods/${periodId}/subjects/${subjectId}`
+            GET_ALL_BY_PERIOD_AND_SUBJECT: (periodId,subjectId) => `/subjects-groups/periods/${periodId}/subjects/${subjectId}`,
+            GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP: (periodId,subjectId,groupId) => 
+                `/subjects-groups/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`
         },
     },
     

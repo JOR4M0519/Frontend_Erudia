@@ -71,7 +71,7 @@ export default function SubjectGrid() {
     }
     
     const grouped = {};
-    
+    console.log(subjectsData)
     subjectsData.forEach(subject => {
       if (!subject) return;
       console.log(subject);

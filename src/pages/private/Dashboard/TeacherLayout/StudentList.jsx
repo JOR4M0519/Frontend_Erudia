@@ -45,7 +45,8 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
           await teacherDataService.fetchListUsersGroupDataByGroupId(selectedSubject.id);
         } else {
           // Para materias normales, usamos el método por periodo y materia
-          await teacherDataService.fetchListUsersGroupData(selectedPeriod, selectedSubject.id);
+          console.log(selectedSubject)
+          await teacherDataService.fetchListUsersGroupDataBySubject(selectedPeriod, selectedSubject.id,selectedSubject.group.id);
         }
         const updatedList = teacherDataService.getStudentGroupListValue();
         if (updatedList) {

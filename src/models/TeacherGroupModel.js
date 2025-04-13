@@ -5,8 +5,9 @@ export class TeacherGroupModel {
     
     // Lista de materias
     this.subjects = safeData.map(item => ({
-      id: item.subjectProfessor?.subject?.id || null,
+      id: item.subjectProfessor?.id || null,
       subjectName: item.subjectProfessor?.subject?.subjectName || "Sin nombre",
+      subjectId: item.subjectProfessor?.subject?.id || null,
       group: {
         id: item.groups?.id || null,
         level: item.groups?.level || null,
