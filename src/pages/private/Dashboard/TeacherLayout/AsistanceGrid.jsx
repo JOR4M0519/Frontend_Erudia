@@ -55,7 +55,7 @@ export default function AsistanceGrid() {
         const fetchStudents = async () => {
             try {
                 setIsLoading(true);
-                await teacherDataService.fetchListUsersGroupData(selectedPeriod, selectedSubject.id);
+                await teacherDataService.fetchListUsersGroupDataBySubject(selectedPeriod, selectedSubject.id,selectedSubject.group.id);
                 const updatedList = teacherDataService.getStudentGroupListValue();
 
                 if (updatedList?.students) {
@@ -115,7 +115,7 @@ export default function AsistanceGrid() {
           // Crear array de registros de asistencia
           const attendanceRecords = students.map(student => ({
             student: { id: student.id },
-            attendanceDate: selectedDate,
+            attendanceDate: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(),
             status: attendance[student.id] || 'P',
             recordedAt: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString() // Ajuste a hora Colombia
           }));
