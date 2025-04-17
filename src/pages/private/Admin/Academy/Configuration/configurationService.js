@@ -478,13 +478,26 @@ export const configurationService = {
     }
   },
 
+  getSubjectKnowledgeBySubjectAndGroup: async (subjectId,groupId) => {
+    try {
+      const response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GET_ALL_BY_SUBJECT_AND_GROUP(subjectId,groupId)
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener materias por grupo y nivel:", error);
+      throw error;
+    }
+  },
+
   getSubjectKnowledgeBySubject: async (subjectId) => {
     try {
       const response = await request(
         "GET",
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.EVALUATION.
-          KNOWLEDGES.SUBJECTS.GET_ALL_BY_SUBJECT(subjectId)
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GET_ALL_BY_SUBJECT(subjectId)
       );
       return response.data;
     } catch (error) {
@@ -729,8 +742,7 @@ export const configurationService = {
       const response = await request(
         'GET',
         apiEndpoints.SERVICES.ACADEMY,
-        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.
-          SUBJECTS.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId, subjectId, groupId)
+        apiEndpoints.API_ENDPOINTS.EVALUATION.KNOWLEDGES.SUBJECTS.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId, subjectId, groupId)
       );
 
       if (response.status !== 200) {

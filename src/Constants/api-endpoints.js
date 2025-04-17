@@ -79,6 +79,22 @@ const API_ENDPOINTS = {
     
 
     EVALUATION: {
+
+        REPORTS:{
+             // Endpoints para descarga forzada como PDF (attachment)
+             DOWNLOAD_GROUP_REPORT: (groupId, periodId) =>
+                `/reports/pdf/group/${groupId}/period/${periodId}`,
+            DOWNLOAD_STUDENT_REPORT: (studentId, groupId, periodId) =>
+                `/reports/pdf/group/${groupId}/student/${studentId}/period/${periodId}`,
+            
+            // Endpoints para visualización online (sin attachment)
+            VIEW_GROUP_REPORT_ONLINE: (groupId, periodId) =>
+                `/reports/group/${groupId}/period/${periodId}`,
+            VIEW_STUDENT_REPORT_ONLINE: (studentId, periodId) =>
+                `/reports/student/${studentId}/period/${periodId}`,
+        
+        },
+
         GRADE_DISTRIBUTION: (year,periodId,levelId,subjectId) =>
         `/subject-grade/report/distribution?year=${year}&periodId=${periodId}&levelId=${levelId}&subjectId=${subjectId}`,
         RECOVERY:{
@@ -112,7 +128,8 @@ const API_ENDPOINTS = {
                 UPDATE_BY_ID:  (id) => `/subject_knowledge/${id}`,
                 DELETE_BY_ID:  (id) => `/subject_knowledge/${id}`,
 
-                GET_ALL_BY_SUBJECT: (subjectId) => `/subject_knowledge/subjects/${subjectId}`,
+                GET_ALL_BY_SUBJECT: (subjectId) => `/subject_knowledge/subjects/${subjectId}`, //Eliminar, descontinuada
+                GET_ALL_BY_SUBJECT_AND_GROUP: (subjectId,groupId) => `/subject_knowledge/subjects/${subjectId}/groups/${groupId}`,
                 
                 CREATE_ACHIEVEMENT_GROUP: `/achievements-group`,
 
