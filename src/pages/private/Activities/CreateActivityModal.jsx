@@ -29,7 +29,7 @@ const CreateActivityModal = ({ isOpen, onClose, courseDataBefore, periodId, onSa
 
   const courseData = useMemo(() => ({
     subject: {
-      id: courseDataBefore?.id,
+      id: courseDataBefore?.subjectId,
       name: courseDataBefore?.subjectName,
     },
     group: {
