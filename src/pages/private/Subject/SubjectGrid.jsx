@@ -37,7 +37,7 @@ export default function SubjectGrid() {
           setLoading(false);
         })
       : studentDataService.getStudentData().subscribe(data => {
-          const subjectData = data?.subjects || [];
+          const subjectData = data?.subjects || []; 
           setSubjects(subjectData);
           processSubjects(subjectData);
           setLoading(false);

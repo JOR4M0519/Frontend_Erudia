@@ -91,13 +91,22 @@ const getActivityDetails = async(activityId,studentId) =>{
  */
 const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=false) => {
   try {
-    const response = await request(
-      "GET",
-      "academy",
-      `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
-      {}
-    );
-
+    let response;
+    if(!!isTeacher){
+      response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.ACTIVITIES.GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP(periodId,subjectId,groupId),
+        {}
+      );
+      }else{
+        response = await request(
+          "GET",
+          apiEndpoints.SERVICES.ACADEMY,
+          apiEndpoints.API_ENDPOINTS.ACTIVITIES.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId,subjectId,groupId),
+          {}
+        );
+      }
     if (response.status !== 200) return [];
     console.log(response);
     const activities = await Promise.all(
@@ -295,8 +304,12 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
    *Obtener las tareas de una materia en un periodo de un estudiante en particular
    * Corregir a Obtener las tareas de una materia en un periodo de un grupo de estudiantes
   */
-   getActivities: async (subjectId, periodId, groupId, studentId) => {
+  getActivities: async (subjectId, periodId, groupId, studentId) => {
     return fetchActivities(subjectId, periodId, groupId, studentId, false);
+  },
+
+  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
+    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
 
   /**
@@ -493,9 +506,7 @@ getIdTypes: async () => {
     }
   },
 
-  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
-    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
-  },
+
 
 /**
  * Obtiene información académica de un estudiante usando métodos existentes

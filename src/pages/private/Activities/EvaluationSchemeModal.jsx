@@ -69,7 +69,7 @@ export default function EvaluationSchemeModal({ isOpen, onClose, groupId }) {
     try {
       const result = await activityService.getEvaluationScheme(
         selectedPeriod, 
-        selectedSubject.subjectId, 
+        selectedSubject?.subjectId || selectedSubject?.id, 
         actualGroupId
       );
       

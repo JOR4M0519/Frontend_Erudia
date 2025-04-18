@@ -204,6 +204,12 @@ const API_ENDPOINTS = {
 
     ACTIVITIES:{
         GET_ALL: '/activities',
+        //To professor
+        GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP: (periodId,subjectId,groupId) =>
+        `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
+        //To student
+        GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP: (periodId,subjectId,groupId) =>
+            `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}/student`,
         UPDATE_ACHIEVEMENT_BY_ID: (activityId,knowledgeId) => `/activities/${activityId}/knowledges/${knowledgeId}`,
         
     },

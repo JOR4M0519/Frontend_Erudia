@@ -45,7 +45,7 @@ export default function SubjectActivities() {
 
   useEffect(() => {
     if (!selectedSubject?.id || !selectedPeriod || !userState?.id) return;
-
+    console.log(selectedSubject)
     const fetchData = async () => {
       try {
         if (isTeacher) {
