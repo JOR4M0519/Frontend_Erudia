@@ -76,7 +76,7 @@ const getActivityDetails = async(activityId,studentId) =>{
 
     return [];
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 }
@@ -148,7 +148,7 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
 
     return activities;
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 };
@@ -179,7 +179,7 @@ const getActivityScore = async(activityId,studentId) =>{
 
     return [];
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 }
@@ -301,12 +301,12 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
   },
 
   /**
-   *Obtener las tareas de una materia en un periodo de un estudiante en particular
-   * Corregir a Obtener las tareas de una materia en un periodo de un grupo de estudiantes
+   *Obtener las actividades de una materia en un periodo de un estudiante en particular
+   * Corregir a Obtener las actividades de una materia en un periodo de un grupo de estudiantes
   */
-  getActivities: async (subjectId, periodId, groupId, studentId) => {
-    return fetchActivities(subjectId, periodId, groupId, studentId, false);
-  },
+  // getActivities: async (subjectId, periodId, groupId, studentId) => {
+  //   return fetchActivities(subjectId, periodId, groupId, studentId, false);
+  // },
 
   getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
     return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
@@ -358,7 +358,7 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
 
       return activities;
     } catch (error) {
-      console.error("Error al obtener todas las tareas:", error);
+      console.error("Error al obtener todas las actividades:", error);
       return [];
     }
   },
@@ -488,13 +488,14 @@ getIdTypes: async () => {
   /**
     * Obtener los datos del estudiante seleccionado de sus materias y grupo asignado !!! Falta poner el año lectivo
   */
-  fetchStudentData: async (studentId) => {
+  fetchStudentData: async (studentId,periodId) => {
     try {
 
       studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
 
       // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
+      //const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
+      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/periods/${periodId}/students/${studentId}`);
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
         console.log(responseGroups)
@@ -513,7 +514,7 @@ getIdTypes: async () => {
  * @param {number} studentId - ID del estudiante
  * @returns {Promise<Object>} - Datos académicos del estudiante
  */
-getStudentAcademicProfile: async (studentId) => {
+getStudentAcademicProfile: async (studentId,periodId) => {
   try {
     // Utilizamos Promise.all para ejecutar todas las peticiones en paralelo
     const [
@@ -527,7 +528,7 @@ getStudentAcademicProfile: async (studentId) => {
     ]);
 
     // Intentamos obtener el grupo del estudiante
-    await studentDataService.fetchStudentData(studentId);
+    await studentDataService.fetchStudentData(studentId,periodId);
     const studentGroupData = studentDataService.getStudentDataValue();
 
     // Extraer el nombre completo y dividirlo en nombre y apellido

@@ -11,28 +11,28 @@ import { useSelector } from "react-redux";
 export default function HomeStudent() {
   const [isDirectorModalOpen, setIsDirectorModalOpen] = useState(false);
   const [isNovedadesOpen, setIsNovedadesOpen] = useState(false);
-  const [studentData, setStudentData] = useState(null); // 🔹 Estado para los datos del estudiante
+  const [studentData, setStudentData] = useState(null); //  Estado para los datos del estudiante
   
   const userState = useSelector(store => store.selectedUser);
   const storedRole = decodeRoles(userState?.roles) ?? [];
 
-  const isTeacher = hasAccess(storedRole,[Roles.TEACHER]); // 🔹 Variable para determinar si el usuario es profesor
+  const isTeacher = hasAccess(storedRole,[Roles.TEACHER]); //  Variable para determinar si el usuario es profesor
 
   useEffect(() => {
     const subscription = studentDataService.getStudentData().subscribe(setStudentData);
     
-    return () => subscription.unsubscribe(); // 🔹 Cancelar suscripción al desmontar
+    return () => subscription.unsubscribe(); //  Cancelar suscripción al desmontar
   }, []);
 
   return (
 <div className="grid grid-cols-12 gap-6 px-6 mt-4 h-full">
 
-{/* 🔹 SubjectGrid manejará todo el contenido principal */}
+{/*  SubjectGrid manejará todo el contenido principal */}
 <div className="col-span-9">
   <SubjectGrid />
 </div>
 
-{/* 🔹 Panel derecho con novedades y horario */}
+{/*  Panel derecho con novedades y horario */}
 <div className="col-span-3 flex flex-col items-end space-y-4">
   <button 
     onClick={() => setIsNovedadesOpen(true)} 
@@ -44,7 +44,7 @@ export default function HomeStudent() {
     <span className="font-medium text-gray-700">Novedades</span>
   </button>
 
-  {/* 🔹 Botones inferiores */}
+  {/*  Botones inferiores */}
   <div className="fixed bottom-6 right-6 flex space-x-4">
     <SchedulePreview />
 
@@ -58,7 +58,7 @@ export default function HomeStudent() {
   </div>
 </div>
 
-{/* 🔹 Modal Director de Grupo */}
+{/*  Modal Director de Grupo */}
 {isDirectorModalOpen && (
   <div className="fixed inset-0 flex items-center justify-center backdrop-blur-md bg-opacity-30">
     <div className="bg-white p-6 rounded-lg max-w-md shadow-lg w-full">
@@ -76,7 +76,7 @@ export default function HomeStudent() {
   </div>
 )}
 
-{/* 🔹 Modal Novedades */}
+{/*  Modal Novedades */}
 {isNovedadesOpen && (
   <div className="fixed inset-0 flex items-center justify-center backdrop-blur-md bg-opacity-30">
     <div className="bg-white p-6 rounded-lg max-w-md shadow-lg w-full">

@@ -1,21 +1,25 @@
 # Etapa 1: Construcción
 FROM node:18-alpine AS builder
 WORKDIR /app
-# Copia de archivos de dependencias y se instalan
+
+# Definir ARG para usarlo durante la construcción
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+# Copia de archivos de configuración
 COPY package*.json ./
+# Instalación de dependencias
 RUN npm install
-# Copia el resto de la aplicación
+# Copia del código fuente
 COPY . .
-# Ejecuta el build para generar la carpeta 'dist'
+# Construcción de la aplicación
 RUN npm run build
 
 # Etapa 2: Producción
-FROM nginx:stable-alpine
-# Copia los archivos construidos en la carpeta de Nginx
+FROM nginx:alpine
+# Copiar la configuración de nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar los archivos de la aplicación
 COPY --from=builder /app/dist /usr/share/nginx/html
-# Copia el archivo de configuración personalizado de Nginx
-COPY default.conf /etc/nginx/conf.d/default.conf
-# Expone el puerto 80 para el tráfico HTTP
-EXPOSE 80
-# Ejecuta Nginx en modo foreground
-CMD ["nginx", "-g", "daemon off;"]
+# Exponer puerto
+EXPOSE 5173

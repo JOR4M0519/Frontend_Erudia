@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { User, GraduationCap, BookOpen, Users, Calendar, UserCheck, BarChart2, Percent } from "lucide-react";
 import { studentDataService } from ".";
+import { configViewService } from "../../Setting";
 
 export default function StudentModal({ student, isOpen, onClose, onViewGrades }) {
   const [academicInfo, setAcademicInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+
+  
   useEffect(() => {
-    if (isOpen && student && student.id) {
+    const selectedPeriodSubscription = configViewService
+      .getSelectedPeriod()
+      .subscribe((period) => {
+        if (period) {
+          setSelectedPeriod(period);
+        }
+      });
+    return () => selectedPeriodSubscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && student && student.id && selectedPeriod) {
       setLoading(true);
-      studentDataService.getStudentAcademicProfile(student.id)
+      studentDataService.getStudentAcademicProfile(student.id, selectedPeriod)
         .then(data => {
           if (data) {
             setAcademicInfo(data);
@@ -18,7 +33,7 @@ export default function StudentModal({ student, isOpen, onClose, onViewGrades })
         .catch(err => console.error("Error cargando datos académicos:", err))
         .finally(() => setLoading(false));
     }
-  }, [isOpen, student]);
+  }, [isOpen, student, selectedPeriod]);
 
   if (!isOpen) return null;
 

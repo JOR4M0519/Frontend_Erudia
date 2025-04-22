@@ -4,7 +4,7 @@ export default function PeriodSelector({ selectedPeriod, setSelectedPeriod, peri
   return (
     <>
 
-      {/* 🔹 Selector de periodos */}
+      {/*  Selector de periodos */}
       <div className="relative flex-grow">
         <select
           value={selectedPeriod}
@@ -27,7 +27,7 @@ export default function PeriodSelector({ selectedPeriod, setSelectedPeriod, peri
           )}
         </select>
 
-        {/* 🔹 Icono de dropdown */}
+        {/*  Icono de dropdown */}
         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
       </div>
     </>

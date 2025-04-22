@@ -66,6 +66,19 @@ export default function ActivitiesGrading() {
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+          title: 'Cargando información...',
+          text: 'Obteniendo datos de estudiantes y calificaciones',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+          
+        });
+        
         const studentList = await teacherDataService.getActivitiesScoresForGroup(
           location.state.activity.id,
           location.state.subject.group.id
@@ -75,7 +88,7 @@ export default function ActivitiesGrading() {
         // Inicializar el estado de las calificaciones con las notas existentes
         const initialGrades = {};
         const initialComments = {};
-
+    
         studentList.forEach(student => {
           if (student.score !== undefined) {
             initialGrades[student.studentId] = student.score;
@@ -84,8 +97,17 @@ export default function ActivitiesGrading() {
         });
         setGrades(initialGrades);
         setComments(initialComments);
+        
+        // Cerrar el indicador de carga cuando termina
+        Swal.close();
       } catch (error) {
         console.error("Error cargando estudiantes:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los estudiantes y calificaciones',
+          timer: 2000
+        });
       } finally {
         setIsLoading(false);
       }
@@ -123,46 +145,62 @@ export default function ActivitiesGrading() {
   //  Función para guardar calificaciones
   const handleSaveGrades = async () => {
     try {
-        setIsLoading(true);
-
-        // Preparar los datos para enviar al servidor
-        const gradesData = students.map(student => ({
-            id: student.id, // Añadimos el ID si existe
-            studentId: student.studentId,
-            activity: {
-                id: activity.activityGroupId,
-                activity: {id: activity.id},
-                group: {id: activity.groupId},
-            },
-            score: grades[student.studentId] || null,
-            comment: comments[student.studentId] || ""
-        }));
-
-        console.log("Datos a guardar:", gradesData); // Para debugging
-
-        const response = await activityService.saveActivityScores(activity.activityGroupId, gradesData);
-
-        if (response.success) {
-            await Swal.fire({
-                title: '¡Éxito!',
-                text: 'Calificaciones guardadas correctamente',
-                icon: 'success'
-            });
-            navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT)
-        } else {
-            throw new Error(response.message);
-        }
-    } catch (error) {
-        console.error("Error al guardar calificaciones:", error);
+      setIsLoading(true);
+      
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Guardando calificaciones...',
+        text: 'Enviando datos al servidor',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        
+      });
+  
+      // Preparar los datos para enviar al servidor
+      const gradesData = students.map(student => ({
+        id: student.id, // Añadimos el ID si existe
+        studentId: student.studentId,
+        activity: {
+          id: activity.activityGroupId,
+          activity: {id: activity.id},
+          group: {id: activity.groupId},
+        },
+        score: grades[student.studentId] || null,
+        comment: comments[student.studentId] || ""
+      }));
+  
+      console.log("Datos a guardar:", gradesData); // Para debugging
+  
+      const response = await activityService.saveActivityScores(activity.activityGroupId, gradesData);
+  
+      // Cerrar el indicador de carga cuando termina
+      Swal.close();
+  
+      if (response.success) {
         await Swal.fire({
-            title: 'Error',
-            text: `Error al guardar las calificaciones: ${error.message}`,
-            icon: 'error'
+          title: '¡Éxito!',
+          text: 'Calificaciones guardadas correctamente',
+          icon: 'success'
         });
+        navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_SUBJECT);
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (error) {
+      console.error("Error al guardar calificaciones:", error);
+      await Swal.fire({
+        title: 'Error',
+        text: `Error al guardar las calificaciones: ${error.message || 'Error desconocido'}`,
+        icon: 'error'
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
+  
   // Función para alternar entre vista normal y compacta
   const toggleCompactView = () => {
     setIsCompact(!isCompact);
@@ -224,44 +262,71 @@ export default function ActivitiesGrading() {
   //  Función para guardar el logro
   const handleSaveLogro = async (data) => {
     try {
-        setIsLoading(true);
+      setIsLoading(true);
+      
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Guardando logro...',
+        text: 'Actualizando información',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
         
-       // Verificamos que tengamos todos los datos necesarios
-        if (!data || !data.id || !data.achievementGroupId) {
-          throw new Error("Faltan datos requeridos para actualizar el logro");
-        }
-
-        
-        // Llamada a la API para actualizar el logro
-        const response = await activityService.updateActivityAchievement(
-          data.id,
-          data.achievementGroupId,
-        );
-
-        if (response.success) {
-            // Actualizar el estado local con el nuevo logro
-            setActivity(prev => ({
-                ...prev,
-                achievementGroup: {
-                    ...prev.achievementGroup,
-                    subjectKnowledge: {
-                        id: data.subjectKnowledgeId
-                    }
-                }
-            }));
-
-            return true;
-        } else {
-            throw new Error(response.message);
-        }
+      });
+      
+      // Verificamos que tengamos todos los datos necesarios
+      if (!data || !data.id || !data.achievementGroupId) {
+        throw new Error("Faltan datos requeridos para actualizar el logro");
+      }
+  
+      // Llamada a la API para actualizar el logro
+      const response = await activityService.updateActivityAchievement(
+        data.id,
+        data.achievementGroupId,
+      );
+  
+      // Cerrar el indicador de carga cuando termina
+      Swal.close();
+  
+      if (response.success) {
+        // Actualizar el estado local con el nuevo logro
+        setActivity(prev => ({
+          ...prev,
+          achievementGroup: {
+            ...prev.achievementGroup,
+            subjectKnowledge: {
+              id: data.subjectKnowledgeId
+            }
+          }
+        }));
+  
+        // Mostrar mensaje de éxito
+        await Swal.fire({
+          title: '¡Éxito!',
+          text: 'Logro actualizado correctamente',
+          icon: 'success',
+          timer: 2000
+        });
+  
+        return true;
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error) {
-        console.error("Error al guardar el logro:", error);
-        throw error;
+      console.error("Error al guardar el logro:", error);
+      await Swal.fire({
+        title: 'Error',
+        text: `Error al actualizar el logro: ${error.message || 'Error desconocido'}`,
+        icon: 'error'
+      });
+      throw error;
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
-
+  };
+  
   // Nueva función para manejar la actualización de la actividad
   const handleActivityUpdate = async () => {
     try {
@@ -273,9 +338,21 @@ export default function ActivitiesGrading() {
         });
         return;
       }
-
+  
       setIsLoading(true);
-
+      
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Actualizando actividad...',
+        text: 'Guardando cambios',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        
+      });
+  
       const activityData = {
         id: editedActivity.id,
         name: editedActivity.name,
@@ -289,9 +366,12 @@ export default function ActivitiesGrading() {
         },
         group: subject.group
       };
-
+  
       const response = await activityService.updateActivity(activityData);
-
+  
+      // Cerrar el indicador de carga cuando termina
+      Swal.close();
+  
       if (response.success) {
         const updatedActivity = {
           ...response.data,
@@ -299,22 +379,22 @@ export default function ActivitiesGrading() {
           endDate: response.data.endDate,
           group: subject.group
         };
-
+  
         setActivity(updatedActivity);
         setEditedActivity({
           ...updatedActivity,
           startDate: updatedActivity.startDate ? parseISO(updatedActivity.startDate) : null,
           endDate: updatedActivity.endDate ? parseISO(updatedActivity.endDate) : null
         });
-
+  
         setIsEditing(false);
-
+  
         await Swal.fire({
           title: '¡Éxito!',
           text: 'Información de la actividad actualizada correctamente',
           icon: 'success'
         });
-
+  
         // Redirigir de vuelta a la lista de actividades para que se actualice
         if (location.state?.returnPath) {
           navigate(location.state.returnPath);
@@ -333,6 +413,7 @@ export default function ActivitiesGrading() {
       setIsLoading(false);
     }
   };
+  
 
   //  Botón de Esquema (si lo necesitas)
   const handleOpenScheme = () => {
@@ -352,11 +433,28 @@ export default function ActivitiesGrading() {
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       });
-
+  
       if (result.isConfirmed) {
         setIsLoading(true);
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+          title: 'Eliminando actividad...',
+          text: 'Procesando solicitud',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+          
+        });
+        
         const response = await activityService.deleteActivity(activity.id);
-        console.log(response)
+        console.log(response);
+        
+        // Cerrar el indicador de carga cuando termina
+        Swal.close();
+        
         if (response.success) {
           Swal.fire(
             '¡Eliminado!',
@@ -381,7 +479,7 @@ export default function ActivitiesGrading() {
       setIsLoading(false);
     }
   };
-
+  
 
 
   // Componente de edición con DatePicker
@@ -621,7 +719,7 @@ export default function ActivitiesGrading() {
       <div className="flex justify-end">
         <button
           onClick={handleSaveGrades}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700"
         >
           Guardar Calificaciones
         </button>

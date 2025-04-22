@@ -3,7 +3,7 @@ import { getCurrentDateInTimeZone } from "../../utilities";
 
 
 const initialState = {
-  selectedDate: getCurrentDateInTimeZone("America/Bogota").toISOString(), // 🔹 Guardamos como string ISO
+  selectedDate: getCurrentDateInTimeZone("America/Bogota").toISOString(), //  Guardamos como string ISO
 };
 
 const dateSlice = createSlice({
@@ -11,7 +11,7 @@ const dateSlice = createSlice({
   initialState,
   reducers: {
     setDate: (state, action) => {
-      state.selectedDate = new Date(action.payload).toISOString(); // 🔹 Guardamos como string ISO
+      state.selectedDate = new Date(action.payload).toISOString(); //  Guardamos como string ISO
     },
   },
 });

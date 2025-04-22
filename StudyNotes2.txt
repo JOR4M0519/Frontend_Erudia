@@ -21,3 +21,22 @@ https://lucide.dev/icons/
 docker build -t erudia_front .
 
 docker run -p 80:5173 erudia_front
+
+docker run --name erudia-frontend -p 80:85173 erudia_front
+--------------------
+docker build -t jpramos19/erudia-config:latest ./config-service
+docker build -t jpramos19/erudia-eureka:latest ./eureka-service
+docker build -t jpramos19/erudia-gateway:latest ./gateway-service
+docker build -t jpramos19/erudia-academy:latest ./academy-service
+
+docker push jpramos19/erudia-config:latest
+docker push jpramos19/erudia-eureka:latest
+docker push jpramos19/erudia-gateway:latest
+docker push jpramos19/erudia-academy:latest
+docker push jpramos19/erudia-frontend:latest
+
+docker pull jpramos19/erudia-academy:latest
+
+docker build -t jpramos19/erudia-frontend:latest .
+docker build --build-arg VITE_API_BASE_URL=/api -t jpramos19/erudia-frontend:latest .
+----------------

@@ -6,6 +6,7 @@ import { BackButton } from "../../../components";
 import { useNavigate } from "react-router-dom";
 import { StudentList } from "../Dashboard/TeacherLayout";
 import { CheckSquare } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function ActivityGradingView() {
   const [tasks, setTasks] = useState([]);
@@ -25,8 +26,20 @@ export default function ActivityGradingView() {
 
   useEffect(() => {
     if (!selectedSubject?.id || !userState?.id) return;
-
+  
     const fetchActivities = async () => {
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Cargando actividades...',
+        text: 'Obteniendo información para calificación',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        backdrop: 'rgba(0,0,123,0.4)'
+      });
+      
       try {
         const taskData = await teacherDataService.getActivities(
           selectedSubject.id,
@@ -36,13 +49,39 @@ export default function ActivityGradingView() {
           true
         );
         setTasks(Array.isArray(taskData) ? taskData : []);
+        
+        // Cerrar el indicador cuando termina
+        Swal.close();
       } catch (error) {
         console.error("Error obteniendo datos:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las actividades para calificación',
+          timer: 2000
+        });
       }
     };
-
+  
     fetchActivities();
   }, [selectedSubject?.id, userState?.id]);
+
+// Añadir SweetAlert cuando se navega a la calificación de una actividad:
+const handleNavigateToGrading = (task) => {
+  Swal.fire({
+    title: 'Preparando evaluación...',
+    text: 'Cargando herramientas de calificación',
+    timer: 1000,
+    timerProgressBar: true,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+    allowOutsideClick: false,
+    showConfirmButton: false
+  });
+  
+  navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITY_GRADING_DETAIL, { state: { task } });
+};
 
   return (
     <div className="space-y-6">
@@ -57,7 +96,7 @@ export default function ActivityGradingView() {
 
       <div className="bg-gray-100 rounded-lg overflow-hidden">
         <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
-          <div className="col-span-4">Tarea</div>
+          <div className="col-span-4">Actividad</div>
           <div className="col-span-4">Descripción</div>
           <div className="col-span-2 text-center">Entrega</div>
           <div className="col-span-2 text-center">Acción</div>
@@ -68,7 +107,7 @@ export default function ActivityGradingView() {
             tasks.map((task) => (
               <div key={task.id} className="bg-white">
                 <div
-                  onClick={() => navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITY_GRADING_DETAIL, { state: { task } })}
+                  onClick={() => handleNavigateToGrading(task)}
                   className="grid grid-cols-12 gap-4 p-3 hover:bg-gray-200 transition-colors items-center cursor-pointer"
                 >
                   <div className="col-span-4 font-medium text-gray-700">{task.name}</div>

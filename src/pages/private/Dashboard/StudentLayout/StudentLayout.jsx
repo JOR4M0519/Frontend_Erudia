@@ -2,21 +2,59 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { GradesStudent, HomeStudent, studentDataService, teacherDataService } from "./index";
 import { ActivityModal, SubjectActivities} from "../../Activities";
 import { useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { decodeRoles } from "../../../../utilities";
 import { AsistanceGrid, DirectionGroupsGrid } from "../TeacherLayout";
 import { PrivateRoutes, Roles } from "../../../../models";
 import { SystemUsers } from "../../Admin/System";
+import { configViewService } from "../../Setting";
+import Swal from 'sweetalert2'; // Importar SweetAlert2
 
 export default function StudentLayout() {
   const userState = useSelector(store => store.selectedUser); // Obtener el usuario del store
   const storedRoles = decodeRoles(userState?.roles) || [];
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!userState?.id) return; // No ejecuta si no hay usuario
-    studentDataService.fetchStudentData(userState.id);
-  }, [userState?.id]);
- 
+    const selectedPeriodSubscription = configViewService
+      .getSelectedPeriod()
+      .subscribe(setSelectedPeriod);
+    return () => selectedPeriodSubscription.unsubscribe();
+  }, [userState?.id, selectedPeriod]);
+
+  useEffect(() => {
+    if (!userState?.id || !selectedPeriod) return; // No ejecuta si no hay usuario o periodo
+    
+    // Mostrar el indicador de carga
+    setIsLoading(true);
+    Swal.fire({
+      title: 'Cargando datos...',
+      text: 'Obteniendo información del estudiante',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    
+    // Llamar al servicio
+    studentDataService.fetchStudentData(userState.id, selectedPeriod)
+      .then(() => {
+        // Cerrar el modal cuando termina
+        setIsLoading(false);
+        Swal.close();
+      })
+      .catch(error => {
+        setIsLoading(false);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los datos del estudiante',
+          timer: 2000
+        });
+      });
+  }, [userState?.id, selectedPeriod]);
   // Divide la URL en segmentos y elimina los vacíos
   const pathSegments = window.location.pathname.split("/").filter(Boolean); // Filtra vacíos
   

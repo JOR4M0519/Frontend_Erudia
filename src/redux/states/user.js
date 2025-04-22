@@ -42,7 +42,7 @@ export const userSlice = createSlice({
     resetUser: () => {
       sessionStorage.clear()
       clearStorage(UserKey);
-      clearStorage(SelectedUserKey); // 🔹 También limpiamos el usuario seleccionado
+      clearStorage(SelectedUserKey); //  También limpiamos el usuario seleccionado
       return EmptyUserState;
     }
   }

@@ -24,7 +24,7 @@ export default function AsistanceGrid() {
     const [selectedDate, setSelectedDate] = useState(selectedDateRedux);
     const [selectedPeriod, setSelectedPeriod] = useState(null);
 
-    // 🔹 Suscribirse a la materia seleccionada y al período
+    //  Suscribirse a la materia seleccionada y al período
     useEffect(() => {
         const subjectSubscription = subjectActivityService.getSelectedSubject().subscribe((subjectString) => {
             if (subjectString) {
@@ -43,7 +43,7 @@ export default function AsistanceGrid() {
         };
     }, []);
 
-    // 🔹 Obtener la lista de estudiantes al cargar el componente
+    //  Obtener la lista de estudiantes al cargar el componente
     // En el useEffect donde se cargan los estudiantes
     // Modificar el useEffect de carga de estudiantes
     useEffect(() => {

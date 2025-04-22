@@ -230,7 +230,7 @@ const handleSubmit = async (e) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tarea</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Actividad</label>
               <input
                 type="text"
                 name="name"

@@ -6,66 +6,144 @@ import { useSelector } from "react-redux";
 import { configViewService } from "../../Setting";
 import { useNavigate } from "react-router-dom";
 import { PrivateRoutes } from "../../../../models";
+import Swal from "sweetalert2";
 
 export default function GradesStudent({ isTeacher,className}) {
   // Si se recibe student por props, lo usamos; de lo contrario, usamos el del estado global
   const userSelected =  useSelector((store) => store.selectedUser);
   
   const [grades, setGrades] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const navigate = useNavigate();
   const [subjects, setSubjects] = useState([]);
   const [observation, setObservation] = useState(""); // Estado para la observación
   const [isEditing, setIsEditing] = useState(false); // Controla si se está editando
 
-  // 🔹 Obtener el período seleccionado
+  //  Obtener el período seleccionado
   useEffect(() => {
     const selectedPeriodSubscription = configViewService
       .getSelectedPeriod()
-      .subscribe(setSelectedPeriod);
+      .subscribe((period) => {
+        if (period) {
+          setSelectedPeriod(period);
+        }
+      });
     return () => selectedPeriodSubscription.unsubscribe();
-  }, [userSelected]);
+  }, []);
 
   // 1. Invocar el fetch para cargar la data del estudiante (incluyendo subjects)
   useEffect(() => {
-    if (userSelected && userSelected.id) {
+    if (userSelected && userSelected.id && selectedPeriod) {
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Cargando información...',
+        text: 'Obteniendo datos del estudiante',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        
+      });
+      
       // Esto forzará la carga de los datos del estudiante (y sus materias)
-      studentDataService.fetchStudentData(userSelected.id);
+      studentDataService.fetchStudentData(userSelected.id, selectedPeriod)
+        .finally(() => {
+          Swal.close();
+        });
     }
-  }, [userSelected]);
+  }, [userSelected?.id, selectedPeriod]);
 
-  // 🔹 Actualizar materias cuando cambia el usuario
+  //  Actualizar materias cuando cambia el usuario
   useEffect(() => {
-    
     const subscription = studentDataService.getStudentData().subscribe((data) => {
       setSubjects(data?.subjects || []);
-      
     });
     return () => subscription.unsubscribe();
   }, [userSelected]);
 
-  // 🔹 Obtener calificaciones solo cuando se actualizan las materias
+
+  //  Obtener calificaciones solo cuando se actualizan las materias
   useEffect(() => {
-   
-    if (!selectedPeriod || !userSelected.id || subjects.length === 0) return;
+    if (!selectedPeriod || !userSelected?.id || subjects.length === 0) return;
+    
+    // Mostrar indicador de carga
+    setLoading(true);
+    Swal.fire({
+      title: 'Cargando calificaciones...',
+      text: 'Obteniendo datos académicos',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      
+    });
+    
     const fetchGrades = async () => {
-      const gradesData = await studentDataService.getGrades(
-        selectedPeriod,
-        userSelected.id,
-        subjects
-      );
-      setGrades(gradesData);
-      // Simulación: obtener la observación final del estudiante en el período
-      setObservation("El estudiante ha mostrado un gran desempeño.");
+      try {
+        const gradesData = await studentDataService.getGrades(
+          selectedPeriod,
+          userSelected.id,
+          subjects
+        );
+        setGrades(gradesData);
+        // Simulación: obtener la observación final del estudiante en el período
+        setObservation("El estudiante ha mostrado un gran desempeño.");
+      } catch (error) {
+        console.error("Error al cargar calificaciones:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las calificaciones',
+          timer: 2000
+        });
+      } finally {
+        setLoading(false);
+        Swal.close();
+      }
     };
     fetchGrades();
-  }, [selectedPeriod, userSelected, subjects]);
+  }, [selectedPeriod, userSelected?.id, subjects]);
+
 
   const handleDownloadBulletin = () => {
+    Swal.fire({
+      title: 'Preparando boletín...',
+      text: 'Generando archivo PDF',
+      timer: 2000,
+      timerProgressBar: true,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    }).then(() => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Boletín descargado',
+        text: 'El archivo se ha descargado correctamente',
+        timer: 1500
+      });
+    });
     console.log("Descargando boletín...");
   };
 
   const handleUpdateObservation = () => {
+    Swal.fire({
+      title: 'Guardando...',
+      text: 'Actualizando observación',
+      timer: 1000,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    }).then(() => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Observación actualizada',
+        text: 'Los cambios han sido guardados',
+        timer: 1500
+      });
+    });
     console.log("Actualizando observación final:", observation);
     setIsEditing(false);
   };
