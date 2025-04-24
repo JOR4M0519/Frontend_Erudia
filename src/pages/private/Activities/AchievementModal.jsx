@@ -35,7 +35,7 @@ export default function AchievementModal({ isOpen, onClose, activity = {}, onSav
                 if (!activity?.subject?.id || !selectedPeriod) return;
     
                 try { 
-                    const response = await activityService.getEvaluationScheme(selectedPeriod, activity.subject.id, activity.groupId);
+                    const response = await activityService.getEvaluationScheme(selectedPeriod, activity.subject.subjectId, activity.groupId);
                     
                     // Verificar si la respuesta tiene la estructura esperada
                     if (response.success && Array.isArray(response.data)) {

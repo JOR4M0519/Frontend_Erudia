@@ -349,9 +349,9 @@ const FamilyReport = () => {
                                                             {family.activeChildrenCount}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <button className="text-primary hover:text-primary-dark">Ver detalles</button>
-                                                    </td>
+                                                    </td> */}
                                                 </tr>
                                             ))
                                         ) : (

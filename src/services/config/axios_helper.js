@@ -275,8 +275,13 @@ const redirectToLogin = () => {
 
 /**
  * Realiza una petición HTTP al backend utilizando Axios.
+ * @param {string} method - Método HTTP (GET, POST, PUT, DELETE)
+ * @param {string} serviceType - Tipo de servicio (por defecto "academy")
+ * @param {string} url - URL o endpoint a llamar
+ * @param {object} data - Datos a enviar en la petición
+ * @param {object} axiosOptions - Opciones adicionales para la instancia de Axios
  */
-export const request = (method, serviceType = "academy", url, data = {}) => {
+export const request = (method, serviceType = "academy", url, data = {}, axiosOptions = {}) => {
   let withCredentials = false;
   let headers = {};
 
@@ -305,5 +310,6 @@ export const request = (method, serviceType = "academy", url, data = {}) => {
     headers: headers,
     data: data,
     withCredentials: withCredentials,
+    ...axiosOptions  
   });
 };

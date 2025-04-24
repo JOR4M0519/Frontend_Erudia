@@ -19,18 +19,18 @@ export default function BackButton({ onClick, confirmExit = false, className}) {
         type: "warning",
       });
 
-      if (!isConfirmed) return; // 🔹 Si el usuario cancela, no ejecuta `onClick`
+      if (!isConfirmed) return; //  Si el usuario cancela, no ejecuta `onClick`
     }
 
-    if (onClick) onClick(); // 🔹 Ejecuta la acción original si no hay confirmación o si el usuario acepta
+    if (onClick) onClick(); //  Ejecuta la acción original si no hay confirmación o si el usuario acepta
   };
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05 }} // 🔹 Animación al pasar el mouse
-      whileTap={{ scale: 0.95 }} // 🔹 Efecto al hacer clic
+      whileHover={{ scale: 1.05 }} //  Animación al pasar el mouse
+      whileTap={{ scale: 0.95 }} //  Efecto al hacer clic
       className="flex cursor-pointer items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-white px-5 py-2.5 rounded-lg shadow-md transition duration-200"
-      onClick={handleBackClick} // 🔹 Llama a la nueva función con confirmación opcional
+      onClick={handleBackClick} //  Llama a la nueva función con confirmación opcional
     >
       <Undo2 className="w-5 h-5" />
       <span>Regresar</span>

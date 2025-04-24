@@ -477,6 +477,7 @@ const startCreationMode = async () => {
           subjectId,
           newGroupId
         );
+        console.log(existingAchievementsData)
         setExistingAchievements(existingAchievementsData);
         
         // Obtener saberes asociados a esta materia
@@ -509,7 +510,7 @@ const startCreationMode = async () => {
   const generateMissingAchievements = async () => {
     try {
       setLoading(true);
-      
+      console.log(subjectKnowledges)
       // Identificar saberes sin logros
       const missingKnowledges = subjectKnowledges.filter(
         sk => !isKnowledgeWithAchievement(sk.idKnowledge.id)
@@ -980,7 +981,7 @@ const startCreationMode = async () => {
                   onChange={handleNewSubjectChange}
                   className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Seleccione una materia</option>
+                  <option value="a">Seleccione una materia</option>
                   {availableSubjects.map(subject => (
                     <option key={subject.id} value={subject.id}>
                       {subject.subjectProfessor.subject.subjectName} - Prof. {subject.subjectProfessor.professor.firstName} {subject.subjectProfessor.professor.lastName}

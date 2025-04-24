@@ -45,7 +45,8 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
           await teacherDataService.fetchListUsersGroupDataByGroupId(selectedSubject.id);
         } else {
           // Para materias normales, usamos el método por periodo y materia
-          await teacherDataService.fetchListUsersGroupData(selectedPeriod, selectedSubject.id);
+          console.log(selectedSubject)
+          await teacherDataService.fetchListUsersGroupDataBySubject(selectedPeriod, selectedSubject.id,selectedSubject.group.id);
         }
         const updatedList = teacherDataService.getStudentGroupListValue();
         if (updatedList) {
@@ -122,7 +123,7 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
     }
   };
 
-  // 🔹 Verificar si no hay estudiantes cargados
+  //  Verificar si no hay estudiantes cargados
   if (!studentList.students || studentList.students.length === 0) {
     return <p className="text-gray-500 text-center">No hay estudiantes disponibles.</p>;
   }

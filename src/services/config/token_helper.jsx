@@ -15,7 +15,7 @@ const TOKEN_EXPIRY_THRESHOLD = 30; // seconds before expiration to show warning
  * @param {string} token - JWT token
  * @returns {boolean} True if token expires soon, false otherwise
  */
-export const isTokenExpiringSoon = (token) => {
+const isTokenExpiringSoon = (token) => {
   try {
     const decoded = jwtDecode(token);
     const expTime = decoded.exp * 1000; // Convert from seconds to milliseconds
@@ -174,11 +174,11 @@ const TokenRefreshAlert = () => {
  * Initializes token refresh handling system
  * To be called once at app initialization
  */
-export const setupTokenRefreshSystem = () => {
+const setupTokenRefreshSystem = () => {
   // Set up axios interceptors for automatic token handling
   console.log("Setting up token refresh system");
   setupAxiosInterceptors();
 };
 
 // Exportar el componente para usarlo en Dashboard
-export { TokenRefreshAlert as default, TokenRefreshAlert };
+export { TokenRefreshAlert as default, TokenRefreshAlert,setupTokenRefreshSystem, isTokenExpiringSoon};

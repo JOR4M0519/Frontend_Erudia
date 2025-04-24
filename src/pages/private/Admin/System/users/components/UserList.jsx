@@ -1,6 +1,7 @@
 import React from "react";
 import { Users, Search, Filter, UserPlus, Eye } from "lucide-react";
 import { motion } from "framer-motion";
+import Swal from "sweetalert2"; // Importamos SweetAlert2
 
 const UserList = ({ 
   users,
@@ -27,6 +28,32 @@ const UserList = ({
         {role.role.roleName}
       </span>
     ));
+  };
+
+  // Verificar si un usuario tiene el rol de "estudiante"
+  const isStudent = (userData) => {
+    if (!userData.userDetail?.user?.roles || userData.userDetail.user.roles.length === 0) return false;
+    
+    return userData.userDetail.user.roles.some(role => 
+      role.role.roleName.toLowerCase() === 'estudiante'
+    );
+  };
+
+  // Manejar clic en el botón de añadir relación
+  const handleAddRelationshipClick = (userData, e) => {
+    e.stopPropagation();
+    
+    if (isStudent(userData)) {
+      prepareRelationshipModal(userData);
+    } else {
+      // Mostrar SweetAlert con el mensaje indicado
+      Swal.fire({
+        title: 'Acción no permitida',
+        text: 'Solo se pueden agregar a los estudiantes un familiar',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6'
+      });
+    }
   };
 
   // Renderizar el estado de un usuario
@@ -128,7 +155,9 @@ const UserList = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+                {console.log(filteredUsers)}
                 {filteredUsers.map((userData) => (
+                  
                   <tr key={userData.userDetail.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -173,17 +202,21 @@ const UserList = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={(e) => showUserDetails(userData, e)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showUserDetails(userData, e);
+                        }}
                         className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         <Eye className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          prepareRelationshipModal(userData);
-                        }}
-                        className="text-green-600 hover:text-green-900"
+                        onClick={(e) => handleAddRelationshipClick(userData, e)}
+                        className={`${
+                          isStudent(userData)
+                            ? "text-green-600 hover:text-green-900"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
                       >
                         <UserPlus className="h-5 w-5" />
                       </button>

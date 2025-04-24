@@ -42,7 +42,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
   useEffect(() => {
     if (userState?.id && !selectedStudentId) {
       setSelectedStudentId(userState.id.toString());
-      
+
       // Si no hay un usuario seleccionado en Redux, establecer el usuario actual
       if (!selectedUser?.id && userState?.id) {
         dispatch(setSelectedUser({
@@ -67,7 +67,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
           ...student,
           roles: await userDataService.getRoleGroups(student.username) || userState.roles
         })));
-
+        
         //Agregar el usuario logeado
         if (response.length >= 0) {
           const userAsStudent = {
@@ -168,7 +168,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
       roles: userState.roles,
       isUser: true
     }];
-    
+
     setStudents(tempStudents);
     setSelectedStudentId(userState.id.toString());
     return null; // Retornar null para evitar renderizado durante esta actualización
@@ -190,16 +190,16 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
 
   // Encontrar el nombre del estudiante seleccionado para mostrar en el selector
   // Priorizar el usuario actual durante la carga inicial
-  const selectedStudentName = students.find(s => s.id === parseInt(selectedStudentId))?.name || 
-    userState.name || 
-    selectedUser?.name || 
+  const selectedStudentName = students.find(s => s.id === parseInt(selectedStudentId))?.name ||
+    userState.name ||
+    selectedUser?.name ||
     "Cargando usuario...";
 
   return (
     <motion.div
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
       className="fixed top-0 left-0 w-full bg-gradient-to-r from-gray-100 to-gray-200 shadow-lg z-50"
     >
       <div className="relative flex items-center justify-between px-6 py-2.5">
@@ -308,7 +308,7 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
           </motion.div>
 
           {/* Selector de período */}
-          
+
           <div className="relative">
             <Selector
               selectedItem={selectedPeriod}
@@ -322,15 +322,15 @@ export default function UserTopBar({ showSelectorUser = false, showSelectorYear 
           </div>
 
           {/* Botón de perfil */}
-        <motion.button
-          onClick={handleProfileClick}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 cursor-pointer"
-        >
-          <UserCircle className="w-5 h-5 text-blue-600" />
-          <span className="text-sm font-medium text-blue-800">Perfil</span>
-        </motion.button>
+          <motion.button
+            onClick={handleProfileClick}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 cursor-pointer"
+          >
+            <UserCircle className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">Perfil</span>
+          </motion.button>
 
         </div>
       </div>

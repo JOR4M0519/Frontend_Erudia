@@ -5,7 +5,7 @@ import { CalendarDays } from "lucide-react";
 import { useSelector } from "react-redux";
 import SubjectHeader from "../../Subject/SubjectHeader";
 
-// 🔹 Simulación de Fetch API: Días habilitados del mes (Temporalmente no se usa)
+//  Simulación de Fetch API: Días habilitados del mes (Temporalmente no se usa)
 const fetchAllowedDates = async () => {
   return [
     new Date("2025-02-02"),
@@ -21,10 +21,10 @@ const fetchAllowedDates = async () => {
 };
 
 const AttendanceHeader = ({ selectedDate, setSelectedDate, subject }) => {
-  const [allowedDates, setAllowedDates] = useState([]); // 🔹 Guardará los días permitidos
+  const [allowedDates, setAllowedDates] = useState([]); //  Guardará los días permitidos
   const reduxSelectedDate = useSelector((state) => state.date.selectedDate);
 
-  // 🔹 Obtener fechas permitidas desde API (Temporalmente no se usa)
+  //  Obtener fechas permitidas desde API (Temporalmente no se usa)
   useEffect(() => {
     const getAllowedDates = async () => {
       const dates = await fetchAllowedDates();
@@ -33,7 +33,7 @@ const AttendanceHeader = ({ selectedDate, setSelectedDate, subject }) => {
     getAllowedDates();
   }, []);
 
-  // 🔹 Verifica si la fecha está permitida (Temporalmente sin efecto)
+  //  Verifica si la fecha está permitida (Temporalmente sin efecto)
   const isDateAllowed = (date) => allowedDates.some((allowedDate) => allowedDate.toDateString() === date.toDateString());
 
   // Componente de selección de fecha personalizado

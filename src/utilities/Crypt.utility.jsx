@@ -1,5 +1,5 @@
 import CryptoJS from "crypto-js";
-import { persistStorage } from "./webStorage.utility";
+import { persistStorage } from "./";
 import { UserInfo } from "../models";
 import {config} from "./";
 

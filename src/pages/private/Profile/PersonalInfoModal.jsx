@@ -8,7 +8,7 @@ export default function PersonalInfoModal({ isOpen, onClose, userData }) {
   return (
     <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300">
       <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl transition-transform transform scale-100">
-        {/* 🔹 Header */}
+        {/*  Header */}
         <div className="bg-yellow-400 px-6 py-4 flex justify-between items-center text-gray-800 rounded-t-2xl">
           <h2 className="text-lg font-semibold">{userData.name || "Información del familiar"}</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors">
@@ -16,7 +16,7 @@ export default function PersonalInfoModal({ isOpen, onClose, userData }) {
           </button>
         </div>
 
-        {/* 🔹 Body */}
+        {/*  Body */}
         <div className="p-6">
           {/* Avatar y Estado */}
           <div className="flex items-center gap-4 mb-6 border-b pb-4">
@@ -34,7 +34,7 @@ export default function PersonalInfoModal({ isOpen, onClose, userData }) {
             </div>
           </div>
 
-          {/* 🔹 Información Personal */}
+          {/*  Información Personal */}
           <div className="bg-gray-100 p-4 rounded-lg shadow-md">
             <h3 className="text-lg font-medium text-gray-700 mb-3">Información Personal</h3>
             <div className="grid md:grid-cols-2 gap-4">
@@ -50,7 +50,7 @@ export default function PersonalInfoModal({ isOpen, onClose, userData }) {
           </div>
         </div>
 
-        {/* 🔹 Footer */}
+        {/*  Footer */}
         <div className="p-4 flex justify-end border-t bg-gray-100 rounded-b-2xl">
           <button
             onClick={onClose}

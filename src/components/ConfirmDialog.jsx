@@ -14,10 +14,10 @@ export const ConfirmDialog = async ({
   text = "Esta acción no se puede deshacer.",
   confirmButtonText = "Sí, continuar",
   cancelButtonText = "Cancelar",
-  type = "warning", // 🔹 Tipo de alerta por defecto
+  type = "warning", //  Tipo de alerta por defecto
 }) => {
   
-  // 🔹 Definir colores según el tipo de alerta
+  //  Definir colores según el tipo de alerta
   const colorMap = {
     warning: { confirm: "#f39c12", cancel: "#d33" },
     success: { confirm: "#28a745", cancel: "#6c757d" },
@@ -29,7 +29,7 @@ export const ConfirmDialog = async ({
   const result = await Swal.fire({
     title,
     text,
-    icon: type, // 🔹 Usa el tipo dinámico de icono
+    icon: type, //  Usa el tipo dinámico de icono
     showCancelButton: true,
     confirmButtonColor: colorMap[type]?.confirm || "#3085d6",
     cancelButtonColor: colorMap[type]?.cancel || "#d33",
@@ -37,7 +37,7 @@ export const ConfirmDialog = async ({
     cancelButtonText,
   });
 
-  return result.isConfirmed; // 🔹 Retorna `true` si confirmó, `false` si canceló.
+  return result.isConfirmed; //  Retorna `true` si confirmó, `false` si canceló.
 };
 
 export default ConfirmDialog;

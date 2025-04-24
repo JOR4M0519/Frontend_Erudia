@@ -19,6 +19,7 @@ import { DetailStudentTracking, StudentTracking } from './pages/private/StudentT
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
+import { SystemUsers } from './pages/private/Admin/System';
 
 
 // const Login = lazy(() => import('./pages/login/Login'));
@@ -33,13 +34,13 @@ function App() {
         <Provider store={store}>
           <BrowserRouter>
             <RoutesWithNotFound>
-              {/* 🔹 Redirigir a Dashboard si ya está autenticado */}
+              {/*  Redirigir a Dashboard si ya está autenticado */}
               <Route path="/" element={<Navigate to={PrivateRoutes.DASHBOARD} />} />
 
-              {/* 🔹 Rutas Públicas (sin Layout) */}
+              {/*  Rutas Públicas (sin Layout) */}
               <Route path={PublicRoutes.LOGIN} element={<Login />} />
 
-              {/* 🔹 Rutas Privadas (con Layout dentro del `AuthGuard`) */}
+              {/*  Rutas Privadas (con Layout dentro del `AuthGuard`) */}
               <Route element={<AuthGuard privateValidation={true} />}>
 
                 <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
@@ -87,8 +88,6 @@ function App() {
                   />
                   <Route path="*" element={<Navigate to={PrivateRoutes.STUDENTTRACKING} />} />
                 </Route>
-
-
 
 
                 <Route element={<MultiRoleGuard navKey="SETTINGS" />}>

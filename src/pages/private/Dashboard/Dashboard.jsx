@@ -22,19 +22,19 @@ export default function Dashboard() {
   const [periods, setPeriods] = useState([]);
   const location = useLocation();
 
-  // 🔹 Suscribirse a los períodos disponibles
+  //  Suscribirse a los períodos disponibles
   useEffect(() => {
     const periodSubscription = configViewService.getPeriods().subscribe(setPeriods);
     return () => periodSubscription.unsubscribe();
   }, []);
 
-  // 🔹 Suscribirse al período seleccionado
+  //  Suscribirse al período seleccionado
   useEffect(() => {
     const selectedPeriodSubscription = configViewService.getSelectedPeriod().subscribe(setSelectedPeriod);
     return () => selectedPeriodSubscription.unsubscribe();
   }, []);
 
-  // 🔹 Cargar períodos al montar el componente
+  //  Cargar períodos al montar el componente
   useEffect(() => {
     configViewService.loadPeriods();
   }, []);

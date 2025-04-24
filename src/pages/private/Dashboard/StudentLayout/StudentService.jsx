@@ -76,7 +76,7 @@ const getActivityDetails = async(activityId,studentId) =>{
 
     return [];
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 }
@@ -91,13 +91,22 @@ const getActivityDetails = async(activityId,studentId) =>{
  */
 const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=false) => {
   try {
-    const response = await request(
-      "GET",
-      "academy",
-      `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
-      {}
-    );
-
+    let response;
+    if(!!isTeacher){
+      response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.ACTIVITIES.GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP(periodId,subjectId,groupId),
+        {}
+      );
+      }else{
+        response = await request(
+          "GET",
+          apiEndpoints.SERVICES.ACADEMY,
+          apiEndpoints.API_ENDPOINTS.ACTIVITIES.GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP(periodId,subjectId,groupId),
+          {}
+        );
+      }
     if (response.status !== 200) return [];
     console.log(response);
     const activities = await Promise.all(
@@ -139,7 +148,7 @@ const fetchActivities = async (subjectId, periodId, groupId, userId, isTeacher=f
 
     return activities;
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 };
@@ -170,7 +179,7 @@ const getActivityScore = async(activityId,studentId) =>{
 
     return [];
   } catch (error) {
-    console.error("Error al obtener tareas:", error);
+    console.error("Error al obtener actividades:", error);
     return [];
   }
 }
@@ -292,11 +301,15 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
   },
 
   /**
-   *Obtener las tareas de una materia en un periodo de un estudiante en particular
-   * Corregir a Obtener las tareas de una materia en un periodo de un grupo de estudiantes
+   *Obtener las actividades de una materia en un periodo de un estudiante en particular
+   * Corregir a Obtener las actividades de una materia en un periodo de un grupo de estudiantes
   */
-   getActivities: async (subjectId, periodId, groupId, studentId) => {
-    return fetchActivities(subjectId, periodId, groupId, studentId, false);
+  // getActivities: async (subjectId, periodId, groupId, studentId) => {
+  //   return fetchActivities(subjectId, periodId, groupId, studentId, false);
+  // },
+
+  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
+    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
   },
 
   /**
@@ -345,7 +358,7 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
 
       return activities;
     } catch (error) {
-      console.error("Error al obtener todas las tareas:", error);
+      console.error("Error al obtener todas las actividades:", error);
       return [];
     }
   },
@@ -380,9 +393,16 @@ updateUserPersonalInfo: async (userId, personalInfo) => {
    */
   getUserDetails: async (familyMemberId) => {
     try {
-      const response = await request("GET", "academy", `/users/detail/${familyMemberId}`, {});
+      const response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.USER.GET_DETAIL(familyMemberId),
+        {});
 
       if (response.status === 200) {
+
+        console.log(response)
+
         return {
           id: response.data.id,
           name: `${response.data.firstName ?? ""} ${response.data.middleName ?? ""} ${response.data.lastName ?? ""} ${response.data.secondLastName ?? ""}`.trim(),
@@ -452,9 +472,9 @@ getIdTypes: async () => {
 
       if (response.status === 200) {
         return response.data.map((student) => ({
-          id: student.relativeUser.id,
-          name: `${student.relativeUser.firstName} ${student.relativeUser.lastName}`,
-          username: student.relativeUser.username
+          id: student.user.id,
+          name: `${student.user.firstName} ${student.user.lastName}`,
+          username: student.user.username
         }));
       }
 
@@ -468,15 +488,17 @@ getIdTypes: async () => {
   /**
     * Obtener los datos del estudiante seleccionado de sus materias y grupo asignado !!! Falta poner el año lectivo
   */
-  fetchStudentData: async (studentId) => {
+  fetchStudentData: async (studentId,periodId) => {
     try {
 
       studentDataService.clearStudentData(); // * Limpiar antes de cargar nuevos datos
 
       // * Obtener el grupo del estudiante
-      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
+      //const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/students/${studentId}?year=${(new Date).getFullYear()}`, {});
+      const responseGroups = await request("GET", "academy", `/subjects-groups/students-groups/periods/${periodId}/students/${studentId}`);
       if (responseGroups.status === 200 && responseGroups.data.length > 0) {
         const studentGroup = new StudentGroupModel(responseGroups.data[0]);
+        console.log(responseGroups)
         studentGroup.addSubjects(responseGroups.data);
         studentDataService.setStudentData(studentGroup.toJSON()); // * Guardamos en RxJS
       }
@@ -485,16 +507,14 @@ getIdTypes: async () => {
     }
   },
 
-  getActivities: async (subjectId, periodId, groupId, user,isTeacher=false) => {
-    return fetchActivities(subjectId, periodId, groupId, user, isTeacher);
-  },
+
 
 /**
  * Obtiene información académica de un estudiante usando métodos existentes
  * @param {number} studentId - ID del estudiante
  * @returns {Promise<Object>} - Datos académicos del estudiante
  */
-getStudentAcademicProfile: async (studentId) => {
+getStudentAcademicProfile: async (studentId,periodId) => {
   try {
     // Utilizamos Promise.all para ejecutar todas las peticiones en paralelo
     const [
@@ -508,7 +528,7 @@ getStudentAcademicProfile: async (studentId) => {
     ]);
 
     // Intentamos obtener el grupo del estudiante
-    await studentDataService.fetchStudentData(studentId);
+    await studentDataService.fetchStudentData(studentId,periodId);
     const studentGroupData = studentDataService.getStudentDataValue();
 
     // Extraer el nombre completo y dividirlo en nombre y apellido
@@ -550,6 +570,45 @@ getStudentAcademicProfile: async (studentId) => {
     return null;
   }
 },
+
+  downloadStudentReport: async (studentId, groupId, periodId) => {
+    try {
+      const response = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.EVALUATION.REPORTS.DOWNLOAD_STUDENT_REPORT(studentId, groupId, periodId),
+        {},
+        { responseType: 'blob' }
+      );
+
+      // Crear blob y URL para descarga
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/pdf'
+      });
+      const url = window.URL.createObjectURL(blob);
+
+      // Crear enlace y simular clic para descarga
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `boletin_estudiante_${studentId}_periodo_${periodId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      return {
+        success: true,
+        message: "Reporte descargado exitosamente",
+        viewOption: "download"
+      };
+    } catch (error) {
+      console.error("Error downloading student report:", error);
+      return {
+        success: false,
+        message: `Error al descargar el reporte: ${error.message}`
+      };
+    }
+  },
 
 
 };
@@ -664,6 +723,21 @@ export const teacherDataService = {
     }
   },
 
+  getStudentActiveGroups: async (studentId) => {
+    try {
+      const response = await request(
+        "GET", 
+        apiEndpoints.SERVICES.ACADEMY, 
+        apiEndpoints.API_ENDPOINTS.GROUPS.GET_ALL_STUDENT_GROUPS(studentId)
+      );
+      
+      // La función request ya maneja la conversión de la respuesta a JSON
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener grupos de estudiantes activos:', error);
+      throw error;
+    }
+  },
 
 
   /**
@@ -711,6 +785,31 @@ export const teacherDataService = {
         "GET",
         apiEndpoints.SERVICES.ACADEMY,
         apiEndpoints.API_ENDPOINTS.SUBJECTS.GROUPS.GET_ALL_BY_PERIOD_AND_SUBJECT(periodId,subjectId),
+        {}
+      );
+
+      if (responseGroupsTeacher.status === 200 && responseGroupsTeacher.data.length > 0) {
+        const studentGroupList = new StudentGroupModel(responseGroupsTeacher.data[0]); //  Instancia base
+        studentGroupList.addStudents(responseGroupsTeacher.data); //  Agrega estudiantes
+
+        teacherDataService.setStudentGroupListData(studentGroupList.toJSON()); //  Guarda en el estado
+      }
+    } catch (error) {
+      console.error("Error cargando lista de estudiantes:", error);
+    }
+  },
+
+  /**
+   *  Obtiene la lista de estudiantes en un grupo específico.
+   *  Mantiene `subjects` y solo actualiza `studentGroupList`.
+   */
+  fetchListUsersGroupDataBySubject: async (periodId,subjectId,groupId) => {
+    try {
+      //  NO se limpia `subjects`, solo obtenemos estudiantes
+      const responseGroupsTeacher = await request(
+        "GET",
+        apiEndpoints.SERVICES.ACADEMY,
+        apiEndpoints.API_ENDPOINTS.SUBJECTS.GROUPS.GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP(periodId,subjectId,groupId),
         {}
       );
 

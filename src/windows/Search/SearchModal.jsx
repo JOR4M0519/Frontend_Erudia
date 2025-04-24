@@ -96,7 +96,7 @@ export default function SearchModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={searchService.close} />
+      <div className="absolute inset-0 backdrop-blur-md" onClick={searchService.close} />
 
       {/* Modal */}
       <div className="relative w-full md:max-w-2xl bg-white shadow-2xl md:rounded-xl flex flex-col max-h-screen">

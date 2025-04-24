@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
   const [expandedTaskId, setExpandedTaskId] = useState(null);
@@ -9,10 +10,31 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
+  const handleTaskWithLoading = (task) => {
+    // Solo mostrar indicador para estudiantes, ya que los profesores tienen funcionalidad diferente
+    if (!isTeacher) {
+      Swal.fire({
+        title: 'Cargando actividad...',
+        text: 'Obteniendo detalles',
+        timer: 800,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        allowOutsideClick: false,
+        showConfirmButton: false
+      });
+    }
+    
+    // Llamar al handler original
+    handleTaskClick(task);
+  };
+
+
   return (
     <div className="bg-gray-100 rounded-lg overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-600 border-b border-gray-200">
-        <div className="col-span-4">Tarea</div>
+        <div className="col-span-4">Actividad</div>
         <div className="col-span-4">Descripción</div>
         <div className="col-span-2 text-center">Entrega</div>
         <div className="col-span-2 text-center">Notas</div>
@@ -24,7 +46,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
             <div key={task.id} className="bg-white">
               {/*  Fila Principal */}
               <div
-                onClick={() => handleTaskClick(task)}
+                onClick={() => handleTaskWithLoading(task)}
                 className="grid grid-cols-12 gap-4 p-3 hover:bg-gray-200 transition-colors items-center cursor-pointer"
               >
                 <div className="col-span-4 font-medium text-gray-700">{task.name}</div>
@@ -78,7 +100,7 @@ export default function ActivitiesList({ tasks, handleTaskClick, isTeacher }) {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 text-center p-4">No hay tareas disponibles.</p>
+          <p className="text-gray-500 text-center p-4">No hay actividades disponibles.</p>
         )}
       </div>
     </div>

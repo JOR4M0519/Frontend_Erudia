@@ -1,45 +1,199 @@
-import React, { useState } from "react";
-import { FilePlus, Download, FileText, Search, Filter, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { FilePlus, Download, FileText, Search, Filter, ChevronDown, Eye } from "lucide-react";
 import { motion } from "framer-motion";
-import { ReportForm, ReportPreview } from "../";
-import { processesService } from "../";
+import { ReportForm, ReportPreview, ReportModal } from "../";
+import { processesService } from "../processesService";
+import Swal from "sweetalert2"; // Importamos SweetAlert2
 
 const GenerateReportsTab = () => {
   const [activeStep, setActiveStep] = useState("form"); // form, preview, success
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null); // Para almacenar el resultado de la operación
+  const [selectedStudents, setSelectedStudents] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [reportUrl, setReportUrl] = useState(null); // Para almacenar la URL del reporte
+  const [isModalOpen, setIsModalOpen] = useState(false); // Para controlar la apertura/cierre del modal
+
+  // Limpiar las URLs de blob cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      if (reportUrl && result?.isBlob) {
+        URL.revokeObjectURL(reportUrl);
+      }
+    };
+  }, [reportUrl, result]);
 
   const handleFormSubmit = (data) => {
     setLoading(true);
     
-    // Simular una llamada API para generar el reporte
-    setTimeout(() => {
-      setReportData(data);
-      setActiveStep("preview");
-      setLoading(false);
-    }, 1000);
+    // Ya no simulamos, simplemente pasamos a la vista previa
+    setReportData(data);
+    setActiveStep("preview");
+    setLoading(false);
   };
 
-  const handleGenerateReport = (viewOption) => {
+  const handleGenerateReport = async (viewOption) => {
+    // Mostrar SweetAlert para indicar la carga
+    Swal.fire({
+      title: 'Generando reportes',
+      text: 'Por favor espere mientras procesamos su solicitud...',
+      icon: 'info',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
     setLoading(true);
     
-    // Simular una llamada API para finalizar la generación
-    setTimeout(() => {
-      setActiveStep("success");
-      setLoading(false);
+    let response;
+    const data = reportData;
+    
+    try {
+      // Guardar la opción de visualización para referencia futura
+      const viewTypeSelected = viewOption;
       
-      // Acción dependiendo de la opción seleccionada
+      // Guardar los datos seleccionados
+      setSelectedStudents(data.selectedStudents && data.selectedStudents.length > 0 ? 
+        data.selectedStudents : undefined);
+      setSelectedGroup(data.selectedGroup);
+      setSelectedPeriod(data.period);
+
+      // Realizar la acción según la opción seleccionada
       if (viewOption === "download") {
-        console.log("Descargando boletines...");
+        response = await handleReportDownload();
       } else {
-        console.log("Visualizando boletines online...");
+        // Ver online
+        const id = data.selectedStudents && data.selectedStudents.length === 1 ? 
+          data.selectedStudents[0] : data.selectedGroup;
+        const type = data.selectedStudents && data.selectedStudents.length === 1 ? "student" : "group";
+        
+        // Pasar los estudiantes seleccionados si hay más de uno
+        const selectedStudentsParam = data.selectedStudents && data.selectedStudents.length > 1 ? 
+          data.selectedStudents : null;
+        
+        response = await processesService.viewReportOnline(
+          id, 
+          data.period, // Usar data.period directamente para asegurar que se pasa correctamente 
+          type, 
+          data.selectedGroup, // Usar data.selectedGroup directamente 
+          selectedStudentsParam
+        );
+        
+        // Guardar la URL del reporte para el modal
+        if (response.success && response.reportUrl) {
+          setReportUrl(response.reportUrl);
+          // Si es un ZIP, mostrar mensaje de advertencia
+          if (response.isZip) {
+            response.message = "El reporte contiene múltiples archivos. Se recomienda descargarlo.";
+          }
+        }
       }
-    }, 1500);
+      
+      // Asegurar que el resultado tiene la propiedad viewOption
+      if (response.success && !response.viewOption) {
+        response.viewOption = viewTypeSelected;
+      }
+      
+      setResult(response);
+      setActiveStep("success");
+      
+      // Cerrar SweetAlert con mensaje de éxito/error
+      if (response.success) {
+        Swal.fire({
+          title: '¡Completado!',
+          text: 'Los reportes se han generado correctamente',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: response.message || 'Ha ocurrido un error al generar los reportes',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#f59e0b'
+        });
+      }
+    } catch (error) {
+      console.error("Error generando reporte:", error);
+      setResult({ 
+        success: false, 
+        message: "Error al generar el reporte: " + (error.message || "Error desconocido") 
+      });
+      setActiveStep("success");
+      
+      // Mostrar error en SweetAlert
+      Swal.fire({
+        title: 'Error',
+        text: "Error al generar el reporte: " + (error.message || "Error desconocido"),
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#f59e0b'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  const handleReportDownload = async() => {
+    let response;
+    
+    // Si hay estudiantes seleccionados específicamente y no es solo uno
+    if (reportData.selectedStudents && reportData.selectedStudents.length > 1) {
+      // Usar el endpoint para múltiples estudiantes seleccionados
+      response = await processesService.downloadSelectedStudentsReport(
+        reportData.selectedGroup, 
+        reportData.period,
+        reportData.selectedStudents
+      );
+    }
+    // Si es un solo estudiante
+    else if (reportData.selectedStudents && reportData.selectedStudents.length === 1) {
+      response = await processesService.downloadStudentReport(
+        reportData.selectedStudents[0], 
+        reportData.selectedGroup, 
+        reportData.period
+      );
+    }
+    // Si es todo el grupo (sin selección específica)
+    else {
+      response = await processesService.downloadGroupReport(
+        reportData.selectedGroup, 
+        reportData.period
+      );
+    }
+    
+    return response;
   };
 
   const handleReset = () => {
+    // Limpiar la URL de blob si existe
+    if (reportUrl && result?.isBlob) {
+      URL.revokeObjectURL(reportUrl);
+    }
+    
     setActiveStep("form");
     setReportData(null);
+    setResult(null);
+    setReportUrl(null);
+  };
+
+  // Función para abrir el modal del reporte
+  const openReportModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Función para cerrar el modal del reporte
+  const closeReportModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -97,21 +251,33 @@ const GenerateReportsTab = () => {
             transition={{ duration: 0.3 }}
             className="text-center py-10"
           >
-            <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <Download size={32} className="text-green-600" />
+            <div className={`w-16 h-16 mx-auto ${result?.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mb-4`}>
+              {result?.viewOption === "download" ? (
+                <Download size={32} className={result?.success ? "text-green-600" : "text-red-600"} />
+              ) : (
+                <Eye size={32} className={result?.success ? "text-green-600" : "text-red-600"} />
+              )}
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">¡Boletines generados correctamente!</h3>
-            <p className="text-gray-500 mb-6">Los archivos están listos para ser descargados</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              {result?.success 
+                ? result?.viewOption === "download" 
+                  ? "¡Boletines generados correctamente!" 
+                  : "¡Reporte listo para visualizar!"
+                : "Error al generar boletines"}
+            </h3>
+            <p className="text-gray-500 mb-6">{result?.message || "Operación completada"}</p>
             
-            <div className="max-w-md mx-auto bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700 font-medium">boletines_periodo1_2025.zip</span>
-                <span className="text-gray-500 text-sm">12.4 MB</span>
+            {result?.success && (
+              <div className="max-w-md mx-auto bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-700 font-medium">Reporte académico</span>
+                  <span className="text-gray-500 text-sm">Completado</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500 w-full"></div>
+                </div>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 w-full"></div>
-              </div>
-            </div>
+            )}
             
             <div className="flex justify-center space-x-4">
               <motion.button
@@ -123,18 +289,44 @@ const GenerateReportsTab = () => {
                 Generar otros boletines
               </motion.button>
               
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="px-6 py-2 bg-amber-500 text-white rounded-md flex items-center hover:bg-amber-600"
-              >
-                <Download size={16} className="mr-2" />
-                Descargar todos
-              </motion.button>
+              {result?.success && result?.viewOption === "download" && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="px-6 py-2 bg-amber-500 text-white rounded-md flex items-center hover:bg-amber-600"
+                  onClick={() => {
+                    handleReportDownload(); 
+                  }}
+                >
+                  <Download size={16} className="mr-2" />
+                  Descargar de nuevo
+                </motion.button>
+              )}
+              
+              {/* Botón para ver el reporte en el modal */}
+              {result?.success && result?.viewOption === "view" && reportUrl && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="px-6 py-2 bg-amber-500 text-white rounded-md flex items-center hover:bg-amber-600"
+                  onClick={openReportModal}
+                >
+                  <Eye size={16} className="mr-2" />
+                  Ver reporte
+                </motion.button>
+              )}
             </div>
           </motion.div>
         )}
       </motion.div>
+      
+      {/* Modal para visualizar el reporte */}
+      <ReportModal 
+        url={reportUrl} 
+        isOpen={isModalOpen} 
+        onClose={closeReportModal}
+        isZip={result?.isZip}
+      />
     </div>
   );
 };

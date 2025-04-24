@@ -71,7 +71,7 @@ const DirectionGroupsGrid = () => {
       id: student.id,
       name: student.name,
       email: student.email ?? "NA",
-      roles: [encryptData(Roles.TEACHER),] ?? "NA",
+      roles: [encryptData(Roles.TEACHER),],
     };
     setSelectedStudent(selectedStudentObj);
     setSelectedStudentIndex(studentIndex);
@@ -100,7 +100,7 @@ const DirectionGroupsGrid = () => {
       id: prevStudent.id,
       name: prevStudent.name,
       email: prevStudent.email ?? "NA",
-      roles: [encryptData(Roles.TEACHER),] ?? "NA",
+      roles: [encryptData(Roles.TEACHER),],
     };
 
     setSelectedStudentIndex(prevIndex);
@@ -124,7 +124,7 @@ const DirectionGroupsGrid = () => {
       id: nextStudent.id,
       name: nextStudent.name,
       email: nextStudent.email ?? "NA",
-      roles: [encryptData(Roles.TEACHER),] ?? "NA",
+      roles: [encryptData(Roles.TEACHER),],
     };
 
     setSelectedStudentIndex(nextIndex);

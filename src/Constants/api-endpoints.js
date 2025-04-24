@@ -49,30 +49,58 @@ const API_ENDPOINTS = {
         GET_ALL: '/groups',
         CREATE: '/groups',
         ACTIVE_ALL: '/groups/active',
+        UPDATE_BY_ID: (id) => `/groups/${id}`,
+        DELETE_BY_ID: (id) => `/groups/${id}`,
         STUDENT_GROUPS_ALL: '/student-groups/active',
         STUDENT_GROUPS_BY_GROUPID: (groupId) => `/student-groups/groups/${groupId}/users`,
-
+        GET_ALL_STUDENT_GROUPS:(userId) => `/student-groups/users/${userId}`,
     },
     
     SUBJECTS:{
         GET_ALL: '/subjects',
         CREATE: '/subjects',
         UPDATE_BY_ID: (id) => `/subjects/${id}`,
+        DELETE_BY_ID: (id) => `/subjects/${id}`,
         SUBJECTS_BY_GROUPS_LEVEL: (periodId,levelId) => `/subjects-groups/periods/${periodId}/edu-level/${levelId}`,
     
         PROFESSORS:{
             GET_ALL:  `/subjects/professors`,
             CREATE: `/subjects/professors`,
             UPDATE_BY_ID:  (id) => `/subjects/professors/${id}`,
+            DELETE_BY_ID: (id) => `/subjects/professors/${id}`,
         },
 
         GROUPS: {
-            GET_ALL_BY_PERIOD_AND_SUBJECT: (periodId,subjectId) => `/subjects-groups/periods/${periodId}/subjects/${subjectId}`
+            GET_ALL_BY_PERIOD_AND_SUBJECT: (periodId,subjectId) => `/subjects-groups/periods/${periodId}/subjects/${subjectId}`,
+            GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP: (periodId,subjectId,groupId) => 
+                `/subjects-groups/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`
         },
     },
     
 
     EVALUATION: {
+
+        REPORTS:{
+             // Endpoints para descarga forzada como PDF (attachment)
+             DOWNLOAD_GROUP_REPORT: (groupId, periodId) =>
+                `/reports/pdf/group/${groupId}/period/${periodId}`,
+            DOWNLOAD_STUDENT_REPORT: (studentId, groupId, periodId) =>
+                `/reports/pdf/group/${groupId}/student/${studentId}/period/${periodId}`,
+            DOWNLOAD_SELECTED_STUDENTS_REPORT: (groupId, periodId) => 
+                `/reports/pdf/group/${groupId}/period/${periodId}/students`,
+            
+            // Endpoints para visualización online (sin attachment)
+            // VIEW_GROUP_REPORT_ONLINE: (groupId, periodId) =>
+            //     `/reports/group/${groupId}/period/${periodId}`,
+            // VIEW_STUDENT_REPORT_ONLINE: (studentId, periodId) =>
+            //     `/reports/student/${studentId}/period/${periodId}`,
+        
+            VIEW_STUDENT_REPORT: (groupId,studentId, periodId) => 
+                `/reports/view/group/${groupId}/student/${studentId}/period/${periodId}`,
+            VIEW_GROUP_REPORT: (groupId, periodId) => 
+                `/reports/view/group/${groupId}/period/${periodId}`,
+        },
+
         GRADE_DISTRIBUTION: (year,periodId,levelId,subjectId) =>
         `/subject-grade/report/distribution?year=${year}&periodId=${periodId}&levelId=${levelId}&subjectId=${subjectId}`,
         RECOVERY:{
@@ -106,7 +134,8 @@ const API_ENDPOINTS = {
                 UPDATE_BY_ID:  (id) => `/subject_knowledge/${id}`,
                 DELETE_BY_ID:  (id) => `/subject_knowledge/${id}`,
 
-                GET_ALL_BY_SUBJECT: (subjectId) => `/subject_knowledge/subjects/${subjectId}`,
+                GET_ALL_BY_SUBJECT: (subjectId) => `/subject_knowledge/subjects/${subjectId}`, //Eliminar, descontinuada
+                GET_ALL_BY_SUBJECT_AND_GROUP: (subjectId,groupId) => `/subject_knowledge/subjects/${subjectId}/groups/${groupId}`,
                 
                 CREATE_ACHIEVEMENT_GROUP: `/achievements-group`,
 
@@ -120,10 +149,13 @@ const API_ENDPOINTS = {
                 `/achievements-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
 
                 GROUP:{
+                    GET_ALL: `/subjects-groups`,
                     GET_ALL_BY_PERIOD_AND_GROUP: (periodId,groupId) =>
                         `/subjects-groups/groups/${groupId}/periods/${periodId}`,
                     CREATE: `/subjects-groups`,
                     UPDATE_BY_ID: (subjectGroupId) =>
+                        `/subjects-groups/${subjectGroupId}`,
+                    DELETE_BY_ID: (subjectGroupId) =>
                         `/subjects-groups/${subjectGroupId}`,
                 },
 
@@ -139,6 +171,9 @@ const API_ENDPOINTS = {
         GET_ALL_BY_YEAR_ACTIVE: (year) => `/periods/active/${year}`,
         GET_ALL_BY_SETTING_AND_YEAR: (settingId,year) => 
             `/periods/settings/${settingId}/active/${year}`,
+        GET_PERCENTAGE_VALIDATION_BY_YEAR: (year) => 
+            `/periods/verify-year/${year}`,
+
         CREATE: `/periods`,
         UPDATE_BY_ID:  (id) => `/periods/${id}`,
     },
@@ -175,6 +210,12 @@ const API_ENDPOINTS = {
 
     ACTIVITIES:{
         GET_ALL: '/activities',
+        //To professor
+        GET_ALL_BY_PERIOD_AND_SUBJECT_PROFESSOR_AND_GROUP: (periodId,subjectId,groupId) =>
+        `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}`,
+        //To student
+        GET_ALL_BY_PERIOD_AND_SUBJECT_AND_GROUP: (periodId,subjectId,groupId) =>
+            `/activity-group/periods/${periodId}/subjects/${subjectId}/groups/${groupId}/student`,
         UPDATE_ACHIEVEMENT_BY_ID: (activityId,knowledgeId) => `/activities/${activityId}/knowledges/${knowledgeId}`,
         
     },

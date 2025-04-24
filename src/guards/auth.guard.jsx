@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
 import { PrivateRoutes, PublicRoutes } from '../models';
-import Layout from '../components/Layout'; // 🔹 Importamos el Layout
+import Layout from '../components/Layout'; //  Importamos el Layout
 
 
 export const AuthGuard = ({ privateValidation }) => {
@@ -14,7 +14,7 @@ export const AuthGuard = ({ privateValidation }) => {
   }
 
   return privateValidation ? (
-    <Layout> {/* 🔹 Envolvemos SOLO rutas privadas con Layout */}
+    <Layout> {/*  Envolvemos SOLO rutas privadas con Layout */}
       <Outlet />
     </Layout>
   ) : (
@@ -29,7 +29,7 @@ export default AuthGuard;
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
 import { PrivateRoutes, PublicRoutes } from '../models';
-import Layout from '../components/Layout'; // 🔹 Importamos el Layout
+import Layout from '../components/Layout'; //  Importamos el Layout
 
 export const AuthGuard = ({ privateValidation }) => {
   const userState = useSelector((store) => store.user);

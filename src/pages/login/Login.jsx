@@ -83,7 +83,7 @@ const Login = () => {
                     // Store user information in Redux
                     console.log("Auth response:", responseData);
                     const userInfo = encodeUserInfo(
-                        responseData.user.id,
+                        responseData.user.user.id,
                         responseData.accessToken,
                         responseData.refreshToken);
                     dispatch(createUser({...userInfo}));
@@ -181,7 +181,7 @@ const Login = () => {
                         />
                     </div>
 
-                    <div className="flex items-center justify-between w-full mb-6">
+                    {/* <div className="flex items-center justify-between w-full mb-6">
                         <label className="flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
@@ -192,7 +192,7 @@ const Login = () => {
                             <span className="ml-2 text-gray-700">Recordarme</span>
                         </label>
                         <a href="#" className="text-sm text-blue-600 hover:underline">¿Olvidaste tu contraseña?</a>
-                    </div>
+                    </div> */}
 
                     <button 
                         type="submit"
@@ -201,13 +201,13 @@ const Login = () => {
                         Ingresar
                         <ArrowRight className="h-5 w-5 ml-2" />
                     </button>
-                    <div className="my-6 flex items-center w-full">
+                    {/* <div className="my-6 flex items-center w-full">
                         <div className="flex-grow border-t border-gray-300"></div>
                         <span className="px-4 text-gray-500 text-sm">O continúa con</span>
                         <div className="flex-grow border-t border-gray-300"></div>
-                    </div>
+                    </div> */}
 
-                    <button 
+                    {/* <button 
                         type="button"
                         className="flex items-center justify-center w-full h-12 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
@@ -217,7 +217,7 @@ const Login = () => {
                             className="w-5 h-5 mr-2"
                         />
                         Entrar con Google
-                    </button>
+                    </button> */}
                 </form>
             </div>
 

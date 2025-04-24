@@ -1,545 +1,817 @@
 import React, { useState, useEffect } from "react";
-import { 
-  ChevronDown, ChevronUp, Search, Filter, Users, Book, User, Calendar, 
-  School, BookOpen, Check, X, Info, FileText, RefreshCw, Plus, UserPlus
+import {
+  ChevronDown, ChevronUp, Search, Filter, Users, Book, User, Calendar,
+  School, BookOpen, Check, X, Info, FileText, RefreshCw, Plus, UserPlus,
+  Trash2, Edit, Eye, Grid, List
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { configurationService,
+import Swal from "sweetalert2";
+import {
+  configurationService,
   LevelAccordion,
   CreateGroupModal,
   AssignSubjectModal,
   CreateSubjectModal,
   AssignProfessorModal,
-  SubjectsModal} from "../";
-
-
-
+  SubjectsModal,
+  SubjectProfessorsTab,
+  SubjectGroupsTab,
+  EditGroupModal
+} from "../";
 const StudentsGroupsTab = () => {
-  const [groups, setGroups] = useState([]);
+  // Estados para datos
   const [levels, setLevels] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [periods, setPeriods] = useState([]);
-  const [filteredGroups, setFilteredGroups] = useState([]);
-  const [groupedByLevel, setGroupedByLevel] = useState({});
-  const [selectedPeriod, setSelectedPeriod] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Estado para el modal de materias
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [groupSubjects, setGroupSubjects] = useState([]);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [professors, setProfessors] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [subjectProfessors, setSubjectProfessors] = useState([]);
+  const [subjectGroups, setSubjectGroups] = useState([]);
 
-  // Estados para los nuevos modales
-  const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
-  const [selectedLevelForGroup, setSelectedLevelForGroup] = useState(null);
-  const [assignSubjectModalOpen, setAssignSubjectModalOpen] = useState(false);
-  const [selectedGroupForSubject, setSelectedGroupForSubject] = useState(null);
-  const [createSubjectModalOpen, setCreateSubjectModalOpen] = useState(false);
-  const [assignProfessorModalOpen, setAssignProfessorModalOpen] = useState(false);
-  
-  // Estado para notificaciones
-  const [notification, setNotification] = useState(null);
+  // Estados para filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [periodFilter, setPeriodFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const [yearFilter, setYearFilter] = useState(String(currentYear));
+  const [availableYears, setAvailableYears] = useState(() => {
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+  });
+
+  // Estados para modales
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showCreateSubjectModal, setShowCreateSubjectModal] = useState(false);
+  const [showAssignSubjectModal, setShowAssignSubjectModal] = useState(false);
+  const [showAssignProfessorModal, setShowAssignProfessorModal] = useState(false);
+  const [showSubjectsModal, setShowSubjectsModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+
+  // Estado para carga inicial
+  const [loading, setLoading] = useState(true);
+
+  // Estado para pestañas
+  const [activeTab, setActiveTab] = useState("groups"); // "groups", "subjects" o "subjectGroups"
+
+  // Estado para modo de edición
+  const [editMode, setEditMode] = useState(false);
+
+  // Referencia para el selector de periodos
+  const periodSelectorRef = React.useRef(null);
 
   // Cargar datos iniciales
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const loadInitialData = async () => {
       try {
         setLoading(true);
-        
-        // Cargar períodos
-        const periodsData = await configurationService.getPeriods();
-        setPeriods(periodsData);
-        
-        // Cargar niveles educativos
-        const levelsData = await configurationService.getEducationalLevels();
+        const [levelsData, groupsData, professorsData, subjectsData, subjectProfessorsData, subjectGroupsData] = await Promise.all([
+          configurationService.getEducationalLevels(),
+          configurationService.getAllGroups(),
+          configurationService.getAdministrativeUsers(),
+          configurationService.getSubjects(),
+          configurationService.getSubjectProfessors(),
+          configurationService.getSubjectGroups()
+        ]);
+
         setLevels(levelsData);
-        
-        // Cargar grupos
-        const groupsData = await configurationService.getAllGroups();
         setGroups(groupsData);
-        setFilteredGroups(groupsData);
-        
+        setProfessors(professorsData);
+        setSubjects(subjectsData);
+        setSubjectProfessors(subjectProfessorsData);
+        setSubjectGroups(subjectGroupsData);
+
+
         setLoading(false);
-      } catch (err) {
-        console.error("Error al cargar datos iniciales:", err);
-        setError("No se pudieron cargar los datos. Por favor, intente de nuevo más tarde.");
+      } catch (error) {
+        console.error("Error cargando datos iniciales:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los datos iniciales",
+        });
         setLoading(false);
       }
     };
-    
-    fetchInitialData();
+
+    loadInitialData();
   }, []);
 
-  // Agrupar por nivel cuando cambian los grupos filtrados
+  // Cargar periodos cuando cambia el año seleccionado
   useEffect(() => {
-    const groupByLevel = () => {
-      const grouped = {};
-      
-      filteredGroups.forEach(group => {
-        const levelId = group.level.id;
-        if (!grouped[levelId]) {
-          grouped[levelId] = {
-            level: group.level,
-            groups: []
-          };
-        }
-        grouped[levelId].groups.push(group);
-      });
-      
-      setGroupedByLevel(grouped);
-    };
-    
-    groupByLevel();
-  }, [filteredGroups]);
-
-  // Aplicar filtros cuando cambian los criterios
-  useEffect(() => {
-    const applyFilters = () => {
-      let filtered = [...groups];
-      
-      // Filtrar por nivel si está seleccionado
-      if (selectedLevel) {
-        filtered = filtered.filter(group => group.level.id === parseInt(selectedLevel));
+    const loadPeriods = async () => {
+      if (!yearFilter) {
+        setPeriods([]);
+        setPeriodFilter("");
+        return;
       }
-      
-      // Filtrar por término de búsqueda
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filtered = filtered.filter(
-          group => 
-            group.groupName.toLowerCase().includes(term) || 
-            group.groupCode.toLowerCase().includes(term) ||
-            group.mentor.firstName.toLowerCase().includes(term) ||
-            group.mentor.lastName.toLowerCase().includes(term)
-        );
+
+      try {
+        const periodsData = await configurationService.getPeriodsByYear(yearFilter);
+        setPeriods(periodsData);
+        setPeriodFilter(""); // Resetear el periodo seleccionado cuando cambia el año
+      } catch (error) {
+        console.error("Error cargando periodos por año:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los periodos para el año seleccionado",
+        });
       }
-      
-      setFilteredGroups(filtered);
     };
-    
-    applyFilters();
-  }, [groups, selectedLevel, searchTerm]);
 
-  // Mostrar notificación
-  const showNotification = (message, type = "success") => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
+    loadPeriods();
+  }, [yearFilter]);
 
-  // Manejar clic en un grupo para mostrar sus materias
-  const handleGroupClick = async (group) => {
-    if (!selectedPeriod) {
-      showNotification("Debe seleccionar un período académico para ver las materias", "error");
-      return;
-    }
-    
+  // Filtrar grupos según los filtros aplicados
+  const filteredGroups = groups.filter((group) => {
+    const matchesSearch = group.groupName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      group.groupCode.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = levelFilter ? group.level.id === parseInt(levelFilter) : true;
+
+    return matchesSearch && matchesLevel;
+  });
+
+  // Añadir este método si no existe ya
+  const refreshAllData = async () => {
     try {
-      setLoadingSubjects(true);
-      setSelectedGroup(group);
-      
-      // Cargar materias del grupo para el período seleccionado
-      const subjectsData = await configurationService.getSubjectsByGroupAndLevel(
-        selectedPeriod,
-        group.level.id
-      );
-      
-      // Filtrar solo las materias de este grupo específico
-      const groupSubjects = subjectsData.filter(
-        item => item.groups && item.groups.id === group.id
-      );
-      
-      setGroupSubjects(groupSubjects);
-      setModalOpen(true);
-      setLoadingSubjects(false);
-    } catch (err) {
-      console.error("Error al cargar materias del grupo:", err);
-      setLoadingSubjects(false);
-      showNotification("Error al cargar las materias del grupo", "error");
+      setLoading(true);
+      const [
+        updatedGroups,
+        updatedSubjects,
+        updatedSubjectProfessors,
+        updatedSubjectGroups
+      ] = await Promise.all([
+        configurationService.getAllGroups(),
+        configurationService.getSubjects(),
+        configurationService.getSubjectProfessors(),
+        configurationService.getSubjectGroups()
+      ]);
+
+      setGroups(updatedGroups);
+      setSubjects(updatedSubjects);
+      setSubjectProfessors(updatedSubjectProfessors);
+      setSubjectGroups(updatedSubjectGroups);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+      setLoading(false);
     }
   };
 
-  // Manejar la creación de un nuevo grupo
-  const handleCreateGroup = (level) => {
-    setSelectedLevelForGroup(level);
-    setCreateGroupModalOpen(true);
+
+  const handleEditGroup = (group) => {
+    setSelectedGroup(group);
+    setShowEditGroupModal(true);
   };
 
-  // Guardar un nuevo grupo
+  const handleGroupUpdated = async (groupId, groupData) => {
+    try {
+      // Actualizar el grupo en el backend
+      let updatedGroup = await configurationService.updateGroups(groupId, groupData);
+
+      // Si el grupo tiene mentor pero la información está incompleta
+      if (updatedGroup.mentor && (!updatedGroup.mentor.firstName || !updatedGroup.mentor.lastName)) {
+        try {
+          // Obtener todos los grupos para asegurar que tenemos datos completos
+          const allGroups = await configurationService.getAllGroups();
+
+          // Encontrar el grupo recién actualizado con datos completos
+          const completeGroup = allGroups.find(g => g.id === updatedGroup.id);
+
+          if (completeGroup) {
+            updatedGroup = completeGroup;
+          }
+        } catch (fetchError) {
+          console.error("Error al obtener datos completos del grupo:", fetchError);
+          // Continuamos con los datos que tenemos
+        }
+      }
+
+      // Actualizar el estado local reemplazando el grupo editado
+      setGroups(prevGroups => prevGroups.map(group =>
+        group.id === groupId ? updatedGroup : group
+      ));
+
+      // Cerrar el modal
+      setShowEditGroupModal(false);
+
+      // Mostrar notificación
+      Swal.fire({
+        icon: "success",
+        title: "Grupo actualizado",
+        text: `El grupo ${updatedGroup.groupName} ha sido actualizado exitosamente`,
+      });
+    } catch (error) {
+      console.error("Error al actualizar grupo:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo actualizar el grupo. Intente nuevamente."
+      });
+    }
+  };
+
+  // Agrupar los grupos por nivel educativo
+  const groupedByLevel = filteredGroups.reduce((acc, group) => {
+    const levelId = group.level.id;
+    if (!acc[levelId]) {
+      acc[levelId] = {
+        level: group.level,
+        groups: []
+      };
+    }
+    acc[levelId].groups.push(group);
+    return acc;
+  }, {});
+
+  // Manejadores para modales
+  const handleCreateGroup = (levelId) => {
+    const selectedLevel = levels.find(level => level.id === levelId);
+    setSelectedLevel(selectedLevel);
+    setShowCreateGroupModal(true);
+  };
+
+
   const saveNewGroup = async (groupData) => {
     try {
-      const newGroup = await configurationService.createGroups(groupData);
-      
-      // Actualizar la lista de grupos
+      // Crear el grupo en el backend
+      let newGroup = await configurationService.createGroups(groupData);
+
+      // Si el grupo tiene mentor pero la información está incompleta
+      if (newGroup.mentor && (!newGroup.mentor.firstName || !newGroup.mentor.lastName)) {
+        try {
+          // Obtener todos los grupos para asegurar que tenemos datos completos
+          const allGroups = await configurationService.getAllGroups();
+
+          // Encontrar el grupo recién creado con datos completos
+          const completeGroup = allGroups.find(g => g.id === newGroup.id);
+
+          if (completeGroup) {
+            newGroup = completeGroup;
+          }
+        } catch (fetchError) {
+          console.error("Error al obtener datos completos del grupo:", fetchError);
+          // Continuamos con los datos que tenemos
+        }
+      }
+
+      // Cerrar el modal (esto ocurre automáticamente por el onSave callback)
+      setShowCreateGroupModal(false);
+
+      // Actualizar el estado local añadiendo el nuevo grupo con datos completos
       setGroups(prevGroups => [...prevGroups, newGroup]);
-      
-      showNotification(`Grupo ${newGroup.groupName} creado exitosamente`);
+
+      // Mostrar notificación con Swal
+      Swal.fire({
+        icon: "success",
+        title: "Grupo creado",
+        text: `El grupo ${newGroup.groupName} ha sido creado exitosamente`,
+      });
+
+      return newGroup;
     } catch (error) {
       console.error("Error al crear el grupo:", error);
+
+      // Mostrar error con Swal
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo crear el grupo. Intente nuevamente."
+      });
+
       throw error;
     }
   };
 
-  // Manejar la asignación de materia a un grupo
-  const handleAssignSubject = (group) => {
-    setSelectedGroupForSubject(group);
-    setAssignSubjectModalOpen(true);
+  const handleSubjectGroupUpdated = async () => {
+    try {
+      // Recargar las asignaciones de materias a grupos
+      const updatedSubjectGroups = await configurationService.getSubjectGroups();
+      setSubjectGroups(updatedSubjectGroups);
+    } catch (error) {
+      console.error("Error al actualizar asignaciones de materias a grupos:", error);
+    }
   };
 
-  // Guardar la asignación de materia a grupo
-  const saveSubjectAssignment = async (subjectGroupData) => {
+
+  const handleAssignSubject = (group) => {
+    if (!periodFilter) {
+      Swal.fire({
+        icon: "warning",
+        title: "Seleccione un periodo",
+        text: "Debe seleccionar un periodo académico para asignar materias",
+      });
+
+      // Scroll hacia el selector de periodo si está disponible
+      if (periodSelectorRef.current) {
+        periodSelectorRef.current.scrollIntoView({ behavior: 'smooth' });
+        periodSelectorRef.current.focus();
+      }
+      return;
+    }
+
+    setSelectedGroup(group);
+    setShowAssignSubjectModal(true);
+  };
+
+  // Modifica la función handleViewSubjects para guardar las materias junto con el grupo
+  const handleViewSubjects = async (group) => {
+    if (!periodFilter) {
+      Swal.fire({
+        icon: "warning",
+        title: "Seleccione un periodo",
+        text: "Debe seleccionar un periodo académico para ver las materias",
+      });
+
+      // Scroll hacia el selector de periodo si está disponible
+      if (periodSelectorRef.current) {
+        periodSelectorRef.current.scrollIntoView({ behavior: 'smooth' });
+        periodSelectorRef.current.focus();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Cargar materias del grupo para el período seleccionado
+      const groupSubjectsData = await configurationService.getSubjectsByGroupAndLevel(
+        periodFilter,
+        group.level.id
+      );
+
+      // Filtrar solo las materias de este grupo específico
+      const filteredGroupSubjects = groupSubjectsData.filter(
+        item => item.groups && item.groups.id === group.id
+      );
+
+      // Guardar el grupo seleccionado con sus materias
+      setSelectedGroup({ ...group, subjectsData: filteredGroupSubjects });
+      setShowSubjectsModal(true);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al cargar materias del grupo:", error);
+      setLoading(false);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudieron cargar las materias del grupo",
+      });
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    try {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción eliminará el grupo académico y no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        await configurationService.deleteGroups(groupId);
+
+        // Recargar grupos
+        const updatedGroups = await configurationService.getAllGroups();
+        setGroups(updatedGroups);
+
+        Swal.fire(
+          '¡Eliminado!',
+          'El grupo académico ha sido eliminado correctamente.',
+          'success'
+        );
+      }
+    } catch (error) {
+      console.error("Error al eliminar grupo:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo eliminar el grupo. Puede que tenga estudiantes o materias asociadas.'
+      });
+    }
+  };
+
+  // Manejadores para acciones CRUD
+  const handleGroupCreated = async (newGroup) => {
+    try {
+      setShowCreateGroupModal(false);
+
+      // Agregar el nuevo grupo al estado directamente en lugar de recargar todos
+      setGroups(prevGroups => [...prevGroups, newGroup]);
+
+      Swal.fire({
+        icon: "success",
+        title: "Grupo creado",
+        text: `El grupo ${newGroup.groupName} ha sido creado exitosamente`,
+      });
+    } catch (error) {
+      console.error("Error al actualizar grupos:", error);
+    }
+  };
+
+  const handleSubjectCreated = async (newSubject) => {
+    try {
+      setShowCreateSubjectModal(false);
+
+      // Recargar materias y relaciones
+      const [updatedSubjects, updatedSubjectProfessors] = await Promise.all([
+        configurationService.getSubjects(),
+        configurationService.getSubjectProfessors()
+      ]);
+
+      setSubjects(updatedSubjects);
+      setSubjectProfessors(updatedSubjectProfessors);
+
+      Swal.fire({
+        icon: "success",
+        title: "Materia creada",
+        text: `La materia ${newSubject.subjectName} ha sido creada exitosamente`,
+      });
+    } catch (error) {
+      console.error("Error al actualizar materias:", error);
+    }
+  };
+
+  const handleSubjectAssigned = async (subjectGroupData) => {
+
+
     try {
       await configurationService.createSubjectGroups(subjectGroupData);
-      showNotification("Materia asignada exitosamente al grupo");
+
+      setShowAssignSubjectModal(false);
+
+      Swal.fire({
+        icon: "success",
+        title: "Materia asignada",
+        text: "La materia ha sido asignada exitosamente al grupo",
+      });
     } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo asignar la materia al grupo.'
+      });
       console.error("Error al asignar materia:", error);
-      throw error;
     }
   };
 
-  // Guardar nueva materia
-  const saveNewSubject = async (subjectData) => {
+  const handleProfessorAssigned = async () => {
     try {
-      const newSubject = await configurationService.createSubject(subjectData);
-      showNotification(`Materia ${newSubject.subjectName} creada exitosamente`);
-      return newSubject
-    } catch (error) {
-      console.error("Error al crear materia:", error);
-      throw error;
-    }
-  };
+      setShowAssignProfessorModal(false);
 
-  // Guardar asignación de profesor a materia
-  const saveProfessorAssignment = async (subjectProfessorData) => {
-    try {
-      await configurationService.createSubjectProfessors(subjectProfessorData);
-      showNotification("Profesor asignado exitosamente a la materia");
+      // Recargar relaciones profesor-materia
+      const [updatedSubjects, updatedSubjectProfessors] = await Promise.all([
+        configurationService.getSubjects(),
+        configurationService.getSubjectProfessors()
+      ]);
+
+      setSubjects(updatedSubjects);
+      setSubjectProfessors(updatedSubjectProfessors);
+
+      Swal.fire({
+        icon: "success",
+        title: "Profesor asignado",
+        text: "El profesor ha sido asignado exitosamente a la materia",
+      });
     } catch (error) {
       console.error("Error al asignar profesor:", error);
-      throw error;
     }
   };
 
-  // Manejar cambio de período
-  const handlePeriodChange = (e) => {
-    setSelectedPeriod(e.target.value);
+  const handleDataUpdated = async () => {
+    try {
+      // Recargar materias y relaciones
+      const [updatedSubjects, updatedSubjectProfessors] = await Promise.all([
+        configurationService.getSubjects(),
+        configurationService.getSubjectProfessors()
+      ]);
+
+      setSubjects(updatedSubjects);
+      setSubjectProfessors(updatedSubjectProfessors);
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+    }
   };
 
-  // Manejar cambio de nivel
-  const handleLevelChange = (e) => {
-    setSelectedLevel(e.target.value);
-  };
 
-  // Manejar cambio en la búsqueda
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  const handleYearChange = (e) => {
+    const selectedYear = e.target.value;
+    setYearFilter(selectedYear);
 
-  // Resetear filtros
-  const resetFilters = () => {
-    setSelectedLevel("");
-    setSearchTerm("");
+    // Si seleccionaron el último año disponible, añadir dos años más
+    if (parseInt(selectedYear) === availableYears[availableYears.length - 1]) {
+      const lastYear = availableYears[availableYears.length - 1];
+      setAvailableYears([...availableYears, lastYear + 1, lastYear + 2]);
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b">
-        <h2 className="text-xl font-bold text-gray-800">Grupos y Materias</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          Administra los grupos y visualiza las materias asociadas a cada uno.
-        </p>
-      </div>
+    <div className="p-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-2xl font-bold mb-4 md:mb-0">Gestión de Grupos y Materias</h1>
 
-      {/* Botones de acción principales */}
-      <div className="p-4 border-b bg-gray-50">
-        <div className="flex flex-wrap gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setCreateSubjectModalOpen(true)}
-            className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md"
+        <div className="flex space-x-2">
+          {(activeTab === "subjects" || activeTab === "subjectGroups") && (
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className={`px-4 py-2 rounded-md flex items-center ${editMode
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
+            >
+              <Edit size={18} className="mr-1" />
+              {editMode ? "Finalizar edición" : "Editar relaciones"}
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center"
           >
-            <BookOpen size={18} />
-            Crear Materia
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setAssignProfessorModalOpen(true)}
-            className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md"
-          >
-            <UserPlus size={18} />
-            Asignar Profesor a Materia
-          </motion.button>
+            <Filter size={18} className="mr-1" />
+            {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+          </button>
+
+          {activeTab === "groups" && (
+            <button
+              onClick={() => setShowCreateSubjectModal(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
+              title="Crear una nueva materia con opción de asignar profesor"
+            >
+              <Plus size={18} className="mr-1" />
+              Crear Materia
+            </button>
+          )}
+
+          {activeTab === "subjects" && (
+            <button
+              onClick={() => setShowAssignProfessorModal(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
+            >
+              <UserPlus size={18} className="mr-1" />
+              Asignar Profesor
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="p-6 border-b bg-gray-50">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
+
+      {/* Pestañas de navegación */}
+      <div className="mb-6 border-b">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => {
+              setActiveTab("groups");
+              setEditMode(false);
+            }}
+            className={`py-2 px-4 flex items-center ${activeTab === "groups"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            <Users size={18} className="mr-1" />
+            Grupos
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("subjects");
+              setEditMode(false);
+            }}
+            className={`py-2 px-4 flex items-center ${activeTab === "subjects"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            <BookOpen size={18} className="mr-1" />
+            Materia/Profesor
+          </button>
+
+          {/* Nueva pestaña */}
+          <button
+            onClick={() => {
+              setActiveTab("subjectGroups");
+              setEditMode(false);
+            }}
+            className={`py-2 px-4 flex items-center ${activeTab === "subjectGroups"
+              ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            <Grid size={18} className="mr-1" />
+            Materia/Grupo
+          </button>
+        </nav>
+      </div>
+
+      {/* Selección de año y periodo académico (siempre visible) */}
+      <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Período Académico *
+              <Calendar size={16} className="inline mr-1" />
+              Año académico
             </label>
             <select
-              value={selectedPeriod}
-              onChange={handlePeriodChange}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-              required
+              value={yearFilter}
+              onChange={handleYearChange}
+              className="form-select w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
             >
-              <option value="">Seleccione un período</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Calendar size={16} className="inline mr-1" />
+              Periodo académico
+            </label>
+            <select
+              ref={periodSelectorRef}
+              value={periodFilter}
+              onChange={(e) => setPeriodFilter(e.target.value)}
+              className={`form-select w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 ${!yearFilter && 'opacity-50'}`}
+              disabled={!yearFilter}
+            >
+              <option value="">
+                {yearFilter ? "Seleccionar periodo" : "Primero seleccione un año"}
+              </option>
               {periods.map((period) => (
                 <option key={period.id} value={period.id}>
                   {period.name}
                 </option>
               ))}
             </select>
-            {!selectedPeriod && (
-              <p className="mt-1 text-xs text-amber-600">
-                <Info size={12} className="inline mr-1" />
-                Seleccione un período para ver las materias de los grupos
-              </p>
-            )}
-          </div>
-          
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nivel Educativo
-            </label>
-            <select
-              value={selectedLevel}
-              onChange={handleLevelChange}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-            >
-              <option value="">Todos los niveles</option>
-              {levels.map((level) => (
-                <option key={level.id} value={level.id}>
-                  {level.levelName}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buscar
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                placeholder="Buscar por nombre, código..."
-                className="w-full pl-10 border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-              />
-              <Search 
-                size={18} 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-end">
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 flex items-center text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              <RefreshCw size={16} className="mr-2" />
-              Resetear
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Notificación */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`mx-6 mt-4 p-4 rounded-md ${
-              notification.type === "error" 
-                ? "bg-red-50 text-red-700 border border-red-200" 
-                : "bg-green-50 text-green-700 border border-green-200"
-            }`}
-          >
-            <div className="flex items-center">
-              {notification.type === "error" ? (
-                <X size={18} className="mr-2" />
-              ) : (
-                <Check size={18} className="mr-2" />
-              )}
-              {notification.message}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Contenido principal */}
-      <div className="p-6">
+      <div className="bg-gray-50 rounded-lg shadow-sm">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500 mb-4"></div>
-            <p className="text-gray-600">Cargando grupos...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        ) : error ? (
-          <div className="text-center py-12 text-red-500">
-            <p>{error}</p>
-            <button 
-              className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600"
-              onClick={() => window.location.reload()}
-            >
-              Reintentar
-            </button>
-          </div>
-        ) : filteredGroups.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <Users size={48} className="mx-auto mb-4 text-gray-400" />
-            <p className="text-lg font-medium">No se encontraron grupos</p>
-            <p className="mt-1">Intente con otros filtros o cree un nuevo grupo</p>
-            
-            {/* Sección para crear grupos cuando no hay ninguno */}
-            <div className="mt-6">
-              <h3 className="text-md font-medium text-gray-700 mb-3">Crear un nuevo grupo</h3>
-              <div className="flex flex-col items-center space-y-4">
-                <div className="w-full max-w-md p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Seleccione un nivel educativo:
-                  </label>
-                  <select
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-                    onChange={(e) => {
-                      const levelId = parseInt(e.target.value);
-                      if (levelId) {
-                        const selectedLevel = levels.find(level => level.id === levelId);
-                        handleCreateGroup(selectedLevel);
-                      }
-                    }}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Seleccione un nivel</option>
-                    {levels.map((level) => (
-                      <option key={level.id} value={level.id}>
-                        {level.levelName}
-                      </option>
-                    ))}
-                  </select>
+        ) : activeTab === "groups" ? (
+          <div className="space-y-4 p-4">
+            {/* Filtros */}
+            {showFilters && (
+              <div className="bg-white rounded-lg shadow p-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Buscar grupo
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search size={16} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Nombre o código del grupo..."
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nivel educativo
+                    </label>
+                    <select
+                      value={levelFilter}
+                      onChange={(e) => setLevelFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Todos los niveles</option>
+                      {levels.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.levelName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (levels.length > 0) {
-                      handleCreateGroup(levels[0]);
-                    } else {
-                      showNotification("No hay niveles educativos disponibles", "error");
-                    }
-                  }}
-                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md"
-                >
-                  <Plus size={20} />
-                  Crear Grupo
-                </motion.button>
               </div>
+            )}
+
+            {/* Acordeón de niveles y grupos */}
+            <div className="space-y-4">
+              {Object.values(groupedByLevel).length > 0 ? (
+                Object.values(groupedByLevel).map(({ level, groups }) => (
+                  <LevelAccordion
+                    key={level.id}
+                    level={level}
+                    groups={groups}
+                    onCreateGroup={() => handleCreateGroup(level.id)}
+                    onEditGroup={handleEditGroup} // Nuevo prop
+                    onAssignSubject={handleAssignSubject}
+                    onViewSubjects={handleViewSubjects}
+                    onDeleteGroup={handleDeleteGroup}
+                    periodSelected={!!periodFilter}
+                  />
+                ))
+              ) : (
+                <div className="bg-white rounded-lg shadow p-8 text-center">
+                  <p className="text-gray-500">No se encontraron grupos con los filtros seleccionados.</p>
+                </div>
+              )}
             </div>
           </div>
+        ) : activeTab === "subjects" ? (
+          <SubjectProfessorsTab
+            subjects={subjects}
+            professors={professors}
+            subjectProfessors={subjectProfessors}
+            showFilters={showFilters}
+            editMode={editMode}
+            onDataUpdated={handleDataUpdated}
+          />
         ) : (
-          <div>
-            <div className="mb-4 flex justify-between items-center">
-              <p className="text-sm text-gray-500">
-                Mostrando {filteredGroups.length} de {groups.length} grupos
-              </p>
-            </div>
-            
-            {/* Acordeones por nivel */}
-            {Object.values(groupedByLevel).map(({ level, groups }) => (
-              <LevelAccordion
-                key={level.id} 
-                level={level} 
-                groups={groups}
-                selectedPeriod={selectedPeriod}
-                onGroupClick={handleGroupClick}
-                onCreateGroup={handleCreateGroup}
-                onAssignSubject={handleAssignSubject}
-              />
-            ))}
-          </div>
+          <SubjectGroupsTab
+            subjectGroups={subjectGroups}
+            allGroups={groups}
+            allSubjects={subjects}
+            allProfessors={professors}
+            periods={periods}
+            showFilters={showFilters}
+            editMode={editMode}
+            onSubjectGroupUpdated={handleSubjectGroupUpdated}
+            selectedPeriodId={periodFilter}
+          />
         )}
       </div>
 
-      {/* Modal para mostrar materias */}
-      <AnimatePresence>
-        {modalOpen && selectedGroup && (
-          <SubjectsModal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            group={selectedGroup}
-            subjects={groupSubjects}
-          />
-        )}
-      </AnimatePresence>
+      {/* Modales */}
+      {showCreateGroupModal && (
+        <CreateGroupModal
+          isOpen={showCreateGroupModal}
+          onClose={() => setShowCreateGroupModal(false)}
+          level={selectedLevel}
+          onSave={saveNewGroup}
+        />
+      )}
 
-      {/* Modal para crear grupo */}
-      <AnimatePresence>
-        {createGroupModalOpen && selectedLevelForGroup && (
-          <CreateGroupModal
-            isOpen={createGroupModalOpen}
-            onClose={() => setCreateGroupModalOpen(false)}
-            level={selectedLevelForGroup}
-            onSave={saveNewGroup}
-          />
-        )}
-      </AnimatePresence>
+      {showCreateSubjectModal && (
+        <CreateSubjectModal
+          isOpen={showCreateSubjectModal}
+          onClose={() => setShowCreateSubjectModal(false)}
+          onSave={handleSubjectCreated}
+          professors={professors}
+          withProfessorAssignment={true}
+        />
+      )}
 
-      {/* Modal para asignar materia a grupo */}
-      <AnimatePresence>
-        {assignSubjectModalOpen && selectedGroupForSubject && (
-          <AssignSubjectModal
-            isOpen={assignSubjectModalOpen}
-            onClose={() => setAssignSubjectModalOpen(false)}
-            group={selectedGroupForSubject}
-            onSave={saveSubjectAssignment}
-          />
-        )}
-      </AnimatePresence>
+      {showAssignSubjectModal && selectedGroup && (
+        <AssignSubjectModal
+          isOpen={showAssignSubjectModal}
+          onClose={() => setShowAssignSubjectModal(false)}
+          group={selectedGroup}
+          onSave={handleSubjectAssigned}
+          selectedPeriodId={periodFilter}
+        />
+      )}
 
-      {/* Modal para crear materia */}
-      <AnimatePresence>
-        {createSubjectModalOpen && (
-          <CreateSubjectModal
-            isOpen={createSubjectModalOpen}
-            onClose={() => setCreateSubjectModalOpen(false)}
-            onSave={saveNewSubject}
-          />
-        )}
-      </AnimatePresence>
+      {showAssignProfessorModal && (
+        <AssignProfessorModal
+          isOpen={showAssignProfessorModal}
+          onClose={() => setShowAssignProfessorModal(false)}
+          onSave={handleProfessorAssigned}
+          subjects={subjects}
+          professors={professors}
+        />
+      )}
 
-      {/* Modal para asignar profesor a materia */}
-      <AnimatePresence>
-        {assignProfessorModalOpen && (
-          <AssignProfessorModal
-            isOpen={assignProfessorModalOpen}
-            onClose={() => setAssignProfessorModalOpen(false)}
-            onSave={saveProfessorAssignment}
-          />
-        )}
-      </AnimatePresence>
 
-      {/* Modal de carga de materias */}
-      {loadingSubjects && (
-        <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
-            <div className="flex items-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500 mr-4"></div>
-              <p>Cargando materias...</p>
-            </div>
-          </div>
-        </div>
+      {showEditGroupModal && selectedGroup && (
+        <EditGroupModal
+          isOpen={showEditGroupModal}
+          onClose={() => setShowEditGroupModal(false)}
+          group={selectedGroup}
+          level={selectedGroup.level}
+          professors={professors}
+          onSave={handleGroupUpdated}
+        />
+      )}
+
+      {/* Modales */}
+      {showSubjectsModal && selectedGroup && (
+        <SubjectsModal
+          isOpen={showSubjectsModal}
+          onClose={() => setShowSubjectsModal(false)}
+          group={selectedGroup}
+          subjects={selectedGroup.subjectsData || []} // Usamos los datos cargados específicamente
+        />
       )}
     </div>
   );

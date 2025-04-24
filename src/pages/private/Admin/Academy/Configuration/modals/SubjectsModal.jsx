@@ -8,6 +8,9 @@ import { motion} from "framer-motion";
 const SubjectsModal = ({ isOpen, onClose, group, subjects }) => {
   if (!isOpen) return null;
 
+  // Asegurarse de que subjects sea un array y tenga los datos correctos
+  const safeSubjects = Array.isArray(subjects) ? subjects : [];
+
   return (
     <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
       <motion.div 
@@ -19,7 +22,7 @@ const SubjectsModal = ({ isOpen, onClose, group, subjects }) => {
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-800">
-              Materias del grupo: {group.groupName}
+              Materias del grupo: {group?.groupName || ""}
             </h2>
             <button 
               onClick={onClose}
@@ -37,24 +40,26 @@ const SubjectsModal = ({ isOpen, onClose, group, subjects }) => {
                 <School size={18} className="text-amber-500 mr-2" />
                 <span className="text-sm text-gray-500">Nivel:</span>
               </div>
-              <p className="font-medium">{group.level.levelName}</p>
+              <p className="font-medium">{group?.level?.levelName || "No especificado"}</p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center mb-2">
                 <User size={18} className="text-amber-500 mr-2" />
                 <span className="text-sm text-gray-500">Mentor:</span>
               </div>
-              <p className="font-medium">{group.mentor.firstName} {group.mentor.lastName}</p>
-              <p className="text-sm text-gray-500">{group.mentor.email}</p>
+              <p className="font-medium">
+                {group?.mentor ? `${group.mentor.firstName || ""} ${group.mentor.lastName || ""}` : "No asignado"}
+              </p>
+              <p className="text-sm text-gray-500">{group?.mentor?.email || ""}</p>
             </div>
           </div>
 
           <h3 className="font-medium text-lg mb-4 flex items-center">
             <BookOpen size={18} className="text-amber-500 mr-2" />
-            Materias asociadas ({subjects.length})
+            Materias asociadas ({safeSubjects.length})
           </h3>
 
-          {subjects.length === 0 ? (
+          {safeSubjects.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No hay materias asociadas a este grupo en el período seleccionado.
             </div>
@@ -72,19 +77,27 @@ const SubjectsModal = ({ isOpen, onClose, group, subjects }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {subjects.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                  {safeSubjects.map((item, index) => (
+                    <tr key={item?.id || index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Book size={16} className="text-amber-500 mr-2" />
-                          <span>{item.subjectProfessor.subject.subjectName}</span>
+                          <span>
+                            {item?.subjectProfessor?.subject?.subjectName || 
+                             item?.subject?.subjectName || 
+                             "Nombre de materia no disponible"}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <User size={16} className="text-gray-400 mr-2" />
                           <span>
-                            {item.subjectProfessor.professor.firstName} {item.subjectProfessor.professor.lastName}
+                            {item?.subjectProfessor?.professor ? 
+                              `${item.subjectProfessor.professor.firstName || ""} ${item.subjectProfessor.professor.lastName || ""}` : 
+                              item?.professor ? 
+                                `${item.professor.firstName || ""} ${item.professor.lastName || ""}` : 
+                                "Profesor no asignado"}
                           </span>
                         </div>
                       </td>
@@ -109,4 +122,4 @@ const SubjectsModal = ({ isOpen, onClose, group, subjects }) => {
   );
 };
 
-export default SubjectsModal
+export default SubjectsModal;

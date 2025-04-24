@@ -108,13 +108,13 @@ export default function Layout({ children }) {
         {/* Overlay para cerrar sidebar en móvil */}
         {isMobile && sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-30 z-30"
+            className="fixed inset-0 backdrop-blur-xs bg-opacity-30 z-30"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Contenido principal */}
-        <main className={`flex-1 p-6 overflow-auto bg-gray-50 ${isMobile && sidebarOpen ? 'opacity-100' : 'opacity-100'}`}>
+        <main className="flex-1 p-6 overflow-auto bg-gray-50">
           {children}
         </main>
       </div>

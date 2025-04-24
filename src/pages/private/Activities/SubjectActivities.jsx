@@ -13,6 +13,7 @@ import { StudentList } from "../Dashboard/TeacherLayout";
 import SubjectHeader from "../Subject/SubjectHeader";
 import { CreateActivityModal } from "./"; // Importamos el nuevo componente
 import { StudentModal } from "../Dashboard/StudentLayout";
+import Swal from "sweetalert2";
 
 export default function SubjectActivities() {
   const [tasks, setTasks] = useState([]);
@@ -45,9 +46,21 @@ export default function SubjectActivities() {
 
   useEffect(() => {
     if (!selectedSubject?.id || !selectedPeriod || !userState?.id) return;
-
+    console.log(selectedSubject)
     const fetchData = async () => {
       try {
+        // Mostrar indicador de carga
+        Swal.fire({
+          title: 'Cargando actividades...',
+          text: 'Obteniendo información de la asignatura',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+          
+        });
+    
         if (isTeacher) {
           const taskData = await teacherDataService.getActivities(
             selectedSubject.id,
@@ -60,17 +73,27 @@ export default function SubjectActivities() {
         } else {
           const grade = await studentDataService.getPeriodGrade(selectedSubject.id, selectedPeriod, userState.id);
           setPeriodGrade(grade);
-
+          console.log(selectedSubject.group?.id)
           const taskData = await studentDataService.getActivities(
             selectedSubject.id,
             selectedPeriod,
-            studentDataService.getStudentDataValue()?.group?.id,
+            selectedSubject.group?.id,
             userState.id
           );
           setTasks(Array.isArray(taskData) ? taskData : []);
         }
+        
+        // Cerrar el indicador de carga cuando termina
+        Swal.close();
       } catch (error) {
         console.error("Error obteniendo datos:", error);
+        // Mostrar mensaje de error
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las actividades',
+          timer: 2000
+        });
       }
     };
 
@@ -79,10 +102,35 @@ export default function SubjectActivities() {
 
   const fetchActivityDetail = async (activityId, userId) => {
     try {
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Cargando detalles...',
+        text: 'Obteniendo información de la actividad',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        
+      });
+      
       const taskData = await studentDataService.getActivityDetailsStudent(activityId, userId);
+      
+      // Cerrar el indicador de carga cuando termina
+      Swal.close();
+      
       return taskData;
     } catch (error) {
       console.error("Error obteniendo detalles de la actividad:", error);
+      
+      // Mostrar mensaje de error
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los detalles de la actividad',
+        timer: 2000
+      });
+      
       return null;
     }
   };
@@ -93,6 +141,19 @@ export default function SubjectActivities() {
       return;
     }
     if (isTeacher) {
+      // Mostrar indicador de carga antes de navegar
+      Swal.fire({
+        title: 'Abriendo actividad...',
+        text: 'Preparando datos para calificación',
+        timer: 1000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        allowOutsideClick: false,
+        showConfirmButton: false
+      });
+      
       // En lugar de pasar la función de actualización, usaremos un callback cuando regresemos
       navigate(PrivateRoutes.DASHBOARD + PrivateRoutes.ACTIVITIES_GRADING, {
         state: { 
@@ -115,6 +176,18 @@ export default function SubjectActivities() {
       if (!selectedSubject?.id || !selectedPeriod || !userState?.id || !isTeacher) return;
       
       try {
+        // Mostrar indicador de carga
+        Swal.fire({
+          title: 'Actualizando actividades...',
+          text: 'Obteniendo lista de actividades',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+          
+        });
+        
         const taskData = await teacherDataService.getActivities(
           selectedSubject.id,
           selectedPeriod,
@@ -123,11 +196,22 @@ export default function SubjectActivities() {
           true
         );
         setTasks(Array.isArray(taskData) ? taskData : []);
+        
+        // Cerrar el indicador de carga cuando termina
+        Swal.close();
       } catch (error) {
         console.error("Error recargando actividades:", error);
+        
+        // Mostrar mensaje de error
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron actualizar las actividades',
+          timer: 2000
+        });
       }
     };
-
+  
     loadActivities();
   }, [selectedSubject?.id, selectedPeriod, userState?.id, isTeacher]);
 

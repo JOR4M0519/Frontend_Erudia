@@ -1,9 +1,8 @@
-// PeriodsTab.jsx
 import React, { useState, useEffect } from "react";
 import { configurationService, PeriodForm } from "../";
-import { Plus, Edit, Trash2, Settings, Filter, X } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Filter, X, AlertTriangle } from "lucide-react";
 import Swal from "sweetalert2";
-import DatePicker from "react-datepicker"; // Asegúrate de tener esta dependencia
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const PeriodsTab = () => {
@@ -15,6 +14,10 @@ const PeriodsTab = () => {
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [gradeSettings, setGradeSettings] = useState({});
   const [showFilters, setShowFilters] = useState(false);
+
+  // estados para validación de porcentajes
+  const [percentageValidation, setPercentageValidation] = useState(true);
+  const [totalPercentage, setTotalPercentage] = useState(0);
 
   // Estados para los filtros
   const [startDateFilter, setStartDateFilter] = useState(null);
@@ -30,6 +33,13 @@ const PeriodsTab = () => {
   useEffect(() => {
     applyFilters();
   }, [periods, startDateFilter, endDateFilter, statusFilter, settingFilter]);
+
+  // Efecto para calcular el total de porcentajes cuando cambian los períodos
+  useEffect(() => {
+    if (periods.length > 0) {
+      calculateTotalPercentage();
+    }
+  }, [periods]);
 
   const fetchGradeSettings = async () => {
     try {
@@ -60,6 +70,16 @@ const PeriodsTab = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para calcular el porcentaje total de los períodos
+  const calculateTotalPercentage = () => {
+    const total = periods.reduce((sum, period) => {
+      return sum + (parseFloat(period.percentage) || 0);
+    }, 0);
+    
+    setTotalPercentage(total);
+    setPercentageValidation(Math.abs(total - 100) < 0.001); // Consideramos 100% con un pequeño margen de error
   };
 
   const applyFilters = () => {
@@ -106,9 +126,27 @@ const PeriodsTab = () => {
     setSettingFilter("");
   };
 
+  // Función para validar los porcentajes del año seleccionado
+  const validateYearPercentages = async () => {
+    try {
+      const data = await configurationService.getValidationPercentagePeriodByYear(schoolYear);
+      setPercentageValidation(data);
+      // No actualizamos totalPercentage aquí, ya que lo calculamos directamente de los períodos
+    } catch (error) {
+      console.error("Error al validar porcentajes del año:", error);
+      setPercentageValidation(false);
+    }
+  };
+
+  // Función para refrescar los datos después de crear/actualizar/eliminar periodos
+  const refreshData = async () => {
+    await fetchPeriods();
+    await validateYearPercentages();
+  };
+
+  // Modificar las funciones existentes para usar refreshData
   const handleCreatePeriod = async (periodData) => {
     try {
-      // Verificar si hay solapamiento de fechas
       if (!isDateRangeValid(periodData.startDate, periodData.endDate, null)) {
         Swal.fire({
           icon: 'error',
@@ -124,7 +162,7 @@ const PeriodsTab = () => {
         title: 'Éxito',
         text: 'Período creado correctamente'
       });
-      fetchPeriods();
+      await refreshData(); // Usar refreshData en lugar de fetchPeriods
       return true;
     } catch (error) {
       console.error("Error al crear período:", error);
@@ -155,16 +193,58 @@ const PeriodsTab = () => {
         title: 'Éxito',
         text: 'Período actualizado correctamente'
       });
-      fetchPeriods();
+      await refreshData();
       return true;
     } catch (error) {
       console.error("Error al actualizar período:", error);
+      
+      // Manejar específicamente el error de validación de porcentaje
+      if (error.response && error.response.data && error.response.data.message) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de validación',
+          text: error.response.data.message
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo actualizar el período'
+        });
+      }
+      return false;
+    }
+  };
+
+  const handleDeletePeriod = async (periodId) => {
+    try {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede revertir",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+      
+      if (result.isConfirmed) {
+        await configurationService.deletePeriod(periodId);
+        Swal.fire(
+          '¡Eliminado!',
+          'El período ha sido eliminado.',
+          'success'
+        );
+        await refreshData(); // Usar refreshData en lugar de fetchPeriods
+      }
+    } catch (error) {
+      console.error("Error al eliminar período:", error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo actualizar el período'
+        text: 'No se pudo eliminar el período'
       });
-      return false;
     }
   };
 
@@ -195,38 +275,6 @@ const PeriodsTab = () => {
         newEndDate >= periodStartDate
       );
     });
-  };
-
-  const handleDeletePeriod = async (periodId) => {
-    try {
-      const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: "Esta acción no se puede revertir",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-      });
-      
-      if (result.isConfirmed) {
-        await configurationService.deletePeriod(periodId);
-        Swal.fire(
-          '¡Eliminado!',
-          'El período ha sido eliminado.',
-          'success'
-        );
-        fetchPeriods();
-      }
-    } catch (error) {
-      console.error("Error al eliminar período:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo eliminar el período'
-      });
-    }
   };
 
   const openCreateModal = () => {
@@ -367,6 +415,53 @@ const PeriodsTab = () => {
           </div>
         </div>
       )}
+
+      {/* Alerta de validación de porcentajes con barra de progreso */}
+      {!loading && periods.length > 0 && (
+        <div className={percentageValidation 
+          ? 'bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm' 
+          : 'bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm'
+        }>
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              {percentageValidation ? (
+                <div className="h-5 w-5 text-green-400">✓</div>
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+              )}
+            </div>
+            <div className="ml-3 flex-grow">
+              <p className="text-sm text-gray-700 mb-2">
+                <span className="font-medium">
+                  {percentageValidation ? 'Correcto:' : 'Advertencia:'}
+                </span> 
+                {percentageValidation 
+                  ? ` Los períodos del año ${schoolYear} suman exactamente 100%.`
+                  : ` Los períodos del año ${schoolYear} suman ${totalPercentage}% en lugar del 100% requerido.`}
+              </p>
+              
+              {/* Barra de progreso */}
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className={
+                    percentageValidation ? 'h-2.5 rounded-full bg-green-600' : 
+                    (totalPercentage > 100 ? 'h-2.5 rounded-full bg-red-600' : 'h-2.5 rounded-full bg-yellow-400')
+                  } 
+                  style={{ width: `${Math.min(totalPercentage, 100)}%` }}
+                ></div>
+              </div>
+              
+              {!percentageValidation && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {totalPercentage < 100 
+                    ? `Faltan ${(100 - totalPercentage).toFixed(1)}% para completar el año académico.` 
+                    : `El total excede en ${(totalPercentage - 100).toFixed(1)}% el máximo permitido.`}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Tabla de períodos */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -408,7 +503,6 @@ const PeriodsTab = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    
                       {period.gradeSetting?.name || 'No asignada'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -455,4 +549,3 @@ const PeriodsTab = () => {
 };
 
 export default PeriodsTab;
-

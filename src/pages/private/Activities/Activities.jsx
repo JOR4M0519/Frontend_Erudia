@@ -18,6 +18,8 @@ import {
   AlertCircle,
   FileText
 } from "lucide-react";
+import { PrivateRoutes } from "../../../models";
+import Swal from "sweetalert2";
 
 export default function Activities() {
   const [activities, setActivities] = useState({});
@@ -35,32 +37,83 @@ export default function Activities() {
   useEffect(() => {
     if (!selectedPeriod || !userState.id) return;
     const fetchAllTasks = async () => {
-      const tasksData = await studentDataService.getAllActivities(selectedPeriod, userState.id);
-      
-      // Agrupar actividades por materia usando el campo "subject"
-      const groupedActivities = tasksData.reduce((acc, activity) => {
-        // Usar el nombre de la materia directamente del campo "subject"
-        const subjectName = activity.subject || 'Sin Materia';
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Cargando actividades...',
+        text: 'Recuperando todas tus actividades',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
         
-        if (!acc[subjectName]) {
-          acc[subjectName] = {
-            subjectName: subjectName,
-            activities: []
-          };
-        }
-        acc[subjectName].activities.push(activity);
-        return acc;
-      }, {});
+      });
       
-      setActivities(groupedActivities);
+      try {
+        const tasksData = await studentDataService.getAllActivities(selectedPeriod, userState.id);
+        
+        // Agrupar actividades por materia usando el campo "subject"
+        const groupedActivities = tasksData.reduce((acc, activity) => {
+          // Usar el nombre de la materia directamente del campo "subject"
+          const subjectName = activity.subject || 'Sin Materia';
+          
+          if (!acc[subjectName]) {
+            acc[subjectName] = {
+              subjectName: subjectName,
+              activities: []
+            };
+          }
+          acc[subjectName].activities.push(activity);
+          return acc;
+        }, {});
+        
+        setActivities(groupedActivities);
+        
+        // Cerrar el indicador cuando termina
+        Swal.close();
+      } catch (error) {
+        console.error("Error obteniendo actividades:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las actividades',
+          timer: 2000
+        });
+      }
     };
-
+  
     fetchAllTasks();
   }, [selectedPeriod, userState]);
 
   const handleActivityClick = async (activityId) => {
-    const activityData = await studentDataService.getActivityDetailsStudent(activityId, userState.id);
-    if (activityData) subjectActivityService.openTaskModal(activityData);
+    // Mostrar indicador de carga
+    Swal.fire({
+      title: 'Cargando detalles...',
+      text: 'Obteniendo información de la actividad',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      
+    });
+    
+    try {
+      const activityData = await studentDataService.getActivityDetailsStudent(activityId, userState.id);
+      if (activityData) {
+        subjectActivityService.openTaskModal(activityData);
+      }
+      // Cerrar el indicador cuando termine
+      Swal.close();
+    } catch (error) {
+      console.error("Error obteniendo detalles:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los detalles de la actividad',
+        timer: 2000
+      });
+    }
   };
 
   const toggleSubject = (subjectId) => {
@@ -290,7 +343,7 @@ export default function Activities() {
         )}
       </div>
 
-      <BackButton onClick={() => navigate("/dashboard")} />
+      <BackButton onClick={() => navigate(PrivateRoutes.DASHBOARD)} />
       <ActivityModal />
     </div>
   );
