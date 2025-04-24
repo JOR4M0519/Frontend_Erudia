@@ -109,6 +109,30 @@ export default function GradesStudent({ isTeacher,className}) {
 
 
   const handleDownloadBulletin = () => {
+
+    setLoading(true);
+    try{
+      
+      studentDataService.downloadStudentReport(userSelected.id, 0, selectedPeriod).then(() => 
+        {
+          setLoading(false)
+        })
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Boletín descargado',
+        text: 'El archivo se ha descargado correctamente',
+        timer: 1500
+      });
+
+    }catch(error){
+     
+      console.error("Error al descargar boletín:", error);
+    
+    }finally{
+      setLoading(false);
+    }
+
     Swal.fire({
       title: 'Preparando boletín...',
       text: 'Generando archivo PDF',

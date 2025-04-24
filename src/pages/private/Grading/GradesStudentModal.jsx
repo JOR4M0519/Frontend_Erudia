@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { X, ChevronLeft, Maximize2, Minimize2, Download, ChevronRight } from 'lucide-react';
-import { GradesStudent } from '../Dashboard/StudentLayout';
+import { GradesStudent, } from '../Dashboard/StudentLayout';
 import { CancelButton } from '../../../components';
+import {gradingService} from './';
 
 const GradesStudentModal = ({
     student,
@@ -36,6 +37,8 @@ const GradesStudentModal = ({
         setIsLoading(true);
         setTimeout(() => onClose(), 300);
     };
+
+    
 
     const toggleFullscreen = () => {
         setIsFullscreen(!isFullscreen);
@@ -199,10 +202,7 @@ const GradesStudentModal = ({
 
                         <div className="flex space-x-3">
                             <CancelButton onClick={handleClose} />
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                <Download className="w-4 h-4" />
-                                Descargar Boletín
-                            </button>
+
                         </div>
                     </div>
                 </footer>

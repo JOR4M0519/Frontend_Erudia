@@ -53,7 +53,7 @@ const API_ENDPOINTS = {
         DELETE_BY_ID: (id) => `/groups/${id}`,
         STUDENT_GROUPS_ALL: '/student-groups/active',
         STUDENT_GROUPS_BY_GROUPID: (groupId) => `/student-groups/groups/${groupId}/users`,
-
+        GET_ALL_STUDENT_GROUPS:(userId) => `/student-groups/users/${userId}`,
     },
     
     SUBJECTS:{
@@ -86,13 +86,19 @@ const API_ENDPOINTS = {
                 `/reports/pdf/group/${groupId}/period/${periodId}`,
             DOWNLOAD_STUDENT_REPORT: (studentId, groupId, periodId) =>
                 `/reports/pdf/group/${groupId}/student/${studentId}/period/${periodId}`,
+            DOWNLOAD_SELECTED_STUDENTS_REPORT: (groupId, periodId) => 
+                `/reports/pdf/group/${groupId}/period/${periodId}/students`,
             
             // Endpoints para visualización online (sin attachment)
-            VIEW_GROUP_REPORT_ONLINE: (groupId, periodId) =>
-                `/reports/group/${groupId}/period/${periodId}`,
-            VIEW_STUDENT_REPORT_ONLINE: (studentId, periodId) =>
-                `/reports/student/${studentId}/period/${periodId}`,
+            // VIEW_GROUP_REPORT_ONLINE: (groupId, periodId) =>
+            //     `/reports/group/${groupId}/period/${periodId}`,
+            // VIEW_STUDENT_REPORT_ONLINE: (studentId, periodId) =>
+            //     `/reports/student/${studentId}/period/${periodId}`,
         
+            VIEW_STUDENT_REPORT: (groupId,studentId, periodId) => 
+                `/reports/view/group/${groupId}/student/${studentId}/period/${periodId}`,
+            VIEW_GROUP_REPORT: (groupId, periodId) => 
+                `/reports/view/group/${groupId}/period/${periodId}`,
         },
 
         GRADE_DISTRIBUTION: (year,periodId,levelId,subjectId) =>

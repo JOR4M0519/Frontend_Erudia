@@ -1,14 +1,29 @@
-import React, { useState } from "react";
-import { FilePlus, Download, FileText, Search, Filter, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { FilePlus, Download, FileText, Search, Filter, ChevronDown, Eye } from "lucide-react";
 import { motion } from "framer-motion";
-import { ReportForm, ReportPreview } from "../";
+import { ReportForm, ReportPreview, ReportModal } from "../";
 import { processesService } from "../processesService";
+import Swal from "sweetalert2"; // Importamos SweetAlert2
 
 const GenerateReportsTab = () => {
   const [activeStep, setActiveStep] = useState("form"); // form, preview, success
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // Para almacenar el resultado de la operación
+  const [selectedStudents, setSelectedStudents] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [reportUrl, setReportUrl] = useState(null); // Para almacenar la URL del reporte
+  const [isModalOpen, setIsModalOpen] = useState(false); // Para controlar la apertura/cierre del modal
+
+  // Limpiar las URLs de blob cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      if (reportUrl && result?.isBlob) {
+        URL.revokeObjectURL(reportUrl);
+      }
+    };
+  }, [reportUrl, result]);
 
   const handleFormSubmit = (data) => {
     setLoading(true);
@@ -20,6 +35,20 @@ const GenerateReportsTab = () => {
   };
 
   const handleGenerateReport = async (viewOption) => {
+    // Mostrar SweetAlert para indicar la carga
+    Swal.fire({
+      title: 'Generando reportes',
+      text: 'Por favor espere mientras procesamos su solicitud...',
+      icon: 'info',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
     setLoading(true);
     
     let response;
@@ -28,33 +57,44 @@ const GenerateReportsTab = () => {
     try {
       // Guardar la opción de visualización para referencia futura
       const viewTypeSelected = viewOption;
-      console.log(data)
+      
+      // Guardar los datos seleccionados
+      setSelectedStudents(data.selectedStudents && data.selectedStudents.length > 0 ? 
+        data.selectedStudents : undefined);
+      setSelectedGroup(data.selectedGroup);
+      setSelectedPeriod(data.period);
+
       // Realizar la acción según la opción seleccionada
       if (viewOption === "download") {
-        const selectedStudents = data.selectedStudents > 0 ? data.selectedStudents: undefined 
-
-        // Si es un grupo específico
-        if (selectedStudents==undefined && data.selectedGroup) {
-          response = await processesService.downloadGroupReport(data.selectedGroup, data.period);
-        } 
-        
-        // Si es un estudiante específco
-        else if (selectedStudents) {
-          response = await processesService.downloadStudentReport(
-            selectedStudents[0], 
-            data.selectedGroup, 
-            data.period
-          );
-          
-        }
+        response = await handleReportDownload();
       } else {
         // Ver online
-        const selectedStudents = data.selectedStudents > 0 ? data.selectedStudents: undefined 
-        const id = selectedStudents || data.selectedGroup;
-        const type = data.studentId ? "student" : "group";
-        response = await processesService.viewReportOnline(id, data.period, type);
+        const id = data.selectedStudents && data.selectedStudents.length === 1 ? 
+          data.selectedStudents[0] : data.selectedGroup;
+        const type = data.selectedStudents && data.selectedStudents.length === 1 ? "student" : "group";
+        
+        // Pasar los estudiantes seleccionados si hay más de uno
+        const selectedStudentsParam = data.selectedStudents && data.selectedStudents.length > 1 ? 
+          data.selectedStudents : null;
+        
+        response = await processesService.viewReportOnline(
+          id, 
+          data.period, // Usar data.period directamente para asegurar que se pasa correctamente 
+          type, 
+          data.selectedGroup, // Usar data.selectedGroup directamente 
+          selectedStudentsParam
+        );
+        
+        // Guardar la URL del reporte para el modal
+        if (response.success && response.reportUrl) {
+          setReportUrl(response.reportUrl);
+          // Si es un ZIP, mostrar mensaje de advertencia
+          if (response.isZip) {
+            response.message = "El reporte contiene múltiples archivos. Se recomienda descargarlo.";
+          }
+        }
       }
-      console.log(response)
+      
       // Asegurar que el resultado tiene la propiedad viewOption
       if (response.success && !response.viewOption) {
         response.viewOption = viewTypeSelected;
@@ -62,6 +102,25 @@ const GenerateReportsTab = () => {
       
       setResult(response);
       setActiveStep("success");
+      
+      // Cerrar SweetAlert con mensaje de éxito/error
+      if (response.success) {
+        Swal.fire({
+          title: '¡Completado!',
+          text: 'Los reportes se han generado correctamente',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: response.message || 'Ha ocurrido un error al generar los reportes',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#f59e0b'
+        });
+      }
     } catch (error) {
       console.error("Error generando reporte:", error);
       setResult({ 
@@ -69,15 +128,72 @@ const GenerateReportsTab = () => {
         message: "Error al generar el reporte: " + (error.message || "Error desconocido") 
       });
       setActiveStep("success");
+      
+      // Mostrar error en SweetAlert
+      Swal.fire({
+        title: 'Error',
+        text: "Error al generar el reporte: " + (error.message || "Error desconocido"),
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#f59e0b'
+      });
     } finally {
       setLoading(false);
     }
   };
+  
+
+  const handleReportDownload = async() => {
+    let response;
+    
+    // Si hay estudiantes seleccionados específicamente y no es solo uno
+    if (reportData.selectedStudents && reportData.selectedStudents.length > 1) {
+      // Usar el endpoint para múltiples estudiantes seleccionados
+      response = await processesService.downloadSelectedStudentsReport(
+        reportData.selectedGroup, 
+        reportData.period,
+        reportData.selectedStudents
+      );
+    }
+    // Si es un solo estudiante
+    else if (reportData.selectedStudents && reportData.selectedStudents.length === 1) {
+      response = await processesService.downloadStudentReport(
+        reportData.selectedStudents[0], 
+        reportData.selectedGroup, 
+        reportData.period
+      );
+    }
+    // Si es todo el grupo (sin selección específica)
+    else {
+      response = await processesService.downloadGroupReport(
+        reportData.selectedGroup, 
+        reportData.period
+      );
+    }
+    
+    return response;
+  };
 
   const handleReset = () => {
+    // Limpiar la URL de blob si existe
+    if (reportUrl && result?.isBlob) {
+      URL.revokeObjectURL(reportUrl);
+    }
+    
     setActiveStep("form");
     setReportData(null);
     setResult(null);
+    setReportUrl(null);
+  };
+
+  // Función para abrir el modal del reporte
+  const openReportModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Función para cerrar el modal del reporte
+  const closeReportModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -136,11 +252,17 @@ const GenerateReportsTab = () => {
             className="text-center py-10"
           >
             <div className={`w-16 h-16 mx-auto ${result?.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mb-4`}>
-              <Download size={32} className={result?.success ? "text-green-600" : "text-red-600"} />
+              {result?.viewOption === "download" ? (
+                <Download size={32} className={result?.success ? "text-green-600" : "text-red-600"} />
+              ) : (
+                <Eye size={32} className={result?.success ? "text-green-600" : "text-red-600"} />
+              )}
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">
               {result?.success 
-                ? "¡Boletines generados correctamente!" 
+                ? result?.viewOption === "download" 
+                  ? "¡Boletines generados correctamente!" 
+                  : "¡Reporte listo para visualizar!"
                 : "Error al generar boletines"}
             </h3>
             <p className="text-gray-500 mb-6">{result?.message || "Operación completada"}</p>
@@ -173,29 +295,38 @@ const GenerateReportsTab = () => {
                   whileTap={{ scale: 0.97 }}
                   className="px-6 py-2 bg-amber-500 text-white rounded-md flex items-center hover:bg-amber-600"
                   onClick={() => {
-                    // Para descarga, repetimos la acción
-                    if (reportData.studentId) {
-                      processesService.downloadStudentReport(
-                        reportData.studentId, 
-                        reportData.groupId, 
-                        reportData.periodId
-                      );
-                    } else {
-                      processesService.downloadGroupReport(
-                        reportData.groupId, 
-                        reportData.periodId
-                      );
-                    }
+                    handleReportDownload(); 
                   }}
                 >
                   <Download size={16} className="mr-2" />
                   Descargar de nuevo
                 </motion.button>
               )}
+              
+              {/* Botón para ver el reporte en el modal */}
+              {result?.success && result?.viewOption === "view" && reportUrl && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="px-6 py-2 bg-amber-500 text-white rounded-md flex items-center hover:bg-amber-600"
+                  onClick={openReportModal}
+                >
+                  <Eye size={16} className="mr-2" />
+                  Ver reporte
+                </motion.button>
+              )}
             </div>
           </motion.div>
         )}
       </motion.div>
+      
+      {/* Modal para visualizar el reporte */}
+      <ReportModal 
+        url={reportUrl} 
+        isOpen={isModalOpen} 
+        onClose={closeReportModal}
+        isZip={result?.isZip}
+      />
     </div>
   );
 };

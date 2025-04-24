@@ -33,10 +33,82 @@ docker push jpramos19/erudia-config:latest
 docker push jpramos19/erudia-eureka:latest
 docker push jpramos19/erudia-gateway:latest
 docker push jpramos19/erudia-academy:latest
-docker push jpramos19/erudia-frontend:latest
+
 
 docker pull jpramos19/erudia-academy:latest
 
-docker build -t jpramos19/erudia-frontend:latest .
+o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-
+
+********************************
+backend-academy-service
+********************************
+docker-compose build --no-cache academy-service-1
+docker tag erudiasiged-academy-service-1:latest jpramos19/erudia-academy:latest
+docker push jpramos19/erudia-academy:latest
+
+++++++++++++++++++++++++++++++++
+NUBE - backend-academy-service
+++++++++++++++++++++++++++++++++
+docker-compose down academy-service-1
+docker-compose down academy-service-2
+
+docker-compose pull academy-service
+docker pull jpramos19/erudia-academy:latest
+
+
+docker-compose up -d academy-service-1
+docker-compose up -d academy-service-2
+
+o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-
+
+********************************
+backend-gateway-service
+********************************
+docker-compose build --no-cache gateway-service
+docker tag erudiasiged-gateway-service:latest jpramos19/erudia-gateway:latest
+docker push jpramos19/erudia-gateway:latest
+
+++++++++++++++++++++++++++++++++
+NUBE - backend-gateway-service
+++++++++++++++++++++++++++++++++
+docker-compose down gateway-service
+
+docker pull jpramos19/erudia-gateway:latest
+docker-compose pull gateway-service
+
+docker-compose up -d gateway-service
+docker-compose up -d frontend
+docker-compose up -d academy-service-1
+--
+docker-compose logs -f gateway-service
+
+
+o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-
+
+********************************
+frontend
+********************************
 docker build --build-arg VITE_API_BASE_URL=/api -t jpramos19/erudia-frontend:latest .
+docker push jpramos19/erudia-frontend:latest
+
+++++++++++++++++++++++++++++++++
+NUBE - frontend
+++++++++++++++++++++++++++++++++
+docker-compose down frontend
+docker-compose pull frontend
+docker pull jpramos19/erudia-frontend:latest
+docker-compose up -d frontend
+
+o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+NUBE - docker-compose
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+docker-compose.yml 
+nano ~/erudia/docker-compose.yml
+
+docker start keycloak_backup
+
+
 ----------------
+cd 'D:\OneDrive - unbosque.edu.co\Documents\AA_Daigaku\Ing Sistemas\Trabajo de Grado\Erudia SIGED'

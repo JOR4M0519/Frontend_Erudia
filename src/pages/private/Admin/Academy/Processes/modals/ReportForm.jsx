@@ -22,7 +22,10 @@ const ReportForm = ({ onSubmit, loading }) => {
   const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [loadingPeriods, setLoadingPeriods] = useState(false);
+  const [loadingLevels, setLoadingLevels] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
 
   // Cargar años (podría ser estático o dinámico)
   useEffect(() => {
@@ -40,7 +43,7 @@ const ReportForm = ({ onSubmit, loading }) => {
     const fetchPeriods = async () => {
       if (!formData.year) return;
       
-      setLoadingData(true);
+      setLoadingPeriods(true);
       try {
         const periodsData = await processesService.getActivePeriodsByYear(formData.year);
         setPeriods(periodsData);
@@ -50,7 +53,7 @@ const ReportForm = ({ onSubmit, loading }) => {
       } catch (error) {
         console.error("Error al cargar períodos:", error);
       } finally {
-        setLoadingData(false);
+        setLoadingPeriods(false);
       }
     };
     
@@ -60,14 +63,14 @@ const ReportForm = ({ onSubmit, loading }) => {
   // Cargar niveles educativos
   useEffect(() => {
     const fetchLevels = async () => {
-      setLoadingData(true);
+      setLoadingLevels(true);
       try {
         const levelsData = await processesService.getEducationalLevels();
         setLevels(levelsData);
       } catch (error) {
         console.error("Error al cargar niveles educativos:", error);
       } finally {
-        setLoadingData(false);
+        setLoadingLevels(false);
       }
     };
     
@@ -261,9 +264,11 @@ const ReportForm = ({ onSubmit, loading }) => {
               onChange={handleChange}
               className="w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500"
               required
-              disabled={loadingData || periods.length === 0}
+              disabled={loadingPeriods || periods.length === 0}
             >
-              {periods.length === 0 ? (
+              {loadingPeriods ? (
+                <option value="">Cargando períodos...</option>
+              ) : periods.length === 0 ? (
                 <option value="">No hay períodos disponibles</option>
               ) : (
                 periods.map(period => (
@@ -274,9 +279,16 @@ const ReportForm = ({ onSubmit, loading }) => {
               )}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <ChevronDown size={18} className="text-gray-400" />
+              {loadingPeriods ? (
+                <div className="animate-spin h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full mr-2"></div>
+              ) : (
+                <ChevronDown size={18} className="text-gray-400" />
+              )}
             </div>
           </div>
+          {loadingPeriods && (
+            <p className="mt-1 text-xs text-amber-500">Cargando períodos disponibles...</p>
+          )}
         </div>
 
         {/* Categoría (Nivel educativo) */}
@@ -291,9 +303,11 @@ const ReportForm = ({ onSubmit, loading }) => {
               onChange={handleChange}
               className="w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500"
               required
-              disabled={loadingData || levels.length === 0}
+              disabled={loadingLevels || levels.length === 0}
             >
-              {levels.length === 0 ? (
+              {loadingLevels ? (
+                <option value="">Cargando niveles...</option>
+              ) : levels.length === 0 ? (
                 <option value="">No hay niveles disponibles</option>
               ) : (
                 <>
@@ -307,9 +321,16 @@ const ReportForm = ({ onSubmit, loading }) => {
               )}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <ChevronDown size={18} className="text-gray-400" />
+              {loadingLevels ? (
+                <div className="animate-spin h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full mr-2"></div>
+              ) : (
+                <ChevronDown size={18} className="text-gray-400" />
+              )}
             </div>
           </div>
+          {loadingLevels && (
+            <p className="mt-1 text-xs text-amber-500">Cargando niveles disponibles...</p>
+          )}
         </div>
 
         {/* Plantilla */}
@@ -351,31 +372,40 @@ const ReportForm = ({ onSubmit, loading }) => {
 
         {/* Selección de grupo */}
         {formData.level && (
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Grupo
-            </label>
-            <div className="relative">
-              <select
-                name="selectedGroup"
-                value={formData.selectedGroup}
-                onChange={handleChange}
-                className="w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500"
-                disabled={loadingData || groups.length === 0}
-              >
-                <option value="">Seleccione un grupo</option>
-                {groups.map(group => (
-                  <option key={group.id} value={group.id}>
-                    {group.name} ({group.code})
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <ChevronDown size={18} className="text-gray-400" />
-              </div>
-            </div>
-          </div>
+  <div className="md:col-span-2">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Grupo
+    </label>
+    <div className="relative">
+      <select
+        name="selectedGroup"
+        value={formData.selectedGroup}
+        onChange={handleChange}
+        className="w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500"
+        disabled={loadingData || groups.length === 0}
+      >
+        <option value="">
+          {loadingData ? "Cargando grupos..." : "Seleccione un grupo"}
+        </option>
+        {groups.map(group => (
+          <option key={group.id} value={group.id}>
+            {group.name} ({group.code})
+          </option>
+        ))}
+      </select>
+      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+        {loadingData ? (
+          <div className="animate-spin h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full mr-2"></div>
+        ) : (
+          <ChevronDown size={18} className="text-gray-400" />
         )}
+      </div>
+    </div>
+    {loadingData && groups.length === 0 && (
+      <p className="mt-1 text-xs text-amber-500">Cargando grupos disponibles...</p>
+    )}
+  </div>
+)}
       </div>
 
       {/* Selección de estudiantes */}
