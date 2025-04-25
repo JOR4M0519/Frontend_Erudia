@@ -12,14 +12,12 @@ import { Layout } from "./components/index"
 
 import { Login } from './pages/login/Login';
 import { Dashboard } from './pages/private/Dashboard';
-import { Admin } from './pages/private/Admin';
 import { Subject } from './pages/private/Subject';
 import { Activities } from './pages/private/Activities';
 import { DetailStudentTracking, StudentTracking } from './pages/private/StudentTracking';
 import { Settings } from './pages/private/Setting';
 import { Profile } from './pages/private/Profile';
 import { GradesStudent } from './pages/private/Dashboard/StudentLayout';
-import { SystemUsers } from './pages/private/Admin/System';
 
 
 // const Login = lazy(() => import('./pages/login/Login'));
@@ -44,10 +42,6 @@ function App() {
               <Route element={<AuthGuard privateValidation={true} />}>
 
                 <Route path={`${PrivateRoutes.DASHBOARD}/*`} element={<Dashboard />} />
-
-                <Route element={<MultiRoleGuard navKey="ADMIN" />}>
-                  <Route path={`${PrivateRoutes.ADMIN}/*`} element={<Admin />} />
-                </Route>
 
                 <Route element={<MultiRoleGuard navKey="PROFILE" />}>
                   <Route path={PrivateRoutes.PROFILE} element={<Profile />} />

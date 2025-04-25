@@ -6,7 +6,6 @@ import { Layout } from "../../../components";
 import { studentDataService, StudentLayout } from "./StudentLayout";
 import { configViewService } from "../Setting";
 import { TeacherLayout } from "./TeacherLayout";
-import { Admin } from "../Admin";
 import { Navigate, useLocation } from "react-router-dom";
 import TokenRefreshAlert from "../../../services/config/token_helper";
 
@@ -67,8 +66,6 @@ export default function Dashboard() {
     if (isAdminRoute) {
       return (
       <>
-        <TokenRefreshAlert />
-        <Admin />
       </>
       )
      

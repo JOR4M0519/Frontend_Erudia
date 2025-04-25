@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { decodeRoles } from "../../../../utilities";
 import { AsistanceGrid, DirectionGroupsGrid } from "../TeacherLayout";
 import { PrivateRoutes, Roles } from "../../../../models";
-import { SystemUsers } from "../../Admin/System";
 import { configViewService } from "../../Setting";
 import Swal from 'sweetalert2'; // Importar SweetAlert2
 
