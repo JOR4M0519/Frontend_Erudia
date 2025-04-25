@@ -5,12 +5,9 @@ import { motion } from "framer-motion";
 import {
   AreasTab,
   PeriodsTab,
-  SchemesTab,
   ObservationsTab,
   LevelsAcademyTab,
   UserStatesTab,
-  KnowledgesTab,
-  MainKnowledgesTab,
   StudentsGroupsTab
 } from "./Configuration";
 
@@ -23,11 +20,10 @@ const AcademicConfiguration = () => {
   const tabs = [
     { id: "areas", label: "Áreas" },
     // { id: "niveles", label: "Niveles académicos" },
-    { id: "esquemas", label: "Esquemas" },
+    
     { id: "periodo", label: "Periodo" },
     // { id: "observaciones", label: "Observaciones" },
     // { id: "estados", label: "Estados de usuario" },
-    { id: "knowledges", label: "Saberes" },
     { id: "groups", label: "Grupos/Materias" },
   ];
 
@@ -82,7 +78,6 @@ const AcademicConfiguration = () => {
               {activeTab === "observaciones" && <ObservationsTab />}
               {activeTab === "niveles" && <LevelsAcademyTab />}
               {activeTab === "estados" && <UserStatesTab />}
-              {activeTab === "knowledges" && <MainKnowledgesTab />}
               {activeTab === "groups" && <StudentsGroupsTab />}
             </motion.div>
           </div>
