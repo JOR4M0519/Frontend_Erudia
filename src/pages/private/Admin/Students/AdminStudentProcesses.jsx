@@ -3,23 +3,19 @@ import { ChevronLeft, Users, ClipboardList, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  PromotionsTab,
   StatusTab,
   AbsencesProcessTab,
-  ManagementTab
 } from "./Processes";
 import { AdminRoutes } from "../../../../models";
 
 const AdminStudentProcesses = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("promociones");
+  const [activeTab, setActiveTab] = useState("estado");
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const tabs = [
-    { id: "promociones", label: "Promociones" },
-    { id: "estado", label: "Estado" },
+   { id: "estado", label: "Estado" },
     // { id: "ausencias", label: "Ausencias" },
-    { id: "gestion", label: "Gestión" }
   ];
 
   return (
@@ -80,10 +76,8 @@ const AdminStudentProcesses = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {activeTab === "promociones" && <PromotionsTab year={currentYear} />}
               {activeTab === "estado" && <StatusTab year={currentYear} />}
               {activeTab === "ausencias" && <AbsencesProcessTab year={currentYear} />}
-              {activeTab === "gestion" && <ManagementTab year={currentYear} />}
             </motion.div>
           </div>
         </div>

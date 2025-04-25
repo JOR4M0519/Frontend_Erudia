@@ -13,7 +13,7 @@ import { AdminRoutes } from "../../../models/routes";
 
 import { AdminInstitutionConfig, FamilyReport } from "./Institution";
 import { AdminStudentProcesses, AdminStudentReport } from "./Students";
-import { AddEmployee, EmployeeConsolidated } from "./Employees";
+import { EmployeeConsolidated } from "./Employees";
 import { AcademicConfiguration, AcademicProcesses, AcademicReports } from "./Academy";
 import { SystemUsers } from "./System";
 
@@ -54,7 +54,6 @@ const Admin = () => {
       
       {/* Subpáginas de Empleados */}
       <Route path={removeAdminPrefix(AdminRoutes.EMPLOYEES_CONSOLIDATED)} element={<EmployeeConsolidated section="consolidated" />} />
-      <Route path={removeAdminPrefix(AdminRoutes.EMPLOYEES_ADD)} element={<AddEmployee section="add" />} />
       
       {/* Subpáginas de Academia */}
       <Route path={removeAdminPrefix(AdminRoutes.ACADEMY_REPORTS)} element={<AcademicReports section="reports" />} />

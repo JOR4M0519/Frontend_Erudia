@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminRoutes } from "../../../../models";
 import Swal from "sweetalert2";
-import { AddEmployee, userService, employeeService } from "./";
-import EmployeeDetailModal from "./EmployeeDetailModal";
+import { userService, employeeService } from "./";
 
 const EmployeeConsolidated = () => {
   const navigate = useNavigate();
@@ -536,28 +535,7 @@ const handleRowClick = async (userId) => {
           </div>
         )}
       </div>
-      <AddEmployee
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleUserCreated}
-      />
 
-      {/* Modal de detalles del empleado */}
-      <EmployeeDetailModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        userDetail={userDetail}
-        selectedUser={selectedUser}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
-        editedUserData={editedUserData}
-        handleInputChange={handleInputChange}
-        handleRoleChange={handleRoleChange} // Añadimos el manejador de roles
-        handleSaveChanges={handleSaveChanges}
-        idTypes={idTypes}
-        roles={roles} // Pasamos los roles al modal
-        detailLoading={detailLoading}
-      />
     </main>
   );
 };

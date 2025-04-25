@@ -3,28 +3,19 @@ import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  AreasTab,
   PeriodsTab,
-  ObservationsTab,
-  LevelsAcademyTab,
-  UserStatesTab,
-  StudentsGroupsTab
 } from "./Configuration";
 
 import { AdminRoutes } from "../../../../models";
 
 const AcademicConfiguration = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("areas");
+  const [activeTab, setActiveTab] = useState("periodo");
 
   const tabs = [
-    { id: "areas", label: "Áreas" },
-    // { id: "niveles", label: "Niveles académicos" },
-    
+   
     { id: "periodo", label: "Periodo" },
-    // { id: "observaciones", label: "Observaciones" },
-    // { id: "estados", label: "Estados de usuario" },
-    { id: "groups", label: "Grupos/Materias" },
+   
   ];
 
   return (
@@ -72,13 +63,7 @@ const AcademicConfiguration = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {activeTab === "areas" && <AreasTab />}
               {activeTab === "periodo" && <PeriodsTab />}
-              {activeTab === "esquemas" && <SchemesTab />}
-              {activeTab === "observaciones" && <ObservationsTab />}
-              {activeTab === "niveles" && <LevelsAcademyTab />}
-              {activeTab === "estados" && <UserStatesTab />}
-              {activeTab === "groups" && <StudentsGroupsTab />}
             </motion.div>
           </div>
         </div>
