@@ -49,22 +49,6 @@ const ReportPreview = ({ data, onBack, onConfirm }) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
-          {/* Opción: Ver online */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleViewOnline}
-            className={`flex flex-col items-center justify-center p-8 bg-white rounded-lg border-2 transition-all ${
-              viewOption === "online" 
-                ? "border-amber-500 shadow-lg" 
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <div className="bg-gray-100 p-4 rounded-full mb-4">
-              <Eye size={40} className="text-gray-800" />
-            </div>
-            <span className="font-medium">Ver online</span>
-          </motion.button>
           
           {/* Opción: Descargar */}
           <motion.button

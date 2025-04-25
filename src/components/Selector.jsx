@@ -1,4 +1,3 @@
-// Componente Selector mejorado
 import { Calendar, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // Importamos motion

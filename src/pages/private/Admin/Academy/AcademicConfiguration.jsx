@@ -22,7 +22,7 @@ const AcademicConfiguration = () => {
 
   const tabs = [
     { id: "areas", label: "Áreas" },
-    { id: "niveles", label: "Niveles académicos" },
+    // { id: "niveles", label: "Niveles académicos" },
     { id: "esquemas", label: "Esquemas" },
     { id: "periodo", label: "Periodo" },
     // { id: "observaciones", label: "Observaciones" },
