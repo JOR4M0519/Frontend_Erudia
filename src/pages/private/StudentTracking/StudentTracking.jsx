@@ -21,6 +21,8 @@ export default function StudentTracking() {
   const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null });
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  // Agregar este estado justo después de los otros estados al inicio del componente
+  const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
   const userState = useSelector((store) => store.selectedUser);
@@ -61,6 +63,7 @@ export default function StudentTracking() {
   
 
   useEffect(() => {
+    setIsLoading(true); // Activar el indicador de carga
     if (!userState.id) return;
     const fetchObservations = async () => {
       try {
@@ -75,11 +78,14 @@ export default function StudentTracking() {
         if (data && Array.isArray(data)) {
           setObservations(data);
           setFilteredObservations(data);
+          
         } else {
           console.warn("Los datos recibidos no son un array:", data);
         }
       } catch (error) {
         console.error("Error al obtener las observaciones:", error);
+      } finally {
+        setIsLoading(false); // Desactivar el indicador de carga
       }
     };
 
@@ -222,6 +228,7 @@ export default function StudentTracking() {
         onEditObservation={handleEditObservation}
         onDeleteObservation={handleDeleteObservation}
         onItemClick={handleItemClick}
+        isLoading={isLoading} // Agregar esta prop
       />
 
       <div className="flex justify-end">

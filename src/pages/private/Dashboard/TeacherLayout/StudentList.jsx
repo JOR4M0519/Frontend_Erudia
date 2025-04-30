@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, CheckSquare, XSquare, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckSquare, XSquare, Clock, Users } from "lucide-react";
 import { teacherDataService } from "../StudentLayout/StudentService";
 import { subjectActivityService } from "../../Subject";
 import { BackButton } from "../../../../components";
@@ -16,6 +16,7 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
   const [isExpanded, setIsExpanded] = useState(true);
   const [attendance, setAttendance] = useState({}); //  Estado de asistencia
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
 
   // Suscribirse a la materia y periodo seleccionada
@@ -38,6 +39,7 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
     if (!selectedSubject?.id) return;
 
     const fetchStudents = async () => {
+      setIsLoading(true);
       try {
         // Usar endpoint diferente según si viene de dirección de grupo o no
         if (isDirectionGroup) {
@@ -59,8 +61,11 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
           }, {});
           setAttendance(initialAttendance);
         }
+        
       } catch (error) {
         console.error("Error al obtener la lista de estudiantes:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -124,9 +129,26 @@ export default function StudentList({ onStudentClick, showAttendance = false, is
   };
 
   //  Verificar si no hay estudiantes cargados
-  if (!studentList.students || studentList.students.length === 0) {
-    return <p className="text-gray-500 text-center">No hay estudiantes disponibles.</p>;
-  }
+if (!studentList.students || studentList.students.length === 0) {
+  return (
+    <>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-8 px-4">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-700 font-medium">Cargando lista de estudiantes</p>
+        </div>
+      ) : (
+        <div className="text-center p-6">
+          <div className="bg-gray-200 rounded-full p-3 inline-flex mb-3">
+            <Users className="h-8 w-8 text-gray-500" strokeWidth={1.5} />
+          </div>
+          <p className="text-gray-700 font-medium">No hay estudiantes para mostrar</p>
+          <p className="text-gray-500 text-sm mt-1">Verifica los filtros aplicados o espera a que se asignen estudiantes</p>
+        </div>
+      )}
+    </>
+  );
+}
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg shadow-md">

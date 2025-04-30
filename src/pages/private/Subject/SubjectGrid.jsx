@@ -6,7 +6,7 @@ import { hasAccess } from "../../../utilities/accesControl.utility";
 import { PrivateRoutes, Roles } from "../../../models";
 import { useSelector } from "react-redux";
 import { decodeRoles } from "../../../utilities";
-import { subjectActivityService, GroupCard, SubjectCard,DirectionGroupCard } from "./";
+import { subjectActivityService, GroupCard, SubjectCard, DirectionGroupCard } from "./";
 import { Users, BookOpen, Briefcase } from "lucide-react";
 
 export default function SubjectGrid() {
@@ -18,7 +18,8 @@ export default function SubjectGrid() {
   
   const [subjects, setSubjects] = useState(null);
   const [directionSubjects, setDirectionSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [groupedSubjects, setGroupedSubjects] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
   const [view, setView] = useState('groups'); // 'groups' o 'subjects'
@@ -26,40 +27,53 @@ export default function SubjectGrid() {
   // Efecto para cargar materias
   useEffect(() => {
     if (!userState?.id) return;
+
+    setIsLoading(true);
+    try {
+      const subscription = isTeacher
+        ? teacherDataService.getSubjects().subscribe(data => {
+            setSubjects(data);
+            if (data?.subjects && Array.isArray(data.subjects)) {
+              processSubjects(data.subjects);
+            }
+            setIsLoading(false);
+          })
+        : studentDataService.getStudentData().subscribe(data => {
+            const subjectData = data?.subjects || []; 
+            setSubjects(subjectData);
+            processSubjects(subjectData);
+            setIsLoading(false);
+          });
     
-    setLoading(true);
-    const subscription = isTeacher
-      ? teacherDataService.getSubjects().subscribe(data => {
-          setSubjects(data);
-          if (data?.subjects && Array.isArray(data.subjects)) {
-            processSubjects(data.subjects);
-          }
-          setLoading(false);
-        })
-      : studentDataService.getStudentData().subscribe(data => {
-          const subjectData = data?.subjects || []; 
-          setSubjects(subjectData);
-          processSubjects(subjectData);
-          setLoading(false);
-        });
-    
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+      
+    } catch (error) {
+      console.error("Error al cargar las materias:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userState?.id, isTeacher]);
 
   // Efecto para cargar dirección de grupo (solo para profesores)
   useEffect(() => {
     if (!userState?.id || !isTeacher) return;
-
-    const year = new Date(reduxSelectedDate).getFullYear();
-    teacherDataService.fetchDirectionSubjectsData(userState.id, year);
+    setIsLoading(true);
+    try {
+      const year = new Date(reduxSelectedDate).getFullYear();
+      teacherDataService.fetchDirectionSubjectsData(userState.id, year);
     
-    const subscription = teacherDataService.getStudentGroupListData().subscribe(data => {
-      if (data?.directionGroupList) {
-        setDirectionSubjects(data.directionGroupList);
-      }
-    });
+      const subscription = teacherDataService.getStudentGroupListData().subscribe(data => {
+        if (data?.directionGroupList) {
+          setDirectionSubjects(data.directionGroupList);
+        }
+      });
     
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    } catch (error) {
+      console.error("Error al cargar dirección de curso:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userState?.id, isTeacher, reduxSelectedDate]);
 
   // Procesar y agrupar materias por grupo
@@ -71,7 +85,7 @@ export default function SubjectGrid() {
     }
     
     const grouped = {};
-    console.log(subjectsData)
+    console.log(subjectsData);
     subjectsData.forEach(subject => {
       if (!subject) return;
       console.log(subject);
@@ -150,15 +164,17 @@ export default function SubjectGrid() {
   };
 
   // Si está cargando, mostrar spinner
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="flex flex-col items-center justify-center py-10 h-64">
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+        <h3 className="text-xl font-medium text-gray-700">Cargando tu información</h3>
+        <p className="text-gray-500 mt-2">Estamos preparando tus materias...</p>
       </div>
     );
   }
 
-  // Si no hay materias, mostrar mensaje
+  // Si no hay materias, mostrar mensaje (solo después de cargar)
   const hasNoSubjects = (!subjects) || 
                         (isTeacher && (!subjects?.subjects || subjects.subjects.length === 0)) || 
                         (!isTeacher && (!Array.isArray(subjects) || subjects.length === 0));
@@ -172,11 +188,6 @@ export default function SubjectGrid() {
       </div>
     );
   }
-
-  // Para depuración
-  console.log("Subjects data:", subjects);
-  console.log("Direction subjects:", directionSubjects);
-  console.log("Grouped subjects:", groupedSubjects);
 
   return (
     <div className="container mx-auto">

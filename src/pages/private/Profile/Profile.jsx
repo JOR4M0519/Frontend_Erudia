@@ -23,6 +23,14 @@ function Profile() {
   // Verificar permisos
   const storedRole = decodeRoles(userState.roles) || [];
   const isAdmin = hasAccess(storedRole, [Roles.ADMIN]);
+  const storeRoleSelectedUser = decodeRoles(selectedUser.roles) || [];
+
+  const updateImageUser = () =>{
+    if(hasAccess(storeRoleSelectedUser, [Roles.ADMIN])) return "admin-icon.png";
+    if(hasAccess(storeRoleSelectedUser, [Roles.TEACHER])) return "teacher-icon.png";
+    if(hasAccess(storeRoleSelectedUser, [Roles.STUDENT])) return "student-icon.png";
+    return "avatar.png";
+  }
 
   // Estados
   const [userInfo, setUserInfo] = useState(null);
@@ -272,8 +280,21 @@ function Profile() {
   };
   console.log(userInfo)
   if (!userInfo) {
-    return <p className="text-gray-500">Cargando perfil...</p>;
+    return (
+      <div className="max-w-5xl mx-auto p-8 flex flex-col items-center justify-center bg-white rounded-lg shadow-md my-8">
+        <div className="relative mb-4">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <User className="h-6 w-6 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Cargando perfil</h3>
+        <p className="text-gray-600 text-center">
+          Estamos recuperando la información de su perfil académico...
+        </p>
+      </div>
+    );
   }
+  
+  let avatarUrl= updateImageUser();
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
@@ -282,7 +303,7 @@ function Profile() {
         <div className="flex items-center gap-4">
           {console.log(userInfo)}
           <img
-            src={userInfo.avatar}
+            src={avatarUrl}
             alt={userInfo.name}
             className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
           />

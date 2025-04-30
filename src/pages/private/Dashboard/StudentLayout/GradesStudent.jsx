@@ -355,9 +355,9 @@ export default function GradesStudent({ isTeacher,className}) {
       </section>
 
       {/* Observación Final */}
-      <section className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
+      {/* <section className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Observación Final
+          Observación Finals
         </h2>
         {isTeacher ? (
           isEditing ? (
@@ -390,7 +390,7 @@ export default function GradesStudent({ isTeacher,className}) {
             {observation}
           </p>
         )}
-      </section>
+      </section> */}
     </main>
   );
 }
