@@ -2,7 +2,7 @@ export * from './roles';
 export * from './routes';
 export * from './user.model';
 export * from './rolesSideBar';
-export * from './ProfileRoles';
+export * from './profileRoles';
 export * from './StudentGroupModel';
 export * from './State';
 export * from './StudentTrackingModel';

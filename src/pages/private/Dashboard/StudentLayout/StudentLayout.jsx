@@ -28,32 +28,21 @@ export default function StudentLayout() {
     
     // Mostrar el indicador de carga
     setIsLoading(true);
-    Swal.fire({
-      title: 'Cargando datos...',
-      text: 'Obteniendo información del estudiante',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
     
     // Llamar al servicio
-    studentDataService.fetchStudentData(userState.id, selectedPeriod)
-      .then(() => {
-        // Cerrar el modal cuando termina
+    const loadData = async () => {
+      try {
+        await studentDataService.fetchStudentData(userState.id, selectedPeriod);
+      } catch (error) {
+        console.error("Error al cargar datos del estudiante:", error);
+      } finally {
+        // Siempre desactivar el estado de carga cuando termine
         setIsLoading(false);
-        Swal.close();
-      })
-      .catch(error => {
-        setIsLoading(false);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudieron cargar los datos del estudiante',
-          timer: 2000
-        });
-      });
+      }
+    };
+    
+    loadData();
+    
   }, [userState?.id, selectedPeriod]);
   // Divide la URL en segmentos y elimina los vacíos
   const pathSegments = window.location.pathname.split("/").filter(Boolean); // Filtra vacíos
@@ -66,6 +55,18 @@ export default function StudentLayout() {
 
   // Verificar si el usuario tiene rol de estudiante para mostrar las rutas correspondientes
   const hasStudentRole = storedRoles.includes(Roles.STUDENT);
+
+  // Mostrar pantalla de carga
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+        <h3 className="text-xl font-medium text-gray-700">Cargando tu información</h3>
+        <p className="text-gray-500 mt-2">Estamos preparando tus datos...</p>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6 p-6">

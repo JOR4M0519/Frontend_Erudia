@@ -63,7 +63,7 @@ export default function Sidebar() {
   // Elementos de navegación para estudiantes
   const studentNavItems = [
     { navKey: "DASHBOARD", to: PrivateRoutes.DASHBOARD, icon: <Home className="h-5 w-5" />, label: "Inicio" },
-    { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Materias" },
+    // { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Materias" },
     { navKey: "ACTIVITIES", to: PrivateRoutes.ACTIVITIES, icon: <NotebookText className="h-5 w-5" />, label: "Actividades" },
     { navKey: "GRADES", to: PrivateRoutes.GRADES, icon: <StarIcon className="h-5 w-5" />, label: "Mis Notas" },
     { navKey: "PROFILE", to: PrivateRoutes.PROFILE, icon: <User className="h-5 w-5" />, label: "Perfil" },
@@ -73,7 +73,7 @@ export default function Sidebar() {
   // Elementos de navegación para profesores
   const teacherNavItems = [
     { navKey: "DASHBOARD", to: PrivateRoutes.DASHBOARD, icon: <Home className="h-5 w-5" />, label: "Inicio" },
-    { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Mis Materias" },
+    // { navKey: "SUBJECTS", to: PrivateRoutes.SUBJECTS, icon: <BookType className="h-5 w-5" />, label: "Mis Materias" },
     // { navKey: "ACTIVITIES_GRADING", to: PrivateRoutes.ACTIVITIES_GRADING, icon: <NotebookText className="h-5 w-5" />, label: "Calificar" },
     { navKey: "STUDENTTRACKING", to: PrivateRoutes.STUDENTTRACKING, icon: <BookUser className="h-5 w-5" />, label: "Observador" },
     { navKey: "PROFILE", to: PrivateRoutes.PROFILE, icon: <User className="h-5 w-5" />, label: "Perfil" },
